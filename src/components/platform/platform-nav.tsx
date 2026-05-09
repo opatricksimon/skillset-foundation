@@ -1,0 +1,80 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { useAuth } from "@/components/auth/auth-provider";
+import { platformNav } from "@/data/site";
+import { hasPermission } from "@/lib/permissions";
+
+export function PlatformNav() {
+  const { user } = useAuth();
+  const pathname = usePathname();
+  const subject = { roles: user?.roles ?? ["guest"] };
+  const visibleItems = platformNav.filter(
+    (item) => !item.permission || hasPermission(subject, item.permission),
+  );
+  const sections = Array.from(new Set(visibleItems.map((item) => item.section)));
+
+  return (
+    <nav className="mt-4 flex flex-col gap-4">
+      {sections.map((section) => (
+        <div key={section} className="grid gap-1.5">
+          <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+            {section}
+          </p>
+          {visibleItems
+            .filter((item) => item.section === section)
+            .map((item) => (
+              <PlatformNavLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                shortLabel={item.shortLabel}
+                active={
+                  item.href === "/platform"
+                    ? pathname === item.href
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                }
+              />
+            ))}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function PlatformNavLink({
+  href,
+  label,
+  shortLabel,
+  active,
+}: {
+  href: string;
+  label: string;
+  shortLabel: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`group flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+        active
+          ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
+          : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
+      }`}
+    >
+      <span
+        className={`grid size-7 shrink-0 place-items-center rounded-[8px] border text-[10px] font-bold ${
+          active
+            ? "border-white/20 bg-white/14 text-white"
+            : "border-[var(--color-line)] bg-white text-[var(--color-primary)] group-hover:border-[rgba(26,54,93,0.18)]"
+        }`}
+      >
+        {shortLabel}
+      </span>
+      {label}
+    </Link>
+  );
+}

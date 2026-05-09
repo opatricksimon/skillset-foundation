@@ -1,0 +1,57 @@
+import { ProtectedSurface } from "@/components/auth/protected-surface";
+import { AdminEnrollmentPanel } from "@/components/admin/admin-enrollment-panel";
+import { CommunityModerationQueue } from "@/components/admin/community-moderation-queue";
+import { CourseReviewQueue } from "@/components/admin/course-review-queue";
+import { PaymentOperationsPanel } from "@/components/admin/payment-operations-panel";
+import { SupportTicketQueue } from "@/components/admin/support-ticket-queue";
+import { UserLookupPanel } from "@/components/admin/user-lookup-panel";
+import { PlatformShell } from "@/components/platform/platform-shell";
+
+const opsCards = [
+  {
+    title: "Course review",
+    description: "Review submitted courses, check quality standards, and publish approved learning experiences.",
+  },
+  {
+    title: "Educator approvals",
+    description: "Review new educators and make sure each profile is ready for the public learning experience.",
+  },
+  {
+    title: "Learner support",
+    description: "Keep account questions, learner care, and support requests organized in one place.",
+  },
+];
+
+export default function OpsPage() {
+  return (
+    <ProtectedSurface permissions={["platform.accessAdmin"]}>
+      <PlatformShell
+        eyebrow="Support and safety"
+        title="A calm operations layer behind the learning experience."
+        description="Course review, educator approvals, and learner support keep the platform trustworthy as it grows."
+      >
+        <div className="grid gap-5 lg:grid-cols-3">
+          {opsCards.map((card) => (
+            <div key={card.title} className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+              <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+                Platform controls
+              </p>
+              <h3 className="display-title mt-3 text-3xl leading-none text-[var(--color-ink)]">
+                {card.title}
+              </h3>
+              <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+                {card.description}
+              </p>
+            </div>
+          ))}
+        </div>
+        <CourseReviewQueue />
+        <PaymentOperationsPanel />
+        <CommunityModerationQueue />
+        <AdminEnrollmentPanel />
+        <SupportTicketQueue />
+        <UserLookupPanel />
+      </PlatformShell>
+    </ProtectedSurface>
+  );
+}

@@ -1,0 +1,177 @@
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { CourseEnrollmentCta } from "@/components/courses/course-enrollment-cta";
+import { SiteNav } from "@/components/site/site-nav";
+import { getCourseBySlug, getCourseSlugs } from "@/lib/data/catalog";
+
+export function generateStaticParams() {
+  return getCourseSlugs().map((slug) => ({ slug }));
+}
+
+export default function CourseDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const course = getCourseBySlug(params.slug);
+
+  if (!course) {
+    notFound();
+  }
+
+  const previewLessons = course.modules.flatMap((module) =>
+    module.lessons
+      .filter((lesson) => lesson.isPreview)
+      .map((lesson) => ({ ...lesson, moduleTitle: module.title })),
+  );
+
+  return (
+    <div className="page-shell">
+      <SiteNav />
+      <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-8 sm:py-14">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+          <section>
+            <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-[20px] shadow-[var(--shadow-soft)]">
+              <Image
+                src={course.image}
+                alt={course.title}
+                fill
+                sizes="100vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(15,39,68,0.8)] via-transparent to-transparent" />
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              {course.category}
+            </p>
+            <h1 className="display-title mt-4 text-6xl leading-none text-[var(--color-primary)]">
+              {course.title}
+            </h1>
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              {course.summary}
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {course.outcomes.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[14px] border fine-rule bg-white p-4"
+                >
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{item}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-primary-light)]">
+              {course.detail}
+            </p>
+            <section className="mt-8 rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
+              <div id="free-preview" className="scroll-mt-24 rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                  Free preview
+                </p>
+                <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+                  Try the course before enrolling.
+                </h2>
+                <div className="mt-4 grid gap-3">
+                  {previewLessons.length > 0 ? (
+                    previewLessons.map((lesson) => (
+                      <div
+                        key={lesson.id}
+                        className="flex items-center justify-between gap-3 rounded-[10px] bg-white px-4 py-3 text-sm"
+                      >
+                        <div>
+                          <p className="font-semibold text-[var(--color-ink)]">
+                            {lesson.title}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                            {lesson.moduleTitle}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+                          {lesson.duration}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+                      The instructor has not added a public preview lesson yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Course structure
+              </p>
+              <div className="mt-5 grid gap-4">
+                {course.modules.map((module) => (
+                  <div key={module.id} className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+                    <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+                      {module.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+                      {module.summary}
+                    </p>
+                    <div className="mt-4 grid gap-2">
+                      {module.lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="flex items-center justify-between gap-3 rounded-[10px] bg-white px-3 py-2 text-xs text-[var(--color-ink-soft)]"
+                        >
+                          <span className="font-semibold text-[var(--color-ink)]">
+                            {lesson.title}
+                          </span>
+                          <span className="shrink-0 uppercase tracking-[0.16em]">
+                            {lesson.isPreview ? "Preview" : "Enrolled"} -{" "}
+                            {lesson.type.replace("_", " ")} - {lesson.duration}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </div>
+            </section>
+          </section>
+          <aside className="h-fit rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
+              At a glance
+            </p>
+            <dl className="mt-5 grid gap-4">
+              {[
+                ["Duration", course.durationLabel],
+                ["Status", course.statusLabel],
+                ["Category", course.category],
+                ["Level", course.level],
+                ["Access", course.priceLabel],
+                ["Preview", course.freePreviewLabel],
+              ].map(([label, value]) => (
+                <div key={label} className="border-b border-[var(--color-line)] pb-4 last:border-b-0 last:pb-0">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <CourseEnrollmentCta course={course} />
+            <Link href="#free-preview" className="button-outline mt-3 w-full px-5 py-3 text-sm">
+              Watch free preview
+            </Link>
+            <Link
+              href="/courses"
+              className="mt-4 inline-flex w-full justify-center text-sm font-semibold text-[var(--color-primary)]"
+            >
+              Back to all programs
+            </Link>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}

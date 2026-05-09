@@ -1,0 +1,151 @@
+"use client";
+
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  where,
+  type Unsubscribe,
+} from "firebase/firestore";
+
+import type { TeacherCourse } from "@/domain/teacher-course";
+import type { Course } from "@/domain/learning";
+import type { CourseCard } from "@/lib/data/catalog";
+import { getFirestoreDb } from "@/lib/firebase/client";
+
+const coursesCollection = "courses";
+
+export function subscribeToPublishedTeacherCourses(
+  callback: (courses: TeacherCourse[]) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  const coursesQuery = query(
+    collection(getFirestoreDb(), coursesCollection),
+    where("status", "==", "published"),
+  );
+
+  return onSnapshot(
+    coursesQuery,
+    (snapshot) => {
+      callback(
+        snapshot.docs
+          .map((document) => ({
+            id: document.id,
+            ...(document.data() as Omit<TeacherCourse, "id">),
+          }))
+          .sort((left, right) => left.title.localeCompare(right.title)),
+      );
+    },
+    onError,
+  );
+}
+
+export function subscribeToPublishedTeacherCourse(
+  courseId: string,
+  callback: (course: TeacherCourse | null) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(getFirestoreDb(), coursesCollection, courseId),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null);
+        return;
+      }
+
+      const course = {
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<TeacherCourse, "id">),
+      };
+
+      callback(course.status === "published" ? course : null);
+    },
+    onError,
+  );
+}
+
+export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
+  const priceLabel =
+    typeof course.priceAmountMinor === "number"
+      ? new Intl.NumberFormat("en", {
+          style: "currency",
+          currency: course.currency ?? "USD",
+        }).format(course.priceAmountMinor / 100)
+      : "Pricing pending";
+
+  return {
+    slug: course.id,
+    title: course.title,
+    category: course.category,
+    duration: `${course.lessonCount} lesson${course.lessonCount === 1 ? "" : "s"}`,
+    status: "Creator course",
+    summary: course.summary,
+    image: course.coverImageUrl
+      || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+    detail: "Created by an approved Skillset educator.",
+    priceLabel,
+    freePreviewLabel: course.freePreviewLessonId
+      ? "Free preview selected"
+      : "Preview setup pending",
+    hasPaidAccess: false,
+    href: `/courses/creator?courseId=${course.id}`,
+    freePreviewHref: `/courses/creator?courseId=${course.id}#free-preview`,
+    sourceLabel: "Teacher published",
+  };
+}
+
+export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
+  const priceLabel =
+    typeof course.priceAmountMinor === "number"
+      ? new Intl.NumberFormat("en", {
+          style: "currency",
+          currency: course.currency ?? "USD",
+        }).format(course.priceAmountMinor / 100)
+      : "Pricing pending";
+
+  return {
+    id: course.id,
+    slug: course.id,
+    title: course.title,
+    category: course.category,
+    durationLabel: `${course.lessonCount} lesson${course.lessonCount === 1 ? "" : "s"}`,
+    status: "published",
+    statusLabel: "Published",
+    summary: course.summary,
+    detail: "This private workspace is connected to a teacher-published Skillset course.",
+    image: course.coverImageUrl
+      || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+    level: "Professional",
+    priceLabel,
+    priceAmountMinor: course.priceAmountMinor ?? null,
+    currency: course.currency ?? "USD",
+    platformFeeBps: course.platformFeeBps ?? 1500,
+    freePreviewLabel: course.freePreviewLessonId
+      ? "Free preview selected"
+      : "Preview setup pending",
+    outcomes: [
+      "Complete the teacher-defined lesson path.",
+      "Use course events and community spaces to support progress.",
+      "Track completion toward Skillset credential eligibility.",
+    ],
+    modules: course.modules.map((module) => ({
+      id: module.id,
+      title: module.title,
+      summary: `${module.lessons.length} lesson${module.lessons.length === 1 ? "" : "s"}`,
+      lessons: module.lessons.map((lesson) => ({
+        id: lesson.id,
+        title: lesson.title,
+        type: lesson.type,
+        duration: lesson.durationMinutes
+          ? `${lesson.durationMinutes} min`
+          : "Self-paced",
+        isPreview: lesson.id === course.freePreviewLessonId,
+        description: lesson.description,
+        contentText: lesson.contentText ?? null,
+        externalUrl: lesson.externalUrl ?? null,
+      })),
+    })),
+    communityEnabled: true,
+  };
+}

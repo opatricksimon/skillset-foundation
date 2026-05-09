@@ -1,0 +1,254 @@
+"use client";
+
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+
+import { useAuth } from "@/components/auth/auth-provider";
+import type { UserGoal } from "@/domain/user-profile";
+import {
+  normalizeGoals,
+  normalizeUsername,
+  validateBio,
+  validateDisplayName,
+  validateUsername,
+} from "@/lib/auth/profile-validation";
+import { getUserProfile, updateUserIdentity } from "@/lib/data/user-profiles";
+
+const goalOptions = [
+  ["career_growth", "Career growth"],
+  ["skill_certification", "Verified learning"],
+  ["teach_online", "Teach online"],
+  ["build_community", "Build a community"],
+  ["live_mentorship", "Live mentorship"],
+  ["business_training", "Team training"],
+] as const satisfies Array<[UserGoal, string]>;
+
+const timezoneOptions = [
+  "America/New_York",
+  "America/Sao_Paulo",
+  "America/Los_Angeles",
+  "Europe/London",
+  "Africa/Lagos",
+  "Africa/Johannesburg",
+];
+
+export function ProfileSettingsPanel() {
+  const { user } = useAuth();
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [timezone, setTimezone] = useState("America/New_York");
+  const [goals, setGoals] = useState<UserGoal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let mounted = true;
+
+    getUserProfile(user.uid)
+      .then((profile) => {
+        if (!mounted) {
+          return;
+        }
+
+        setDisplayName(profile?.displayName ?? user.displayName ?? "");
+        setUsername(profile?.username ?? "");
+        setBio(profile?.bio ?? "");
+        setTimezone(
+          profile?.timezone ??
+            Intl.DateTimeFormat().resolvedOptions().timeZone ??
+            "America/New_York",
+        );
+        setGoals(profile?.goals ?? []);
+      })
+      .catch(() => {
+        if (mounted) {
+          setError("We could not load your profile settings.");
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
+  const safeTimezoneOptions = useMemo(() => {
+    if (timezoneOptions.includes(timezone)) {
+      return timezoneOptions;
+    }
+
+    return [timezone, ...timezoneOptions];
+  }, [timezone]);
+
+  function toggleGoal(goal: UserGoal) {
+    setGoals((currentGoals) =>
+      currentGoals.includes(goal)
+        ? currentGoals.filter((currentGoal) => currentGoal !== goal)
+        : normalizeGoals([...currentGoals, goal]),
+    );
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user) {
+      setError("Sign in again to update your profile.");
+      return;
+    }
+
+    const validationError =
+      validateDisplayName(displayName) ||
+      validateUsername(username) ||
+      validateBio(bio) ||
+      (!timezone ? "Choose your timezone." : "");
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setIsSaving(true);
+
+    try {
+      await updateUserIdentity(user.uid, {
+        displayName,
+        username: normalizeUsername(username),
+        bio,
+        timezone,
+        goals,
+      });
+      setSuccess("Profile updated.");
+    } catch {
+      setError("We could not update your profile. Check permissions and try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <p className="text-sm text-[var(--color-ink-soft)]">Loading profile settings...</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+        Account identity
+      </p>
+      <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+        Profile settings
+      </h3>
+      <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+        Keep your Skillset identity clear for learning, teaching, communities, and future public profiles.
+      </p>
+
+      <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Public name
+          <input
+            value={displayName}
+            onChange={(event) => setDisplayName(event.target.value)}
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Username
+          <div className="flex overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-white focus-within:border-[var(--color-primary-light)]">
+            <span className="grid place-items-center border-r border-[var(--color-line)] px-3 text-sm font-semibold text-[var(--color-ink-soft)]">
+              @
+            </span>
+            <input
+              value={username}
+              onChange={(event) => setUsername(normalizeUsername(event.target.value))}
+              className="min-w-0 flex-1 px-4 py-3 text-sm font-normal outline-none"
+            />
+          </div>
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Bio
+          <textarea
+            value={bio}
+            onChange={(event) => setBio(event.target.value)}
+            rows={4}
+            className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          />
+          <span className="text-xs font-normal text-[var(--color-ink-soft)]">
+            {bio.trim().length}/280 characters
+          </span>
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Timezone
+          <select
+            value={timezone}
+            onChange={(event) => setTimezone(event.target.value)}
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          >
+            {safeTimezoneOptions.map((option) => (
+              <option key={option} value={option}>
+                {option.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="grid gap-2">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">Goals</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {goalOptions.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleGoal(value)}
+                className={`rounded-[10px] border px-4 py-3 text-left text-sm font-semibold ${
+                  goals.includes(value)
+                    ? "border-[var(--color-primary)] bg-[rgba(24,58,94,0.08)] text-[var(--color-primary)]"
+                    : "border-[var(--color-line)] bg-white text-[var(--color-ink-soft)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error ? (
+          <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+            {error}
+          </p>
+        ) : null}
+
+        {success ? (
+          <p className="rounded-[10px] border border-[rgba(26,54,93,0.12)] bg-[var(--color-surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]">
+            {success}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="button-solid justify-self-start px-5 py-3 text-sm disabled:opacity-60"
+        >
+          {isSaving ? "Saving..." : "Save profile"}
+        </button>
+      </form>
+    </section>
+  );
+}

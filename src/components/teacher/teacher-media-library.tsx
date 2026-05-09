@@ -1,0 +1,219 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+import { useAuth } from "@/components/auth/auth-provider";
+import type { CourseAsset, CourseAssetKind } from "@/domain/course-asset";
+import {
+  courseAssetKindLabels,
+  formatCourseAssetSize,
+} from "@/domain/course-asset";
+import type { TeacherCourse } from "@/domain/teacher-course";
+import { subscribeToCourseAssets } from "@/lib/data/course-assets";
+import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
+
+const assetKindFilters = [
+  "all",
+  "course_cover",
+  "module_cover",
+  "lesson_thumbnail",
+  "lesson_material",
+  "lesson_video",
+  "live_recording",
+] as const satisfies Array<CourseAssetKind | "all">;
+
+export function TeacherMediaLibrary() {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [assets, setAssets] = useState<CourseAsset[]>([]);
+  const [kindFilter, setKindFilter] = useState<CourseAssetKind | "all">("all");
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherCourses(
+      user.uid,
+      (nextCourses) => {
+        setCourses(nextCourses);
+        setIsLoadingCourses(false);
+
+        if (!selectedCourseId && nextCourses[0]) {
+          setSelectedCourseId(nextCourses[0].id);
+        }
+      },
+      () => {
+        setError("We could not load your courses.");
+        setIsLoadingCourses(false);
+      },
+    );
+  }, [selectedCourseId, user]);
+
+  useEffect(() => {
+    if (!selectedCourseId) {
+      return;
+    }
+
+    return subscribeToCourseAssets(
+      selectedCourseId,
+      (nextAssets) => {
+        setAssets(nextAssets);
+      },
+      () => {
+        setError("We could not load assets for this course.");
+      },
+    );
+  }, [selectedCourseId]);
+
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? null;
+  const filteredAssets = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return assets.filter((asset) => {
+      const matchesKind = kindFilter === "all" || asset.kind === kindFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        asset.fileName.toLowerCase().includes(normalizedSearch) ||
+        courseAssetKindLabels[asset.kind].toLowerCase().includes(normalizedSearch);
+
+      return matchesKind && matchesSearch;
+    });
+  }, [assets, kindFilter, search]);
+
+  return (
+    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+            Media library
+          </p>
+          <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+            Course files and lesson assets
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            Review assets uploaded through the builder. Private lesson files stay protected;
+            this library is for organization and course production control.
+          </p>
+        </div>
+        {selectedCourse ? (
+          <Link
+            href={`/teach/builder?courseId=${selectedCourse.id}`}
+            className="button-solid px-4 py-3 text-sm"
+          >
+            Upload in builder
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_220px]">
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Search assets
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by filename or type"
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Type
+          <select
+            value={kindFilter}
+            onChange={(event) => setKindFilter(event.target.value as CourseAssetKind | "all")}
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          >
+            {assetKindFilters.map((kind) => (
+              <option key={kind} value={kind}>
+                {kind === "all" ? "All files" : courseAssetKindLabels[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          Course
+          <select
+            value={selectedCourseId}
+            onChange={(event) => setSelectedCourseId(event.target.value)}
+            disabled={courses.length === 0}
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+          >
+            {courses.length === 0 ? (
+              <option value="">No courses yet</option>
+            ) : (
+              courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+      </div>
+
+      {error ? (
+        <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="mt-6 grid gap-3">
+        {isLoadingCourses ? (
+          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            Loading media library...
+          </p>
+        ) : courses.length === 0 ? (
+          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            Create a course draft first. Media uploads stay attached to a course so
+            every file has clear ownership and access rules.
+          </p>
+        ) : filteredAssets.length === 0 ? (
+          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            No assets match this view. Upload a course cover, lesson material, or
+            recording from the builder.
+          </p>
+        ) : (
+          filteredAssets.map((asset) => (
+            <article
+              key={asset.id}
+              className="grid gap-4 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 md:grid-cols-[80px_1fr_auto]"
+            >
+              <div className="grid h-20 w-20 place-items-center rounded-[10px] border border-[var(--color-line)] bg-white text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+                {asset.contentType.split("/")[0] || "file"}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
+                  {asset.fileName}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+                  {courseAssetKindLabels[asset.kind]} - {formatCourseAssetSize(asset.size)}
+                </p>
+                <p className="mt-2 break-all text-xs leading-5 text-[var(--color-ink-soft)]">
+                  {asset.storagePath}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-start gap-2 md:justify-end">
+                <span className="rounded-[8px] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+                  {asset.isPreview ? "Preview" : "Private"}
+                </span>
+                {asset.lessonId ? (
+                  <span className="rounded-[8px] bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+                    Lesson asset
+                  </span>
+                ) : null}
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}

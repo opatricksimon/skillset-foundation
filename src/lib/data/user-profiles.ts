@@ -1,0 +1,167 @@
+"use client";
+
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  type Unsubscribe,
+} from "firebase/firestore";
+
+import type {
+  UpsertUserProfileInput,
+  UserIdentityInput,
+  UserProfile,
+} from "@/domain/user-profile";
+import { getFirestoreDb } from "@/lib/firebase/client";
+import type { Role } from "@/lib/permissions";
+
+const usersCollection = "users";
+const currentTermsVersion = "2026-04-26";
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  const snapshot = await getDoc(doc(getFirestoreDb(), usersCollection, uid));
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return snapshot.data() as UserProfile;
+}
+
+export function subscribeToUserProfile(
+  uid: string,
+  callback: (profile: UserProfile | null) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(getFirestoreDb(), usersCollection, uid),
+    (snapshot) => {
+      callback(snapshot.exists() ? (snapshot.data() as UserProfile) : null);
+    },
+    onError,
+  );
+}
+
+export async function upsertUserProfile(
+  input: UpsertUserProfileInput,
+): Promise<void> {
+  const profileRef = doc(getFirestoreDb(), usersCollection, input.uid);
+  const existingProfile = await getDoc(profileRef);
+
+  if (existingProfile.exists()) {
+    await updateDoc(profileRef, {
+      email: input.email,
+      displayName: input.displayName,
+      photoURL: input.photoURL,
+      updatedAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    });
+
+    return;
+  }
+
+  await setDoc(profileRef, {
+    uid: input.uid,
+    email: input.email,
+    displayName: input.displayName,
+    photoURL: input.photoURL,
+    roles: ["student"],
+    onboardingCompleted: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+  });
+}
+
+export async function updateUserRoles(
+  uid: string,
+  roles: ReadonlyArray<Extract<Role, "student" | "teacher">>,
+) {
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      roles: Array.from(new Set(roles)),
+      onboardingCompleted: true,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function updateUserRole(uid: string, role: Extract<Role, "student" | "teacher">) {
+  await updateUserRoles(uid, [role]);
+}
+
+function buildIdentityPatch(input: UserIdentityInput) {
+  const patch: Record<string, unknown> = {};
+
+  if (input.displayName !== undefined) {
+    patch.displayName = input.displayName?.trim() || null;
+  }
+
+  if (input.username !== undefined) {
+    patch.username = input.username?.trim() || null;
+  }
+
+  if (input.bio !== undefined) {
+    patch.bio = input.bio?.trim() || null;
+  }
+
+  if (input.timezone !== undefined) {
+    patch.timezone = input.timezone?.trim() || null;
+  }
+
+  if (input.goals !== undefined) {
+    patch.goals = input.goals;
+  }
+
+  return patch;
+}
+
+export async function updateUserIdentity(uid: string, input: UserIdentityInput) {
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      ...buildIdentityPatch(input),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function completeUserOnboarding({
+  uid,
+  roles,
+  identity,
+}: {
+  uid: string;
+  roles: ReadonlyArray<Extract<Role, "student" | "teacher">>;
+  identity: UserIdentityInput;
+}) {
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      ...buildIdentityPatch(identity),
+      roles: Array.from(new Set(roles)),
+      onboardingCompleted: true,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function acceptUserTerms(uid: string, marketingConsent: boolean) {
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      termsAcceptedAt: serverTimestamp(),
+      termsVersion: currentTermsVersion,
+      marketingConsent,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}

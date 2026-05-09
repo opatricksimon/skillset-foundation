@@ -1,0 +1,57 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+
+import { getAuthErrorMessage, resetPassword } from "@/lib/auth/firebase-auth";
+
+export function ResetPasswordForm() {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsLoading(true);
+
+    try {
+      await resetPassword(email);
+      setSuccess("If an account exists for this email, a reset link has been sent.");
+    } catch (caughtError) {
+      setError(getAuthErrorMessage(caughtError));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <form className="mt-6 grid gap-4" onSubmit={handleReset}>
+      <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+        Email
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@example.com"
+          required
+          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+        />
+      </label>
+      {error ? (
+        <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-[10px] border border-[rgba(26,54,93,0.14)] bg-[var(--color-surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]">
+          {success}
+        </p>
+      ) : null}
+      <button type="submit" disabled={isLoading} className="button-solid mt-2 px-5 py-3 text-sm disabled:opacity-60">
+        {isLoading ? "Sending..." : "Send reset link"}
+      </button>
+    </form>
+  );
+}

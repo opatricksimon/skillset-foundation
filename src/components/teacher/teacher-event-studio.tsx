@@ -1,0 +1,345 @@
+"use client";
+
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+
+import { useAuth } from "@/components/auth/auth-provider";
+import {
+  courseEventStatusLabels,
+  courseEventTypeLabels,
+  formatEventDateTime,
+  isValidExternalEventUrl,
+  type CourseEvent,
+  type CourseEventRsvp,
+  type CourseEventType,
+} from "@/domain/course-event";
+import type { TeacherCourse } from "@/domain/teacher-course";
+import {
+  createCourseEvent,
+  subscribeToCourseEventRsvps,
+  subscribeToTeacherCourseEvents,
+} from "@/lib/data/course-events";
+import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
+
+const eventTypes: CourseEventType[] = [
+  "live_class",
+  "mentorship",
+  "office_hours",
+  "webinar",
+  "deadline",
+];
+
+export function TeacherEventStudio() {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [events, setEvents] = useState<CourseEvent[]>([]);
+  const [courseId, setCourseId] = useState("");
+  const [type, setType] = useState<CourseEventType>("live_class");
+  const [title, setTitle] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherCourses(
+      user.uid,
+      (nextCourses) => {
+        setCourses(nextCourses);
+        setIsLoading(false);
+      },
+      () => {
+        setError("We could not load your courses for scheduling.");
+        setIsLoading(false);
+      },
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherCourseEvents(
+      user.uid,
+      setEvents,
+      () => setError("We could not load your scheduled sessions."),
+    );
+  }, [user]);
+
+  const selectedCourse = useMemo(
+    () => courses.find((course) => course.id === courseId) ?? courses[0],
+    [courseId, courses],
+  );
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user || !selectedCourse) {
+      setError("Create a course draft before scheduling a live session.");
+      return;
+    }
+
+    if (!isValidExternalEventUrl(externalUrl)) {
+      setError("Use a valid external link, such as a Zoom or Google Meet URL.");
+      return;
+    }
+
+    if (!startsAt) {
+      setError("Choose the date and time for this session.");
+      return;
+    }
+
+    setError("");
+    setIsSaving(true);
+
+    try {
+      await createCourseEvent({
+        courseId: selectedCourse.id,
+        courseSlug: selectedCourse.id,
+        courseTitle: selectedCourse.title,
+        ownerId: user.uid,
+        title,
+        description,
+        type,
+        startsAt: new Date(startsAt).toISOString(),
+        externalUrl,
+      });
+
+      setTitle("");
+      setStartsAt("");
+      setExternalUrl("");
+      setDescription("");
+      setType("live_class");
+      setCourseId(selectedCourse.id);
+    } catch {
+      setError("We could not schedule this session. Please check the details and try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+          Live sessions
+        </p>
+        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+          Schedule a class or mentorship.
+        </h3>
+        <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+          Use external links first. After the session, recordings can be added
+          through the course media flow and connected to the lesson structure.
+        </p>
+
+        <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Course
+            <select
+              value={selectedCourse?.id ?? ""}
+              onChange={(event) => setCourseId(event.target.value)}
+              disabled={courses.length === 0 || isLoading}
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:opacity-60"
+            >
+              {courses.length === 0 ? (
+                <option value="">Create a course first</option>
+              ) : (
+                courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.title}
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+              Session type
+              <select
+                value={type}
+                onChange={(event) => setType(event.target.value as CourseEventType)}
+                className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+              >
+                {eventTypes.map((item) => (
+                  <option key={item} value={item}>
+                    {courseEventTypeLabels[item]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+              Date and time
+              <input
+                value={startsAt}
+                onChange={(event) => setStartsAt(event.target.value)}
+                type="datetime-local"
+                required
+                className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+              />
+            </label>
+          </div>
+
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Session title
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+              minLength={3}
+              placeholder="Example: Leadership clinic with live Q&A"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            External class link
+            <input
+              value={externalUrl}
+              onChange={(event) => setExternalUrl(event.target.value)}
+              required
+              placeholder="https://meet.google.com/... or https://zoom.us/..."
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Session description
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              required
+              minLength={12}
+              rows={4}
+              placeholder="What should learners expect in this session?"
+              className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            />
+          </label>
+
+          {error ? (
+            <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSaving || !selectedCourse}
+            className="button-solid px-5 py-3 text-sm disabled:opacity-60"
+          >
+            {isSaving ? "Scheduling..." : "Schedule session"}
+          </button>
+        </form>
+      </div>
+
+      <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+          Agenda
+        </p>
+        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+          Scheduled sessions
+        </h3>
+        <div className="mt-6 grid gap-3">
+          {events.length === 0 ? (
+            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+              No live sessions scheduled yet. Create one when the course has a
+              class, mentorship, webinar, or deadline to share.
+            </p>
+          ) : (
+            events.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      {courseEventTypeLabels[event.type]}
+                    </p>
+                    <h4 className="mt-2 text-base font-semibold text-[var(--color-ink)]">
+                      {event.title}
+                    </h4>
+                  </div>
+                  <span className="rounded-[8px] bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+                    {courseEventStatusLabels[event.status]}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-[var(--color-ink)]">
+                  {event.courseTitle}
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
+                  {formatEventDateTime(event.startsAt)}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
+                  {event.description}
+                </p>
+                <TeacherEventRsvpSummary eventId={event.id} />
+                <a
+                  href={event.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)]"
+                >
+                  Open external link
+                </a>
+              </article>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TeacherEventRsvpSummary({ eventId }: { eventId: string }) {
+  const [rsvps, setRsvps] = useState<CourseEventRsvp[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    return subscribeToCourseEventRsvps(
+      eventId,
+      (nextRsvps) => {
+        setRsvps(nextRsvps);
+        setIsLoading(false);
+      },
+      () => {
+        setError("RSVP summary unavailable.");
+        setIsLoading(false);
+      },
+    );
+  }, [eventId]);
+
+  const attendingCount = rsvps.filter((rsvp) => rsvp.status === "attending").length;
+  const notAttendingCount = rsvps.filter((rsvp) => rsvp.status === "not_attending").length;
+
+  return (
+    <div className="mt-4 rounded-[12px] border border-[var(--color-line)] bg-white p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+        RSVP
+      </p>
+      {isLoading ? (
+        <p className="mt-2 text-sm text-[var(--color-ink-soft)]">Loading attendance...</p>
+      ) : error ? (
+        <p className="mt-2 text-sm font-semibold text-[var(--color-accent)]">
+          {error}
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-wrap gap-2 text-sm">
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 font-semibold text-[var(--color-primary)]">
+            {attendingCount} going
+          </span>
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 font-semibold text-[var(--color-ink-soft)]">
+            {notAttendingCount} not going
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}

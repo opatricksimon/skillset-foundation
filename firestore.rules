@@ -1,0 +1,1109 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function currentUserRoles() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles is list
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles
+        : [];
+    }
+
+    function hasRole(role) {
+      return signedIn() && currentUserRoles().hasAny([role]);
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isTeacher() {
+      return hasRole('teacher') || isAdmin();
+    }
+
+    function isSupport() {
+      return hasRole('support') || isAdmin();
+    }
+
+    function isModerator() {
+      return hasRole('moderator') || isAdmin();
+    }
+
+    function hasOnlyAllowedUserKeys() {
+      return request.resource.data.keys().hasOnly([
+        'uid',
+        'email',
+        'displayName',
+        'username',
+        'bio',
+        'timezone',
+        'goals',
+        'photoURL',
+        'roles',
+        'onboardingCompleted',
+        'termsAcceptedAt',
+        'termsVersion',
+        'marketingConsent',
+        'stripeConnectedAccountId',
+        'stripeConnectStatus',
+        'stripeConnectChargesEnabled',
+        'stripeConnectPayoutsEnabled',
+        'stripeConnectUpdatedAt',
+        'createdAt',
+        'updatedAt',
+        'lastLoginAt'
+      ]);
+    }
+
+    function validUserIdentityFields() {
+      return (
+          !request.resource.data.keys().hasAny(['displayName'])
+          || request.resource.data.displayName == null
+          || (
+            request.resource.data.displayName is string
+            && request.resource.data.displayName.size() <= 120
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['username'])
+          || request.resource.data.username == null
+          || (
+            request.resource.data.username is string
+            && request.resource.data.username.matches('^[a-z0-9][a-z0-9-]{2,31}$')
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['bio'])
+          || request.resource.data.bio == null
+          || (
+            request.resource.data.bio is string
+            && request.resource.data.bio.size() <= 280
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['timezone'])
+          || request.resource.data.timezone == null
+          || (
+            request.resource.data.timezone is string
+            && request.resource.data.timezone.size() >= 3
+            && request.resource.data.timezone.size() <= 80
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['goals'])
+          || (
+            request.resource.data.goals is list
+            && request.resource.data.goals.size() <= 8
+            && request.resource.data.goals.hasOnly([
+              'career_growth',
+              'skill_certification',
+              'teach_online',
+              'build_community',
+              'live_mentorship',
+              'business_training'
+            ])
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['stripeConnectedAccountId'])
+          || request.resource.data.stripeConnectedAccountId == null
+          || request.resource.data.stripeConnectedAccountId == resource.data.stripeConnectedAccountId
+        )
+        && (
+          !request.resource.data.keys().hasAny(['stripeConnectStatus'])
+          || request.resource.data.stripeConnectStatus == null
+          || request.resource.data.stripeConnectStatus == resource.data.stripeConnectStatus
+        )
+        && (
+          !request.resource.data.keys().hasAny(['stripeConnectChargesEnabled'])
+          || request.resource.data.stripeConnectChargesEnabled == resource.data.stripeConnectChargesEnabled
+        )
+        && (
+          !request.resource.data.keys().hasAny(['stripeConnectPayoutsEnabled'])
+          || request.resource.data.stripeConnectPayoutsEnabled == resource.data.stripeConnectPayoutsEnabled
+        )
+        && (
+          !request.resource.data.keys().hasAny(['stripeConnectUpdatedAt'])
+          || request.resource.data.stripeConnectUpdatedAt == resource.data.stripeConnectUpdatedAt
+        );
+    }
+
+    function hasOnlyAllowedCourseKeys() {
+      return request.resource.data.keys().hasOnly([
+        'ownerId',
+        'title',
+        'summary',
+        'category',
+        'status',
+        'modules',
+        'lessonCount',
+        'priceAmountMinor',
+        'currency',
+        'platformFeeBps',
+        'freePreviewLessonId',
+        'coverImageUrl',
+        'reviewNote',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCourseStatus() {
+      return request.resource.data.status in [
+        'draft',
+        'in_review',
+        'needs_changes',
+        'published',
+        'inactive'
+      ];
+    }
+
+    function validCourseShape() {
+      return hasOnlyAllowedCourseKeys()
+        && validCourseStatus()
+        && request.resource.data.ownerId is string
+        && request.resource.data.title is string
+        && request.resource.data.summary is string
+        && request.resource.data.category is string
+        && request.resource.data.modules is list
+        && request.resource.data.lessonCount is int
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.summary.size() >= 20
+        && request.resource.data.summary.size() <= 1200
+        && request.resource.data.category.size() >= 2
+        && request.resource.data.category.size() <= 80
+        && request.resource.data.modules.size() <= 30
+        && request.resource.data.lessonCount >= 0
+        && request.resource.data.lessonCount <= 300
+        && (
+          !request.resource.data.keys().hasAny(['priceAmountMinor'])
+          || request.resource.data.priceAmountMinor == null
+          || (
+            request.resource.data.priceAmountMinor is int
+            && request.resource.data.priceAmountMinor >= 0
+            && request.resource.data.priceAmountMinor <= 100000000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['currency'])
+          || request.resource.data.currency in ['USD', 'BRL', 'GYD']
+        )
+        && (
+          !request.resource.data.keys().hasAny(['platformFeeBps'])
+          || (
+            request.resource.data.platformFeeBps is int
+            && request.resource.data.platformFeeBps >= 0
+            && request.resource.data.platformFeeBps <= 5000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['freePreviewLessonId'])
+          || request.resource.data.freePreviewLessonId == null
+          || (
+            request.resource.data.freePreviewLessonId is string
+            && request.resource.data.freePreviewLessonId.size() <= 160
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['coverImageUrl'])
+          || request.resource.data.coverImageUrl == null
+          || (
+            request.resource.data.coverImageUrl is string
+            && request.resource.data.coverImageUrl.size() >= 8
+            && request.resource.data.coverImageUrl.size() <= 1200
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['reviewNote'])
+          || request.resource.data.reviewNote == null
+          || (
+            request.resource.data.reviewNote is string
+            && request.resource.data.reviewNote.size() <= 1200
+          )
+        );
+    }
+
+    function courseChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function teacherCanSaveOwnedCourse() {
+      return isTeacher()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
+        && request.resource.data.status == resource.data.status
+        && courseChangedOnly([
+          'title',
+          'summary',
+          'category',
+          'modules',
+          'lessonCount',
+          'priceAmountMinor',
+          'currency',
+          'platformFeeBps',
+          'freePreviewLessonId',
+          'updatedAt'
+        ]);
+    }
+
+    function teacherCanUpdateOwnedCourseCover() {
+      return isTeacher()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
+        && request.resource.data.status == resource.data.status
+        && courseChangedOnly(['coverImageUrl', 'updatedAt']);
+    }
+
+    function teacherCanSubmitOwnedDraft() {
+      return isTeacher()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.status in ['draft', 'needs_changes', 'inactive']
+        && request.resource.data.status == 'in_review'
+        && request.resource.data.reviewNote == null
+        && courseChangedOnly(['status', 'reviewNote', 'updatedAt']);
+    }
+
+    function hasOnlyAllowedEnrollmentKeys() {
+      return request.resource.data.keys().hasOnly([
+        'id',
+        'userId',
+        'courseId',
+        'courseSlug',
+        'courseTitle',
+        'courseCategory',
+        'courseImage',
+        'status',
+        'source',
+        'progressPercent',
+        'lastLessonId',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validEnrollmentStatus() {
+      return request.resource.data.status in [
+        'active',
+        'completed',
+        'refunded',
+        'revoked',
+        'expired'
+      ];
+    }
+
+    function validEnrollmentSource() {
+      return request.resource.data.source in ['manual_demo', 'payment', 'admin'];
+    }
+
+    function validEnrollmentShape(enrollmentId) {
+      return hasOnlyAllowedEnrollmentKeys()
+        && validEnrollmentStatus()
+        && validEnrollmentSource()
+        && request.resource.data.id == enrollmentId
+        && request.resource.data.userId is string
+        && request.resource.data.courseId is string
+        && request.resource.data.courseSlug is string
+        && request.resource.data.courseTitle is string
+        && request.resource.data.courseCategory is string
+        && request.resource.data.courseImage is string
+        && request.resource.data.progressPercent is int
+        && request.resource.data.progressPercent >= 0
+        && request.resource.data.progressPercent <= 100
+        && (
+          request.resource.data.lastLessonId == null
+          || request.resource.data.lastLessonId is string
+        )
+        && request.resource.data.courseId.size() >= 3
+        && request.resource.data.courseId.size() <= 160
+        && request.resource.data.courseSlug.size() >= 3
+        && request.resource.data.courseSlug.size() <= 160
+        && request.resource.data.courseTitle.size() >= 3
+        && request.resource.data.courseTitle.size() <= 180
+        && request.resource.data.courseCategory.size() >= 2
+        && request.resource.data.courseCategory.size() <= 80
+        && request.resource.data.courseImage.size() >= 8
+        && request.resource.data.courseImage.size() <= 500;
+    }
+
+    function enrollmentChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function userCanUpdateOwnedEnrollment() {
+      return signedIn()
+        && validEnrollmentShape(resource.data.id)
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.courseId == resource.data.courseId
+        && request.resource.data.courseSlug == resource.data.courseSlug
+        && request.resource.data.courseTitle == resource.data.courseTitle
+        && request.resource.data.courseCategory == resource.data.courseCategory
+        && request.resource.data.courseImage == resource.data.courseImage
+        && request.resource.data.source == resource.data.source
+        && resource.data.status in ['active', 'completed']
+        && request.resource.data.status in ['active', 'completed']
+        && enrollmentChangedOnly(['status', 'progressPercent', 'lastLessonId', 'updatedAt']);
+    }
+
+    function enrollmentExists(enrollmentId) {
+      return exists(/databases/$(database)/documents/enrollments/$(enrollmentId));
+    }
+
+    function enrollmentData(enrollmentId) {
+      return get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data;
+    }
+
+    function ownsEnrollment(enrollmentId) {
+      return signedIn()
+        && enrollmentExists(enrollmentId)
+        && enrollmentData(enrollmentId).userId == request.auth.uid;
+    }
+
+    function hasOnlyAllowedLessonProgressKeys() {
+      return request.resource.data.keys().hasOnly([
+        'lessonId',
+        'userId',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validLessonProgressShape(enrollmentId, lessonId) {
+      return hasOnlyAllowedLessonProgressKeys()
+        && request.resource.data.lessonId == lessonId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.userId == enrollmentData(enrollmentId).userId;
+    }
+
+    function hasEnrollmentForCourseSlug(courseSlug) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '__' + courseSlug))
+        && get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '__' + courseSlug)).data.status in ['active', 'completed'];
+    }
+
+    function hasOnlyAllowedCommunityPostKeys() {
+      return request.resource.data.keys().hasOnly([
+        'courseSlug',
+        'authorId',
+        'authorName',
+        'authorRole',
+        'category',
+        'body',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCommunityPostCategory() {
+      return request.resource.data.category in [
+        'announcement',
+        'discussion',
+        'question',
+        'resource'
+      ];
+    }
+
+    function validCommunityPostShape() {
+      return hasOnlyAllowedCommunityPostKeys()
+        && validCommunityPostCategory()
+        && request.resource.data.courseSlug is string
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.authorRole is string
+        && request.resource.data.body is string
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.courseSlug.size() >= 3
+        && request.resource.data.courseSlug.size() <= 160
+        && request.resource.data.authorName.size() >= 1
+        && request.resource.data.authorName.size() <= 120
+        && request.resource.data.authorRole.size() >= 3
+        && request.resource.data.authorRole.size() <= 40
+        && request.resource.data.body.size() >= 8
+        && request.resource.data.body.size() <= 5000;
+    }
+
+    function communityPostExists(postId) {
+      return exists(/databases/$(database)/documents/communityPosts/$(postId));
+    }
+
+    function communityPostData(postId) {
+      return get(/databases/$(database)/documents/communityPosts/$(postId)).data;
+    }
+
+    function hasOnlyAllowedCommunityCommentKeys() {
+      return request.resource.data.keys().hasOnly([
+        'postId',
+        'courseSlug',
+        'authorId',
+        'authorName',
+        'authorRole',
+        'body',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCommunityCommentShape(postId) {
+      return hasOnlyAllowedCommunityCommentKeys()
+        && request.resource.data.postId == postId
+        && request.resource.data.courseSlug == communityPostData(postId).courseSlug
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.authorRole is string
+        && request.resource.data.body is string
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorName.size() >= 1
+        && request.resource.data.authorName.size() <= 120
+        && request.resource.data.authorRole.size() >= 3
+        && request.resource.data.authorRole.size() <= 40
+        && request.resource.data.body.size() >= 3
+        && request.resource.data.body.size() <= 3000;
+    }
+
+    function hasOnlyAllowedCourseEventKeys() {
+      return request.resource.data.keys().hasOnly([
+        'courseId',
+        'courseSlug',
+        'courseTitle',
+        'ownerId',
+        'title',
+        'description',
+        'type',
+        'status',
+        'startsAt',
+        'externalUrl',
+        'recordingAssetId',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCourseEventType() {
+      return request.resource.data.type in [
+        'live_class',
+        'mentorship',
+        'office_hours',
+        'webinar',
+        'deadline'
+      ];
+    }
+
+    function validCourseEventStatus() {
+      return request.resource.data.status in [
+        'scheduled',
+        'completed',
+        'cancelled'
+      ];
+    }
+
+    function validCourseEventShape() {
+      return hasOnlyAllowedCourseEventKeys()
+        && validCourseEventType()
+        && validCourseEventStatus()
+        && request.resource.data.courseId is string
+        && request.resource.data.courseSlug is string
+        && request.resource.data.courseTitle is string
+        && request.resource.data.ownerId is string
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.startsAt is string
+        && request.resource.data.externalUrl is string
+        && (
+          request.resource.data.recordingAssetId == null
+          || request.resource.data.recordingAssetId is string
+        )
+        && request.resource.data.courseId.size() >= 3
+        && request.resource.data.courseId.size() <= 160
+        && request.resource.data.courseSlug.size() >= 3
+        && request.resource.data.courseSlug.size() <= 160
+        && request.resource.data.courseTitle.size() >= 3
+        && request.resource.data.courseTitle.size() <= 180
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 140
+        && request.resource.data.description.size() >= 12
+        && request.resource.data.description.size() <= 1200
+        && request.resource.data.startsAt.size() >= 10
+        && request.resource.data.startsAt.size() <= 40
+        && request.resource.data.externalUrl.size() >= 8
+        && request.resource.data.externalUrl.size() <= 500;
+    }
+
+    function courseEventExists(eventId) {
+      return exists(/databases/$(database)/documents/courseEvents/$(eventId));
+    }
+
+    function courseEventData(eventId) {
+      return get(/databases/$(database)/documents/courseEvents/$(eventId)).data;
+    }
+
+    function hasOnlyAllowedCourseEventRsvpKeys() {
+      return request.resource.data.keys().hasOnly([
+        'eventId',
+        'courseSlug',
+        'userId',
+        'attendeeName',
+        'attendeeEmail',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCourseEventRsvpStatus() {
+      return request.resource.data.status in ['attending', 'not_attending'];
+    }
+
+    function validCourseEventRsvpShape(eventId, uid) {
+      return hasOnlyAllowedCourseEventRsvpKeys()
+        && validCourseEventRsvpStatus()
+        && request.resource.data.eventId == eventId
+        && request.resource.data.courseSlug == courseEventData(eventId).courseSlug
+        && request.resource.data.userId == uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.attendeeName is string
+        && (
+          request.resource.data.attendeeEmail == null
+          || request.resource.data.attendeeEmail is string
+        )
+        && request.resource.data.attendeeName.size() >= 1
+        && request.resource.data.attendeeName.size() <= 120;
+    }
+
+    function hasOnlyAllowedSupportTicketKeys() {
+      return request.resource.data.keys().hasOnly([
+        'userId',
+        'userEmail',
+        'userName',
+        'category',
+        'subject',
+        'message',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validSupportTicketCategory() {
+      return request.resource.data.category in [
+        'account',
+        'course',
+        'payment',
+        'technical',
+        'other'
+      ];
+    }
+
+    function validSupportTicketStatus() {
+      return request.resource.data.status in [
+        'open',
+        'in_review',
+        'resolved'
+      ];
+    }
+
+    function validSupportTicketShape() {
+      return hasOnlyAllowedSupportTicketKeys()
+        && validSupportTicketCategory()
+        && validSupportTicketStatus()
+        && request.resource.data.userId is string
+        && request.resource.data.subject is string
+        && request.resource.data.message is string
+        && (
+          request.resource.data.userEmail == null
+          || request.resource.data.userEmail is string
+        )
+        && (
+          request.resource.data.userName == null
+          || request.resource.data.userName is string
+        )
+        && request.resource.data.subject.size() >= 4
+        && request.resource.data.subject.size() <= 140
+        && request.resource.data.message.size() >= 12
+        && request.resource.data.message.size() <= 5000;
+    }
+
+    function supportTicketChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function userCanCreateSupportTicket() {
+      return signedIn()
+        && validSupportTicketShape()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'open';
+    }
+
+    function supportCanUpdateTicketStatus() {
+      return isSupport()
+        && validSupportTicketShape()
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.userEmail == resource.data.userEmail
+        && request.resource.data.userName == resource.data.userName
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.subject == resource.data.subject
+        && request.resource.data.message == resource.data.message
+        && supportTicketChangedOnly(['status', 'updatedAt']);
+    }
+
+    function hasOnlyAllowedCommunityReportKeys() {
+      return request.resource.data.keys().hasOnly([
+        'courseSlug',
+        'postId',
+        'commentId',
+        'targetType',
+        'targetAuthorId',
+        'targetAuthorName',
+        'reporterId',
+        'reporterName',
+        'reporterEmail',
+        'reason',
+        'detail',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validCommunityReportReason() {
+      return request.resource.data.reason in [
+        'spam',
+        'harassment',
+        'unsafe_content',
+        'off_topic',
+        'other'
+      ];
+    }
+
+    function validCommunityReportStatus() {
+      return request.resource.data.status in [
+        'open',
+        'reviewed',
+        'resolved',
+        'dismissed'
+      ];
+    }
+
+    function validCommunityReportShape() {
+      return hasOnlyAllowedCommunityReportKeys()
+        && validCommunityReportReason()
+        && validCommunityReportStatus()
+        && request.resource.data.courseSlug is string
+        && request.resource.data.postId is string
+        && (
+          request.resource.data.commentId == null
+          || request.resource.data.commentId is string
+        )
+        && request.resource.data.targetType in ['post', 'comment']
+        && request.resource.data.targetAuthorId is string
+        && request.resource.data.targetAuthorName is string
+        && request.resource.data.reporterId is string
+        && request.resource.data.reporterName is string
+        && (
+          request.resource.data.reporterEmail == null
+          || request.resource.data.reporterEmail is string
+        )
+        && (
+          request.resource.data.detail == null
+          || request.resource.data.detail is string
+        )
+        && request.resource.data.courseSlug.size() >= 3
+        && request.resource.data.courseSlug.size() <= 160
+        && request.resource.data.postId.size() >= 3
+        && request.resource.data.postId.size() <= 160
+        && request.resource.data.targetAuthorId.size() >= 3
+        && request.resource.data.targetAuthorId.size() <= 160
+        && request.resource.data.targetAuthorName.size() >= 1
+        && request.resource.data.targetAuthorName.size() <= 120
+        && request.resource.data.reporterName.size() >= 1
+        && request.resource.data.reporterName.size() <= 120
+        && (
+          request.resource.data.detail == null
+          || request.resource.data.detail.size() <= 1000
+        );
+    }
+
+    function communityReportChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function userCanCreateCommunityReport() {
+      return signedIn()
+        && validCommunityReportShape()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && hasEnrollmentForCourseSlug(request.resource.data.courseSlug);
+    }
+
+    function trustCanUpdateCommunityReportStatus() {
+      return (isSupport() || isModerator())
+        && validCommunityReportShape()
+        && request.resource.data.courseSlug == resource.data.courseSlug
+        && request.resource.data.postId == resource.data.postId
+        && request.resource.data.commentId == resource.data.commentId
+        && request.resource.data.targetType == resource.data.targetType
+        && request.resource.data.targetAuthorId == resource.data.targetAuthorId
+        && request.resource.data.targetAuthorName == resource.data.targetAuthorName
+        && request.resource.data.reporterId == resource.data.reporterId
+        && request.resource.data.reporterName == resource.data.reporterName
+        && request.resource.data.reporterEmail == resource.data.reporterEmail
+        && request.resource.data.reason == resource.data.reason
+        && request.resource.data.detail == resource.data.detail
+        && communityReportChangedOnly(['status', 'updatedAt']);
+    }
+
+    function courseEventChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function courseEventRsvpChangedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function teacherCanCreateCourseEvent() {
+      return isTeacher()
+        && validCourseEventShape()
+        && request.resource.data.ownerId == request.auth.uid
+        && courseExists(request.resource.data.courseId)
+        && courseData(request.resource.data.courseId).ownerId == request.auth.uid
+        && request.resource.data.status == 'scheduled'
+        && request.resource.data.recordingAssetId == null;
+    }
+
+    function teacherCanUpdateOwnedCourseEvent() {
+      return isTeacher()
+        && validCourseEventShape()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.courseId == resource.data.courseId
+        && request.resource.data.courseSlug == resource.data.courseSlug
+        && request.resource.data.courseTitle == resource.data.courseTitle
+        && courseExists(resource.data.courseId)
+        && courseData(resource.data.courseId).ownerId == request.auth.uid
+        && courseEventChangedOnly([
+          'title',
+          'description',
+          'type',
+          'status',
+          'startsAt',
+          'externalUrl',
+          'recordingAssetId',
+          'updatedAt'
+        ]);
+    }
+
+    function courseExists(courseId) {
+      return exists(/databases/$(database)/documents/courses/$(courseId));
+    }
+
+    function courseData(courseId) {
+      return get(/databases/$(database)/documents/courses/$(courseId)).data;
+    }
+
+    function ownsCourse(courseId) {
+      return signedIn()
+        && courseExists(courseId)
+        && courseData(courseId).ownerId == request.auth.uid;
+    }
+
+    function teacherCanManageCourseAssets(courseId) {
+      return isTeacher()
+        && ownsCourse(courseId)
+        && courseData(courseId).status in ['draft', 'needs_changes', 'published', 'inactive'];
+    }
+
+    function validAssetKind() {
+      return request.resource.data.kind in [
+        'course_cover',
+        'module_cover',
+        'lesson_thumbnail',
+        'lesson_material',
+        'lesson_video',
+        'live_recording'
+      ];
+    }
+
+    function hasOnlyAllowedAssetKeys() {
+      return request.resource.data.keys().hasOnly([
+        'id',
+        'courseId',
+        'ownerId',
+        'kind',
+        'fileName',
+        'contentType',
+        'size',
+        'storagePath',
+        'downloadUrl',
+        'isPreview',
+        'lessonId',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validAssetShape(courseId, assetId) {
+      return hasOnlyAllowedAssetKeys()
+        && validAssetKind()
+        && request.resource.data.id == assetId
+        && request.resource.data.courseId == courseId
+        && request.resource.data.ownerId is string
+        && request.resource.data.fileName is string
+        && request.resource.data.contentType is string
+        && request.resource.data.size is int
+        && request.resource.data.storagePath is string
+        && (
+          !request.resource.data.keys().hasAny(['downloadUrl'])
+          || request.resource.data.downloadUrl == null
+          || request.resource.data.downloadUrl is string
+        )
+        && request.resource.data.isPreview is bool
+        && (
+          request.resource.data.lessonId == null
+          || request.resource.data.lessonId is string
+        )
+        && request.resource.data.fileName.size() >= 1
+        && request.resource.data.fileName.size() <= 180
+        && request.resource.data.contentType.size() >= 3
+        && request.resource.data.contentType.size() <= 120
+        && request.resource.data.size > 0
+        && request.resource.data.size <= 500 * 1024 * 1024
+        && (
+          !request.resource.data.keys().hasAny(['downloadUrl'])
+          || request.resource.data.downloadUrl == null
+          || (
+            request.resource.data.downloadUrl.size() >= 8
+            && request.resource.data.downloadUrl.size() <= 1200
+          )
+        )
+        && request.resource.data.storagePath.matches(
+          '^courses/' + courseId + '/assets/' + request.resource.data.ownerId + '/' + assetId + '/[^/]+$'
+        );
+    }
+
+    function userRolesAreClientSafe() {
+      return request.resource.data.roles is list
+        && (
+          request.resource.data.roles == resource.data.roles
+          || request.resource.data.roles.hasOnly(['student', 'teacher'])
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid)
+        && hasOnlyAllowedUserKeys()
+        && validUserIdentityFields()
+        && request.resource.data.uid == uid
+        && request.resource.data.roles is list
+        && request.resource.data.roles.hasOnly(['student', 'teacher']);
+      allow update: if isSelf(uid)
+        && hasOnlyAllowedUserKeys()
+        && validUserIdentityFields()
+        && request.resource.data.uid == uid
+        && userRolesAreClientSafe();
+      allow delete: if false;
+    }
+
+    match /courses/{courseId} {
+      allow read: if resource.data.status == 'published'
+        || (signedIn() && hasEnrollmentForCourseSlug(courseId))
+        || (signedIn() && resource.data.ownerId == request.auth.uid)
+        || isAdmin();
+      allow create: if isTeacher()
+        && validCourseShape()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'draft';
+      allow update: if validCourseShape()
+        && (
+          isAdmin()
+          || teacherCanSaveOwnedCourse()
+          || teacherCanSubmitOwnedDraft()
+          || teacherCanUpdateOwnedCourseCover()
+        );
+      allow delete: if isAdmin()
+        || (
+          isTeacher()
+          && resource.data.ownerId == request.auth.uid
+          && resource.data.status in ['draft', 'needs_changes', 'inactive']
+        );
+
+      match /assets/{assetId} {
+        allow read: if isAdmin()
+          || ownsCourse(courseId)
+          || hasEnrollmentForCourseSlug(courseId);
+        allow create: if teacherCanManageCourseAssets(courseId)
+          && validAssetShape(courseId, assetId)
+          && request.resource.data.ownerId == request.auth.uid;
+        allow update: if isAdmin()
+          || (
+            teacherCanManageCourseAssets(courseId)
+            && resource.data.ownerId == request.auth.uid
+            && validAssetShape(courseId, assetId)
+            && request.resource.data.ownerId == resource.data.ownerId
+          );
+        allow delete: if isAdmin()
+          || (
+            teacherCanManageCourseAssets(courseId)
+            && resource.data.ownerId == request.auth.uid
+          );
+      }
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() && validEnrollmentShape(enrollmentId);
+      allow update: if userCanUpdateOwnedEnrollment()
+        || (isAdmin() && validEnrollmentShape(enrollmentId));
+      allow delete: if isAdmin();
+
+      match /progress/{lessonId} {
+        allow read: if isAdmin() || ownsEnrollment(enrollmentId);
+        allow create, update: if ownsEnrollment(enrollmentId)
+          && validLessonProgressShape(enrollmentId, lessonId);
+        allow delete: if isAdmin() || ownsEnrollment(enrollmentId);
+      }
+    }
+
+    match /communityPosts/{postId} {
+      allow read: if isAdmin()
+        || (signedIn() && hasEnrollmentForCourseSlug(resource.data.courseSlug));
+      allow create: if signedIn()
+        && hasEnrollmentForCourseSlug(request.resource.data.courseSlug)
+        && validCommunityPostShape();
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.authorId == request.auth.uid
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.courseSlug == resource.data.courseSlug
+          && validCommunityPostShape()
+        );
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.authorId == request.auth.uid);
+
+      match /comments/{commentId} {
+        allow read: if isAdmin()
+          || (
+            signedIn()
+            && communityPostExists(postId)
+            && hasEnrollmentForCourseSlug(communityPostData(postId).courseSlug)
+          );
+        allow create: if signedIn()
+          && communityPostExists(postId)
+          && hasEnrollmentForCourseSlug(communityPostData(postId).courseSlug)
+          && validCommunityCommentShape(postId);
+        allow update: if isAdmin()
+          || (
+            signedIn()
+            && resource.data.authorId == request.auth.uid
+            && communityPostExists(postId)
+            && request.resource.data.authorId == resource.data.authorId
+            && request.resource.data.courseSlug == resource.data.courseSlug
+            && request.resource.data.postId == resource.data.postId
+            && validCommunityCommentShape(postId)
+          );
+        allow delete: if isAdmin()
+          || (signedIn() && resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    match /courseEvents/{eventId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid)
+        || (signedIn() && hasEnrollmentForCourseSlug(resource.data.courseSlug));
+      allow create: if teacherCanCreateCourseEvent()
+        || (isAdmin() && validCourseEventShape());
+      allow update: if isAdmin()
+        || teacherCanUpdateOwnedCourseEvent();
+      allow delete: if isAdmin()
+        || (isTeacher() && resource.data.ownerId == request.auth.uid);
+
+      match /rsvps/{uid} {
+        allow read: if isAdmin()
+          || (signedIn() && uid == request.auth.uid)
+          || (
+            signedIn()
+            && courseEventExists(eventId)
+            && courseEventData(eventId).ownerId == request.auth.uid
+          );
+        allow create: if signedIn()
+          && uid == request.auth.uid
+          && courseEventExists(eventId)
+          && courseEventData(eventId).status == 'scheduled'
+          && hasEnrollmentForCourseSlug(courseEventData(eventId).courseSlug)
+          && validCourseEventRsvpShape(eventId, uid);
+        allow update: if signedIn()
+          && uid == request.auth.uid
+          && resource.data.userId == request.auth.uid
+          && courseEventExists(eventId)
+          && courseEventData(eventId).status == 'scheduled'
+          && hasEnrollmentForCourseSlug(courseEventData(eventId).courseSlug)
+          && request.resource.data.eventId == resource.data.eventId
+          && request.resource.data.courseSlug == resource.data.courseSlug
+          && request.resource.data.userId == resource.data.userId
+          && courseEventRsvpChangedOnly([
+            'attendeeName',
+            'attendeeEmail',
+            'status',
+            'updatedAt'
+          ])
+          && validCourseEventRsvpShape(eventId, uid);
+        allow delete: if isAdmin()
+          || (signedIn() && uid == request.auth.uid && resource.data.userId == request.auth.uid);
+      }
+    }
+
+    match /certificates/{certificateId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /supportTickets/{ticketId} {
+      allow read: if isSupport()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if userCanCreateSupportTicket()
+        || (isSupport() && validSupportTicketShape());
+      allow update: if supportCanUpdateTicketStatus();
+      allow delete: if isAdmin();
+    }
+
+    match /communityReports/{reportId} {
+      allow read: if isSupport() || isModerator();
+      allow create: if userCanCreateCommunityReport();
+      allow update: if trustCanUpdateCommunityReportStatus();
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid)
+        || (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
