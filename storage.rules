@@ -53,6 +53,20 @@ service firebase.storage {
         );
     }
 
+    function validAvatarUpload() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /users/{uid}/avatar/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && uid == request.auth.uid
+        && validAvatarUpload();
+    }
+
     match /courses/{courseId}/assets/{ownerId}/{assetId}/{fileName} {
       allow read: if isAdmin() || ownsCourse(courseId) || hasEnrollmentForCourse(courseId);
       allow write: if signedIn()

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import type { UserGoal } from "@/domain/user-profile";
 import {
   normalizeGoals,
@@ -12,6 +13,11 @@ import {
   validateUsername,
 } from "@/lib/auth/profile-validation";
 import { getUserProfile, updateUserIdentity } from "@/lib/data/user-profiles";
+import {
+  isAllowedAvatarFile,
+  uploadUserAvatar,
+  type UploadAvatarProgress,
+} from "@/lib/data/profile-media";
 
 const goalOptions = [
   ["career_growth", "Career growth"],
@@ -38,6 +44,9 @@ export function ProfileSettingsPanel() {
   const [bio, setBio] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
   const [goals, setGoals] = useState<UserGoal[]>([]);
+  const [photoURL, setPhotoURL] = useState<string | null>(null);
+  const [avatarProgress, setAvatarProgress] = useState<UploadAvatarProgress | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -59,6 +68,7 @@ export function ProfileSettingsPanel() {
         setDisplayName(profile?.displayName ?? user.displayName ?? "");
         setUsername(profile?.username ?? "");
         setBio(profile?.bio ?? "");
+        setPhotoURL(profile?.photoURL ?? user.photoURL ?? null);
         setTimezone(
           profile?.timezone ??
             Intl.DateTimeFormat().resolvedOptions().timeZone ??
@@ -137,6 +147,37 @@ export function ProfileSettingsPanel() {
     }
   }
 
+  async function handleAvatarChange(file: File | null) {
+    if (!user || !file) {
+      return;
+    }
+
+    if (!isAllowedAvatarFile(file)) {
+      setError("Use a profile image under 5 MB.");
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setAvatarProgress(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const uploadedPhotoURL = await uploadUserAvatar(
+        user.uid,
+        file,
+        setAvatarProgress,
+      );
+      setPhotoURL(uploadedPhotoURL);
+      setSuccess("Profile photo updated.");
+    } catch {
+      setError("We could not upload your profile photo. Try a smaller image.");
+    } finally {
+      setIsUploadingAvatar(false);
+      setAvatarProgress(null);
+    }
+  }
+
   if (isLoading) {
     return (
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
@@ -158,6 +199,35 @@ export function ProfileSettingsPanel() {
       </p>
 
       <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+        <div className="flex flex-col gap-4 rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 sm:flex-row sm:items-center">
+          <UserAvatar
+            name={displayName || user?.email}
+            photoURL={photoURL}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-[var(--color-ink)]">
+              Profile photo
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
+              Use a clear square image. If you skip it, Skillset shows a neutral
+              person icon instead of a letter badge.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={isUploadingAvatar}
+              onChange={(event) => void handleAvatarChange(event.target.files?.[0] ?? null)}
+              className="mt-3 w-full rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white disabled:opacity-60"
+            />
+            {avatarProgress ? (
+              <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">
+                Uploading {avatarProgress.percent}%
+              </p>
+            ) : null}
+          </div>
+        </div>
+
         <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
           Public name
           <input

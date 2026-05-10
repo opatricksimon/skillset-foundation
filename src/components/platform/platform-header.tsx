@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 const surfaceCopy = {
   learn: {
@@ -45,7 +46,6 @@ export function PlatformHeader() {
   const { user } = useAuth();
   const surface = getSurface(pathname);
   const copy = surfaceCopy[surface];
-  const initials = getInitials(user?.displayName ?? user?.email ?? "S");
 
   return (
     <header className="rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-soft)]">
@@ -88,9 +88,18 @@ export function PlatformHeader() {
             >
               Alerts
             </button>
-            <div className="grid size-9 place-items-center rounded-[10px] border border-[var(--color-line)] bg-[var(--color-primary)] text-xs font-semibold text-white">
-              {initials}
-            </div>
+            <Link
+              href="/profile"
+              className="cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.28)] focus-visible:ring-offset-2"
+              aria-label="Open profile settings"
+            >
+              <UserAvatar
+                name={user?.displayName || user?.email}
+                photoURL={user?.photoURL}
+                size="md"
+                className="shadow-[0_8px_18px_rgba(26,54,93,0.14)]"
+              />
+            </Link>
           </div>
         </div>
       </div>
@@ -112,17 +121,4 @@ function getSurface(pathname: string): keyof typeof surfaceCopy {
   }
 
   return "platform";
-}
-
-function getInitials(value: string) {
-  const parts = value
-    .split(/[.\s@_-]+/)
-    .filter(Boolean)
-    .slice(0, 2);
-
-  if (parts.length === 0) {
-    return "S";
-  }
-
-  return parts.map((part) => part[0]?.toUpperCase()).join("");
 }

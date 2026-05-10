@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import {
+  getAuthErrorMessage,
+  requestSkillsetEmailChange,
   refreshCurrentUserEmailVerification,
   sendSkillsetEmailVerification,
 } from "@/lib/auth/firebase-auth";
@@ -11,6 +13,7 @@ import {
 export function SecuritySettingsPanel() {
   const { user } = useAuth();
   const [emailVerified, setEmailVerified] = useState(user?.emailVerified ?? false);
+  const [newEmail, setNewEmail] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +48,24 @@ export function SecuritySettingsPanel() {
       );
     } catch {
       setError("Could not refresh your email verification status.");
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleEmailChangeRequest() {
+    setIsBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await requestSkillsetEmailChange(newEmail);
+      setMessage(
+        "Verification sent to the new email. Open it to confirm the email change.",
+      );
+      setNewEmail("");
+    } catch (caughtError) {
+      setError(getAuthErrorMessage(caughtError));
     } finally {
       setIsBusy(false);
     }
@@ -101,6 +122,33 @@ export function SecuritySettingsPanel() {
               className="button-solid px-4 py-2 text-xs disabled:opacity-60"
             >
               Refresh status
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-[14px] border border-[var(--color-line)] bg-white p-4">
+          <p className="font-semibold text-[var(--color-ink)]">
+            Change email
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+            Current email: {user?.email || "No email on file"}. We verify the
+            new address before replacing it.
+          </p>
+          <div className="mt-4 grid gap-2">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(event) => setNewEmail(event.target.value)}
+              placeholder="new-email@example.com"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
+            />
+            <button
+              type="button"
+              onClick={handleEmailChangeRequest}
+              disabled={isBusy || !newEmail.trim()}
+              className="button-outline justify-self-start px-4 py-2 text-xs disabled:opacity-60"
+            >
+              Send change confirmation
             </button>
           </div>
         </div>

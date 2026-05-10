@@ -11,6 +11,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  verifyBeforeUpdateEmail,
   type User,
 } from "firebase/auth";
 
@@ -148,6 +149,21 @@ export async function refreshCurrentUserEmailVerification() {
   return user.emailVerified;
 }
 
+export async function requestSkillsetEmailChange(newEmail: string) {
+  const user = getFirebaseAuth().currentUser;
+  const normalizedEmail = newEmail.trim().toLowerCase();
+
+  if (!user) {
+    throw new Error("No authenticated user.");
+  }
+
+  if (!normalizedEmail || normalizedEmail === user.email?.toLowerCase()) {
+    throw new Error("Use a different valid email address.");
+  }
+
+  await verifyBeforeUpdateEmail(user, normalizedEmail);
+}
+
 export async function signOutOfSkillset() {
   await signOut(getFirebaseAuth());
 }
@@ -220,6 +236,10 @@ export function getAuthErrorMessage(error: unknown): string {
 
   if (code.includes("auth/too-many-requests")) {
     return "Too many attempts. Wait a moment and try again.";
+  }
+
+  if (code.includes("auth/requires-recent-login")) {
+    return "For security, sign out and sign in again before changing your email.";
   }
 
   if (code.includes("auth/api-key-not-valid") || code.includes("auth/invalid-api-key")) {

@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import type { SkillsetUser } from "@/domain/auth";
 import Link from "next/link";
 
@@ -129,16 +130,6 @@ function getPrimaryRoleLabel(user: SkillsetUser) {
   return "Learner";
 }
 
-function getUserInitials(user: SkillsetUser) {
-  const source = user.displayName || user.email || "Skillset";
-  const parts = source.split(/[ @._-]+/).filter(Boolean);
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "S";
-}
-
 function AccountMenu({
   user,
   onSignOut,
@@ -153,14 +144,16 @@ function AccountMenu({
   return (
     <details className={compact ? "" : "group relative"}>
       <summary
-        className={`list-none rounded-[10px] border border-[var(--color-line)] bg-white text-left marker:hidden [&::-webkit-details-marker]:hidden ${
+        className={`cursor-pointer select-none list-none rounded-[10px] border border-[var(--color-line)] bg-white text-left marker:hidden [&::-webkit-details-marker]:hidden ${
           compact ? "p-3" : "px-2.5 py-1.5"
         }`}
       >
         <span className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-[8px] bg-[var(--color-primary)] text-xs font-bold text-white">
-            {getUserInitials(user)}
-          </span>
+          <UserAvatar
+            name={user.displayName || user.email}
+            photoURL={user.photoURL}
+            size="sm"
+          />
           <span className={compact ? "grid" : "hidden text-left sm:grid"}>
             <span className="max-w-32 truncate text-xs font-bold text-[var(--color-ink)]">
               {user.displayName || user.email || "Skillset member"}

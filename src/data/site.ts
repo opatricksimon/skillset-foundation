@@ -96,7 +96,7 @@ export const platformNav: PlatformNavItem[] = [
     permission: "teacherStudio.manageCourses",
   },
   {
-    href: "/learn/settings",
+    href: "/profile",
     label: "Profile Settings",
     shortLabel: "S",
     section: "Account",

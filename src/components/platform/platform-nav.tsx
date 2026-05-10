@@ -18,8 +18,13 @@ export function PlatformNav() {
 
   return (
     <nav className="mt-4 flex flex-col gap-4">
-      {sections.map((section) => (
-        <div key={section} className="grid gap-1.5">
+      {sections.map((section, index) => (
+        <div
+          key={section}
+          className={`grid gap-1.5 ${
+            index === 0 ? "" : "border-t border-[var(--color-line)] pt-4"
+          }`}
+        >
           <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
             {section}
           </p>
@@ -31,17 +36,21 @@ export function PlatformNav() {
                 href={item.href}
                 label={item.label}
                 shortLabel={item.shortLabel}
-                active={
-                  item.href === "/platform"
-                    ? pathname === item.href
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`)
-                }
+                active={isActivePlatformRoute(pathname, item.href)}
               />
             ))}
         </div>
       ))}
     </nav>
   );
+}
+
+function isActivePlatformRoute(pathname: string, href: string) {
+  if (["/platform", "/learn", "/teach", "/ops"].includes(href)) {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function PlatformNavLink({
@@ -61,7 +70,7 @@ function PlatformNavLink({
       aria-current={active ? "page" : undefined}
       className={`group flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
         active
-          ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
+          ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)] hover:text-white"
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
       }`}
     >
@@ -74,7 +83,7 @@ function PlatformNavLink({
       >
         {shortLabel}
       </span>
-      {label}
+      <span className={active ? "text-white" : ""}>{label}</span>
     </Link>
   );
 }

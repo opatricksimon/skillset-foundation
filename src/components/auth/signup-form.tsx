@@ -25,6 +25,7 @@ import {
   getUserProfile,
   updateUserIdentity,
 } from "@/lib/data/user-profiles";
+import { isAllowedAvatarFile, uploadUserAvatar } from "@/lib/data/profile-media";
 
 export function SignupForm() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export function SignupForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -68,6 +70,9 @@ export function SignupForm() {
     try {
       const normalizedUsername = normalizeUsername(username);
       const user = await signUpWithEmail({ displayName, email, password });
+      if (avatarFile) {
+        await uploadUserAvatar(user.uid, avatarFile);
+      }
       await acceptUserTerms(user.uid, marketingConsent);
       await updateUserIdentity(user.uid, {
         displayName,
@@ -105,6 +110,9 @@ export function SignupForm() {
 
     try {
       const user = await signInWithGoogle();
+      if (avatarFile) {
+        await uploadUserAvatar(user.uid, avatarFile);
+      }
       await acceptUserTerms(user.uid, marketingConsent);
       if (normalizedUsername) {
         await updateUserIdentity(user.uid, { username: normalizedUsername });
@@ -187,6 +195,27 @@ export function SignupForm() {
           required
           className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
         />
+      </label>
+      <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+        Profile photo <span className="font-normal text-[var(--color-ink-soft)]">(optional)</span>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null;
+            if (file && !isAllowedAvatarFile(file)) {
+              setAvatarFile(null);
+              setError("Use a profile image under 5 MB.");
+              return;
+            }
+            setError("");
+            setAvatarFile(file);
+          }}
+          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-surface-soft)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[var(--color-primary)]"
+        />
+        <span className="text-xs font-normal leading-5 text-[var(--color-ink-soft)]">
+          You can skip this and add or replace your photo later in Profile.
+        </span>
       </label>
       <label className="flex items-start gap-3 rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-3 text-sm leading-6 text-[var(--color-ink-soft)]">
         <input
