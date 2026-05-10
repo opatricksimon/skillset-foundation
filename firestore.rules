@@ -1030,11 +1030,17 @@ service cloud.firestore {
     }
 
     function userRolesAreClientSafe() {
-      return requestedUserRolesAreSelfServiceOnly()
-        && (
-          request.resource.data.roles == resource.data.roles
-          || requestedTeacherRoleIsGuarded()
-        );
+      return (
+        (
+          'roles' in resource.data
+          && 'roles' in request.resource.data
+          && request.resource.data.roles == resource.data.roles
+        )
+        || (
+          requestedUserRolesAreSelfServiceOnly()
+          && requestedTeacherRoleIsGuarded()
+        )
+      );
     }
 
     match /users/{uid} {

@@ -96,6 +96,20 @@ describe("Firestore user role rules", () => {
     );
   });
 
+  it("allows an admin to update their own profile without changing roles", async () => {
+    await seedUser("admin-1", ["admin"]);
+
+    const db = testEnv.authenticatedContext("admin-1", verifiedAuth).firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(db, "users/admin-1"), {
+        displayName: "Updated Admin",
+        updatedAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+      }),
+    );
+  });
+
   it("requires verified email and Teacher Terms before self-service teacher role", async () => {
     const unverifiedDb = testEnv
       .authenticatedContext("teacher-unverified", unverifiedAuth)
@@ -202,15 +216,24 @@ describe("Firestore course publishing rules", () => {
 });
 
 async function seedTeacher(uid: string) {
+  await seedUser(uid, ["student", "teacher"], {
+    teacherTermsAcceptedAt: Timestamp.now(),
+    teacherTermsVersion: "2026-05-10",
+  });
+}
+
+async function seedUser(
+  uid: string,
+  roles: string[],
+  extra: Record<string, unknown> = {},
+) {
   await testEnv.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), `users/${uid}`), {
       uid,
       email: `${uid}@example.com`,
-      displayName: "Teacher One",
-      roles: ["student", "teacher"],
+      displayName: "Seed User",
+      roles,
       onboardingCompleted: true,
-      teacherTermsAcceptedAt: Timestamp.now(),
-      teacherTermsVersion: "2026-05-10",
       termsAcceptedAt: Timestamp.now(),
       termsVersion: "2026-05-10",
       privacyAcceptedAt: Timestamp.now(),
@@ -219,6 +242,7 @@ async function seedTeacher(uid: string) {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       lastLoginAt: Timestamp.now(),
+      ...extra,
     });
   });
 }

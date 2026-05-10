@@ -56,13 +56,28 @@ export async function upsertUserProfile(
   const existingProfile = await getDoc(profileRef);
 
   if (existingProfile.exists()) {
-    await updateDoc(profileRef, {
+    const data = existingProfile.data();
+    const patch: Record<string, unknown> = {
       email: input.email,
       displayName: input.displayName,
       photoURL: input.photoURL,
       updatedAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
-    });
+    };
+
+    if (!Array.isArray(data.roles) || data.roles.length === 0) {
+      patch.roles = ["student"];
+    }
+
+    if (typeof data.uid !== "string") {
+      patch.uid = input.uid;
+    }
+
+    if (typeof data.onboardingCompleted !== "boolean") {
+      patch.onboardingCompleted = false;
+    }
+
+    await updateDoc(profileRef, patch);
 
     return;
   }
