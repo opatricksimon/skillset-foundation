@@ -13,6 +13,10 @@ import {
   validateUsername,
 } from "@/lib/auth/profile-validation";
 import {
+  refreshCurrentUserEmailVerification,
+  sendSkillsetEmailVerification,
+} from "@/lib/auth/firebase-auth";
+import {
   completeUserOnboarding,
   getUserProfile,
 } from "@/lib/data/user-profiles";
@@ -111,6 +115,9 @@ export function OnboardingChoice() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [goals, setGoals] = useState<UserGoal[]>([]);
   const [teacherTermsAccepted, setTeacherTermsAccepted] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [error, setError] = useState("");
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -125,6 +132,7 @@ export function OnboardingChoice() {
       }
 
       setUid(user.uid);
+      setEmailVerified(user.emailVerified);
       setDisplayName(user.displayName ?? "");
 
       try {
@@ -172,7 +180,7 @@ export function OnboardingChoice() {
   const selectedPathIncludesTeacher =
     selectedPath?.roles.some((role) => role === "teacher") ?? false;
   const canContinue = selectedPath !== null
-    && (!selectedPathIncludesTeacher || teacherTermsAccepted);
+    && (!selectedPathIncludesTeacher || (teacherTermsAccepted && emailVerified));
 
   function toggleGoal(goal: UserGoal) {
     setGoals((currentGoals) =>
@@ -191,13 +199,50 @@ export function OnboardingChoice() {
     );
   }
 
+  async function handleSendVerification() {
+    setError("");
+    setVerificationMessage("");
+    setIsSendingVerification(true);
+
+    try {
+      await sendSkillsetEmailVerification();
+      setVerificationMessage("Verification email sent. Open it, confirm, then return here.");
+    } catch {
+      setError("Could not send the verification email. Try again in a moment.");
+    } finally {
+      setIsSendingVerification(false);
+    }
+  }
+
+  async function handleRefreshVerification() {
+    setError("");
+    setVerificationMessage("");
+    setIsSendingVerification(true);
+
+    try {
+      const verified = await refreshCurrentUserEmailVerification();
+      setEmailVerified(verified);
+      setVerificationMessage(
+        verified
+          ? "Email verified. You can continue creator setup."
+          : "Email is not verified yet. Confirm it from your inbox first.",
+      );
+    } catch {
+      setError("Could not refresh verification status. Try again.");
+    } finally {
+      setIsSendingVerification(false);
+    }
+  }
+
   function handleNext() {
     setError("");
 
     if (step === 0 && !canContinue) {
       setError(
         selectedPathIncludesTeacher
-          ? "Accept the Teacher Terms before opening educator tools."
+          ? emailVerified
+            ? "Accept the Teacher Terms before opening educator tools."
+            : "Verify your email before opening creator tools."
           : "Choose how you want to use Skillset first.",
       );
       return;
@@ -233,6 +278,12 @@ export function OnboardingChoice() {
 
     if (goals.length === 0) {
       setError("Select at least one goal so Skillset can shape your workspace.");
+      return;
+    }
+
+    if (selectedPathIncludesTeacher && !emailVerified) {
+      setStep(0);
+      setError("Verify your email before opening creator tools.");
       return;
     }
 
@@ -311,26 +362,76 @@ export function OnboardingChoice() {
           })}
 
           {selectedPathIncludesTeacher ? (
-            <label className="flex gap-3 rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-              <input
-                type="checkbox"
-                checked={teacherTermsAccepted}
-                onChange={(event) => setTeacherTermsAccepted(event.target.checked)}
-                className="mt-1 size-4 accent-[var(--color-primary)]"
-              />
-              <span>
-                I accept the{" "}
-                <Link
-                  href="/legal/teacher-terms"
-                  className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
-                  target="_blank"
-                >
-                  Teacher Terms
-                </Link>{" "}
-                and understand Skillset reviews courses before marketplace
-                publication.
-              </span>
-            </label>
+            <div className="grid gap-3">
+              <div className="rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-[var(--color-ink)]">
+                      Email verification
+                    </p>
+                    <p className="mt-1">
+                      Creator tools require a verified email before Skillset can
+                      assign the teacher role.
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-[8px] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                      emailVerified
+                        ? "bg-[rgba(26,54,93,0.08)] text-[var(--color-primary)]"
+                        : "bg-[rgba(178,34,52,0.08)] text-[var(--color-accent)]"
+                    }`}
+                  >
+                    {emailVerified ? "Verified" : "Required"}
+                  </span>
+                </div>
+                {!emailVerified ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSendVerification}
+                      disabled={isSendingVerification}
+                      className="button-outline px-4 py-2 text-xs disabled:opacity-60"
+                    >
+                      Send verification email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRefreshVerification}
+                      disabled={isSendingVerification}
+                      className="button-solid px-4 py-2 text-xs disabled:opacity-60"
+                    >
+                      I verified my email
+                    </button>
+                  </div>
+                ) : null}
+                {verificationMessage ? (
+                  <p className="mt-3 text-xs font-semibold text-[var(--color-primary)]">
+                    {verificationMessage}
+                  </p>
+                ) : null}
+              </div>
+
+              <label className="flex gap-3 rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+                <input
+                  type="checkbox"
+                  checked={teacherTermsAccepted}
+                  onChange={(event) => setTeacherTermsAccepted(event.target.checked)}
+                  className="mt-1 size-4 accent-[var(--color-primary)]"
+                />
+                <span>
+                  I accept the{" "}
+                  <Link
+                    href="/legal/teacher-terms"
+                    className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+                    target="_blank"
+                  >
+                    Teacher Terms
+                  </Link>{" "}
+                  and understand Skillset reviews courses before marketplace
+                  publication.
+                </span>
+              </label>
+            </div>
           ) : null}
         </div>
       ) : null}

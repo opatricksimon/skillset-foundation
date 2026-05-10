@@ -1,15 +1,15 @@
-import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { ProfileSettingsPanel } from "@/components/account/profile-settings-panel";
 import { SecuritySettingsPanel } from "@/components/account/security-settings-panel";
+import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { PlatformShell } from "@/components/platform/platform-shell";
 
-export default function LearnSettingsPage() {
+export default function ProfilePage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
       <PlatformShell
-        eyebrow="Account settings"
-        title="Keep your Skillset identity current."
-        description="Manage the profile details used across learning, teaching, communities, and future public-facing Skillset surfaces."
+        eyebrow="Profile"
+        title="Manage your Skillset identity and security."
+        description="Update the profile information, verification state, and security controls used across learning, creator tools, communities, and support."
       >
         <ProfileSettingsPanel />
         <SecuritySettingsPanel />

@@ -171,6 +171,10 @@ export function SignupForm() {
           required
           className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
         />
+        <span className="text-xs font-normal leading-5 text-[var(--color-ink-soft)]">
+          We send a verification email after signup. Creator tools require a
+          verified email before setup can finish.
+        </span>
       </label>
       <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
         Password

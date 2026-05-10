@@ -4,6 +4,8 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  reload,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -29,6 +31,7 @@ export function mapFirebaseUser(
   return {
     uid: user.uid,
     email: user.email,
+    emailVerified: user.emailVerified,
     displayName: profile?.displayName ?? user.displayName,
     photoURL: user.photoURL,
     roles: profile?.roles ?? ["student"],
@@ -97,6 +100,7 @@ export async function signUpWithEmail({
     displayName: displayName.trim() || credential.user.displayName,
     photoURL: credential.user.photoURL,
   });
+  await sendEmailVerification(credential.user).catch(() => undefined);
 
   return mapFirebaseUser(credential.user);
 }
@@ -119,6 +123,29 @@ export async function resetPassword(email: string) {
   const auth = getFirebaseAuth();
 
   await sendPasswordResetEmail(auth, email);
+}
+
+export async function sendSkillsetEmailVerification() {
+  const user = getFirebaseAuth().currentUser;
+
+  if (!user) {
+    throw new Error("No authenticated user.");
+  }
+
+  await sendEmailVerification(user);
+}
+
+export async function refreshCurrentUserEmailVerification() {
+  const user = getFirebaseAuth().currentUser;
+
+  if (!user) {
+    return false;
+  }
+
+  await reload(user);
+  await user.getIdToken(true);
+
+  return user.emailVerified;
 }
 
 export async function signOutOfSkillset() {

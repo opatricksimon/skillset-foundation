@@ -5,6 +5,7 @@ export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 export type SkillsetUser = {
   uid: string;
   email: string | null;
+  emailVerified: boolean;
   displayName: string | null;
   photoURL: string | null;
   roles: Role[];

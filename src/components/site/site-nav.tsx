@@ -7,10 +7,10 @@ import Link from "next/link";
 
 const navItems = [
   { href: "/courses", label: "Courses" },
-  { href: "/instructors", label: "Instructors" },
   { href: "/about", label: "About" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/fees-and-payouts", label: "Fees & tax" },
   { href: "/contact", label: "Contact" },
-  { href: "/platform", label: "Platform" },
 ];
 
 const accessPaths = [
@@ -183,10 +183,10 @@ function AccountMenu({
           Open workspace
         </Link>
         <Link
-          href="/learn/settings"
+          href="/profile"
           className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
         >
-          Account settings
+          Profile settings
         </Link>
         {user.roles.includes("teacher") ? (
           <Link
