@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { WatermarkedVideoPlayer } from "@/components/learn/watermarked-video-player";
 import type { CourseAsset } from "@/domain/course-asset";
 import { courseAssetKindLabels, formatCourseAssetSize } from "@/domain/course-asset";
 import {
@@ -690,8 +691,13 @@ function LessonAssetList({
 }
 
 function ProtectedAssetPreview({ asset }: { asset: CourseAsset }) {
+  const { user } = useAuth();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const viewerLabel =
+    user?.email
+    || user?.displayName
+    || "Skillset learner";
 
   useEffect(() => {
     let isMounted = true;
@@ -738,10 +744,10 @@ function ProtectedAssetPreview({ asset }: { asset: CourseAsset }) {
 
   if (asset.contentType.startsWith("video/")) {
     return (
-      <video
-        controls
+      <WatermarkedVideoPlayer
+        fileName={asset.fileName}
         src={objectUrl}
-        className="mt-3 aspect-video w-full rounded-[10px] bg-[var(--color-primary)]"
+        viewerLabel={viewerLabel}
       />
     );
   }

@@ -30,6 +30,8 @@ small Codex task before implementation.
   `/verify` UI are deployed.
 - `DRIP-1`: course and lesson drip content policy exists in domain, builder,
   Firestore validation, and learner UI.
+- `SEC-1`: protected video playback now has a dynamic learner watermark overlay
+  with viewer identity and timestamp.
 - `SEC-2`: idempotency keys and rate limiting exist for payment-sensitive
   Functions.
 - `SEC-3`: HTTP security headers are configured. App Check still requires
@@ -43,7 +45,6 @@ small Codex task before implementation.
 - `MARKETPLACE-2`: prevent public cards from showing "Pricing pending" or
   incomplete preview states.
 - `DETAIL-1`: real published course detail pages using SSR/ISR.
-- `SEC-1`: dynamic learner watermark in the video player.
 - `SEC-3`: complete Firebase App Check setup and enforce it after console
   configuration; headers are already configured.
 - `EMAIL-1`: transactional email provider and templates.
