@@ -6,9 +6,8 @@ import { useState, type FormEvent } from "react";
 
 import {
   type CertificateVerificationResult,
-  verifySkillsetCertificate,
+  verifySkillsetCertificatePublic,
 } from "@/lib/data/certificates";
-import { getFirebaseClientConfig } from "@/lib/firebase/config";
 
 export function CertificateVerificationPanel() {
   const searchParams = useSearchParams();
@@ -17,7 +16,6 @@ export function CertificateVerificationPanel() {
   const [result, setResult] = useState<CertificateVerificationResult | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState("");
-  const hasFirebaseConfig = Boolean(getFirebaseClientConfig());
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,7 +32,7 @@ export function CertificateVerificationPanel() {
     setIsChecking(true);
 
     try {
-      setResult(await verifySkillsetCertificate(code));
+      setResult(await verifySkillsetCertificatePublic(code));
     } catch {
       setError("We could not verify this certificate right now.");
     } finally {
@@ -65,18 +63,12 @@ export function CertificateVerificationPanel() {
         />
         <button
           type="submit"
-          disabled={isChecking || !hasFirebaseConfig}
+          disabled={isChecking}
           className="button-solid px-5 py-3 text-sm disabled:opacity-60"
         >
           {isChecking ? "Checking..." : "Verify"}
         </button>
       </form>
-
-      {!hasFirebaseConfig ? (
-        <p className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
-          Firebase configuration is required before verification can run.
-        </p>
-      ) : null}
 
       {error ? (
         <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">

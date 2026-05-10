@@ -108,6 +108,21 @@ type PayoutLedgerRecord = {
   releaseAttemptCount?: number;
 };
 
+type CertificateVerificationResult =
+  | {
+      valid: false;
+    }
+  | {
+      valid: true;
+      certificate: {
+        courseTitle: string;
+        courseCategory: string;
+        authorityLabel: string;
+        verificationCode: string;
+        issuedAt: string | null;
+      };
+    };
+
 const payoutReleaseDelayDays = 30;
 const automaticRefundWindowDays = 7;
 const automaticRefundProgressCap = 50;
@@ -907,6 +922,47 @@ export const verifySkillsetCertificate = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "A valid verification code is required.");
   }
 
+  return verifyCertificateCode(verificationCode);
+});
+
+export const verifySkillsetCertificateHttp = onRequest(
+  async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    response.set("Access-Control-Allow-Headers", "Content-Type");
+    response.set("Cache-Control", "no-store");
+
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+
+    if (request.method !== "GET") {
+      response.status(405).json({ error: "Method not allowed." });
+      return;
+    }
+
+    const verificationCode = String(request.query.code || "")
+      .trim()
+      .toUpperCase();
+
+    if (!verificationCode || verificationCode.length > 80) {
+      response.status(400).json({ error: "A valid verification code is required." });
+      return;
+    }
+
+    try {
+      response.status(200).json(await verifyCertificateCode(verificationCode));
+    } catch (error) {
+      logger.error("Public certificate verification failed", error);
+      response.status(500).json({ error: "Certificate verification failed." });
+    }
+  },
+);
+
+async function verifyCertificateCode(
+  verificationCode: string,
+): Promise<CertificateVerificationResult> {
   const certificatesSnapshot = await db
     .collection("certificates")
     .where("verificationCode", "==", verificationCode)
@@ -932,7 +988,7 @@ export const verifySkillsetCertificate = onCall(async (request) => {
       issuedAt: certificate.issuedAt?.toDate?.().toISOString?.() ?? null,
     },
   };
-});
+}
 
 export const stripeWebhook = onRequest(
   { secrets: [stripeSecretKey, stripeWebhookSecret] },

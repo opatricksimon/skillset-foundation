@@ -11,6 +11,7 @@ import { httpsCallable } from "firebase/functions";
 
 import type { Certificate } from "@/domain/certificate";
 import { getFirestoreDb, getFirebaseFunctions } from "@/lib/firebase/client";
+import { getFirebaseClientConfig } from "@/lib/firebase/config";
 
 const certificatesCollection = "certificates";
 
@@ -58,7 +59,7 @@ export type CertificateVerificationResult =
       certificate: {
         courseTitle: string;
         courseCategory: string;
-        authorityLabel: "Skillset Verified";
+        authorityLabel: string;
         verificationCode: string;
         issuedAt: string | null;
       };
@@ -75,4 +76,32 @@ export async function verifySkillsetCertificate(
   const result = await verifyCertificate({ verificationCode });
 
   return result.data;
+}
+
+export async function verifySkillsetCertificatePublic(
+  verificationCode: string,
+): Promise<CertificateVerificationResult> {
+  const code = verificationCode.trim().toUpperCase();
+  const endpoint = getPublicCertificateVerificationEndpoint();
+  const response = await fetch(`${endpoint}?code=${encodeURIComponent(code)}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Certificate verification request failed.");
+  }
+
+  return (await response.json()) as CertificateVerificationResult;
+}
+
+function getPublicCertificateVerificationEndpoint() {
+  const projectId =
+    getFirebaseClientConfig()?.projectId
+    || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    || "skillsetusaofficial";
+
+  return `https://us-central1-${projectId}.cloudfunctions.net/verifySkillsetCertificateHttp`;
 }
