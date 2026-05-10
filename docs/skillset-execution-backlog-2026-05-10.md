@@ -38,6 +38,8 @@ small Codex task before implementation.
   Functions.
 - `SEC-3`: HTTP security headers are configured. App Check still requires
   Firebase Console setup before enforcement.
+- `TEST-1`: Firestore rules test harness and initial role/course security cases
+  are added. Execution requires Java because Firebase Emulator depends on it.
 
 ## P0: Remaining Before Serious Public Launch
 
@@ -47,7 +49,7 @@ small Codex task before implementation.
 - `SEC-3`: complete Firebase App Check setup and enforce it after console
   configuration; headers are already configured.
 - `EMAIL-1`: transactional email provider and templates.
-- `TEST-1`: Firestore rules test harness.
+- Run `TEST-1` after Java/OpenJDK is available on PATH.
 
 ## P1: Teacher-Student Loop
 
