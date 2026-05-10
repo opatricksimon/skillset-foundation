@@ -11,10 +11,14 @@ import { isPublicFeatureEnabled } from "@/lib/feature-flags";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
 import { startCourseCheckout } from "@/lib/payments/checkout";
 
-export function CreatorCourseDetail() {
+type CreatorCourseDetailProps = {
+  courseIdOverride?: string;
+};
+
+export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailProps = {}) {
   const { status: authStatus, user } = useAuth();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("courseId") ?? "";
+  const courseId = courseIdOverride ?? searchParams.get("courseId") ?? "";
   const checkoutStatus = searchParams.get("checkout");
   const hasFirebaseConfig = Boolean(getFirebaseClientConfig());
   const checkoutEnabled = isPublicFeatureEnabled("payments.checkout");

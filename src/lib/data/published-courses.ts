@@ -90,9 +90,9 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
       ? "Free preview selected"
       : "Preview coming soon",
     hasPaidAccess: false,
-    href: `/courses/creator?courseId=${course.id}`,
+    href: `/courses/${course.id}`,
     freePreviewHref: hasFreePreview
-      ? `/courses/creator?courseId=${course.id}#free-preview`
+      ? `/courses/${course.id}#free-preview`
       : undefined,
     sourceLabel: "Teacher published",
   };

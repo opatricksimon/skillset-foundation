@@ -32,6 +32,9 @@ small Codex task before implementation.
   Firestore validation, and learner UI.
 - `MARKETPLACE-1` and `MARKETPLACE-2`: `/courses` no longer depends on demo
   cards and public creator cards avoid incomplete "pending" copy.
+- `DETAIL-1` initial: real published course cards now point to canonical
+  `/courses/{courseId}` pages, with client-side Firestore loading for unknown
+  non-demo slugs.
 - `SEC-1`: protected video playback now has a dynamic learner watermark overlay
   with viewer identity and timestamp.
 - `SEC-2`: idempotency keys and rate limiting exist for payment-sensitive
@@ -45,7 +48,8 @@ small Codex task before implementation.
 
 - Verify `LEGAL-1`, `PAY-1`, `PAY-2`, `PAY-3`, `PUB-1`, `CERT-1`, `CERT-2`,
   `DRIP-1`, and `SEC-2` end-to-end with real Firebase/Stripe test data.
-- `DETAIL-1`: real published course detail pages using SSR/ISR.
+- `DETAIL-1`: upgrade real published course pages from client-side fallback to
+  true SSR/ISR metadata and HTML.
 - `SEC-3`: complete Firebase App Check setup and enforce it after console
   configuration; headers are already configured.
 - `EMAIL-1`: transactional email provider and templates.
