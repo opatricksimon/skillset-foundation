@@ -12,16 +12,19 @@ import {
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
 
 type CourseMarketplaceProps = {
-  courses: CourseCard[];
+  courses?: CourseCard[];
 };
 
 const allCategoriesLabel = "All courses";
 
-export function CourseMarketplace({ courses }: CourseMarketplaceProps) {
+export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
   const [activeCategory, setActiveCategory] = useState(allCategoriesLabel);
   const [query, setQuery] = useState("");
   const [publishedCourses, setPublishedCourses] = useState<CourseCard[]>([]);
   const [publishedCoursesError, setPublishedCoursesError] = useState("");
+  const [isLoadingPublishedCourses, setIsLoadingPublishedCourses] = useState(
+    Boolean(getFirebaseClientConfig()),
+  );
   const deferredQuery = useDeferredValue(query.toLowerCase().trim());
   const marketplaceCourses = [...courses, ...publishedCourses];
   const categories = [
@@ -38,9 +41,11 @@ export function CourseMarketplace({ courses }: CourseMarketplaceProps) {
       (nextCourses) => {
         setPublishedCourses(nextCourses.map(teacherCourseToCourseCard));
         setPublishedCoursesError("");
+        setIsLoadingPublishedCourses(false);
       },
       () => {
         setPublishedCoursesError("Creator-published courses could not load right now.");
+        setIsLoadingPublishedCourses(false);
       },
     );
   }, []);
@@ -97,17 +102,44 @@ export function CourseMarketplace({ courses }: CourseMarketplaceProps) {
         </p>
       ) : null}
 
-      {visibleCourses.length === 0 ? (
+      {isLoadingPublishedCourses ? (
         <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
-            No courses match this filter yet. Clear the search or choose another
-            category.
+            Loading published creator courses...
           </p>
+        </div>
+      ) : visibleCourses.length === 0 ? (
+        <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
+            Creator catalog opening
+          </p>
+          <h2 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
+            Published courses will appear here after Skillset review.
+          </h2>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            The marketplace is connected to the teacher publishing workflow. As
+            creators submit and Skillset approves courses, this page becomes the
+            public storefront for enrollment, previews, and course discovery.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/for-creators" className="button-solid px-5 py-3 text-sm">
+              For creators
+            </Link>
+            <Link href="/teach" className="button-outline px-5 py-3 text-sm">
+              Open Creator Studio
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-3">
-          {visibleCourses.map((track) => (
-            <article key={`${track.slug}-${track.title}`} className="surface-card overflow-hidden rounded-[18px]">
+          {visibleCourses.map((track) => {
+            const hasFreePreview = Boolean(track.freePreviewHref);
+
+            return (
+            <article
+              key={`${track.slug}-${track.title}`}
+              className="surface-card overflow-hidden rounded-[18px]"
+            >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
                   src={track.image}
@@ -154,16 +186,19 @@ export function CourseMarketplace({ courses }: CourseMarketplaceProps) {
                   >
                     View course
                   </Link>
-                  <Link
-                    href={track.freePreviewHref ?? `/courses/${track.slug}#free-preview`}
-                    className="button-outline px-4 py-2 text-sm"
-                  >
-                    Free preview
-                  </Link>
+                  {hasFreePreview ? (
+                    <Link
+                      href={track.freePreviewHref ?? `/courses/${track.slug}#free-preview`}
+                      className="button-outline px-4 py-2 text-sm"
+                    >
+                      Free preview
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

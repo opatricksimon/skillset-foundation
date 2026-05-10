@@ -72,7 +72,8 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
           style: "currency",
           currency: course.currency ?? "USD",
         }).format(course.priceAmountMinor / 100)
-      : "Pricing pending";
+      : "Enrollment opening soon";
+  const hasFreePreview = Boolean(course.freePreviewLessonId);
 
   return {
     slug: course.id,
@@ -85,12 +86,14 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
       || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
     detail: "Created by an approved Skillset educator.",
     priceLabel,
-    freePreviewLabel: course.freePreviewLessonId
+    freePreviewLabel: hasFreePreview
       ? "Free preview selected"
-      : "Preview setup pending",
+      : "Preview coming soon",
     hasPaidAccess: false,
     href: `/courses/creator?courseId=${course.id}`,
-    freePreviewHref: `/courses/creator?courseId=${course.id}#free-preview`,
+    freePreviewHref: hasFreePreview
+      ? `/courses/creator?courseId=${course.id}#free-preview`
+      : undefined,
     sourceLabel: "Teacher published",
   };
 }
@@ -102,7 +105,8 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
           style: "currency",
           currency: course.currency ?? "USD",
         }).format(course.priceAmountMinor / 100)
-      : "Pricing pending";
+      : "Enrollment opening soon";
+  const hasFreePreview = Boolean(course.freePreviewLessonId);
 
   return {
     id: course.id,
@@ -123,9 +127,9 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     platformFeeBps: course.platformFeeBps ?? 1500,
     dripStrategy: course.dripStrategy ?? "instant",
     dripIntervalDays: course.dripIntervalDays ?? 1,
-    freePreviewLabel: course.freePreviewLessonId
+    freePreviewLabel: hasFreePreview
       ? "Free preview selected"
-      : "Preview setup pending",
+      : "Preview coming soon",
     outcomes: [
       "Complete the teacher-defined lesson path.",
       "Use course events and community spaces to support progress.",

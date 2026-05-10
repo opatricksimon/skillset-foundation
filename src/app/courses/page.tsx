@@ -1,7 +1,6 @@
 import { CourseMarketplace } from "@/components/courses/course-marketplace";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
-import { featuredTracks } from "@/data/site";
 
 export default function CoursesPage() {
   return (
@@ -24,7 +23,7 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        <CourseMarketplace courses={featuredTracks} />
+        <CourseMarketplace />
       </main>
       <SiteFooter />
     </div>

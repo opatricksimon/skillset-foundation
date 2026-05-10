@@ -30,6 +30,8 @@ small Codex task before implementation.
   `/verify` UI are deployed.
 - `DRIP-1`: course and lesson drip content policy exists in domain, builder,
   Firestore validation, and learner UI.
+- `MARKETPLACE-1` and `MARKETPLACE-2`: `/courses` no longer depends on demo
+  cards and public creator cards avoid incomplete "pending" copy.
 - `SEC-1`: protected video playback now has a dynamic learner watermark overlay
   with viewer identity and timestamp.
 - `SEC-2`: idempotency keys and rate limiting exist for payment-sensitive
@@ -41,9 +43,6 @@ small Codex task before implementation.
 
 - Verify `LEGAL-1`, `PAY-1`, `PAY-2`, `PAY-3`, `PUB-1`, `CERT-1`, `CERT-2`,
   `DRIP-1`, and `SEC-2` end-to-end with real Firebase/Stripe test data.
-- `MARKETPLACE-1`: remove public marketplace dependence on mock courses.
-- `MARKETPLACE-2`: prevent public cards from showing "Pricing pending" or
-  incomplete preview states.
 - `DETAIL-1`: real published course detail pages using SSR/ISR.
 - `SEC-3`: complete Firebase App Check setup and enforce it after console
   configuration; headers are already configured.
