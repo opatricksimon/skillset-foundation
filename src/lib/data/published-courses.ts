@@ -121,6 +121,8 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     priceAmountMinor: course.priceAmountMinor ?? null,
     currency: course.currency ?? "USD",
     platformFeeBps: course.platformFeeBps ?? 1500,
+    dripStrategy: course.dripStrategy ?? "instant",
+    dripIntervalDays: course.dripIntervalDays ?? 1,
     freePreviewLabel: course.freePreviewLessonId
       ? "Free preview selected"
       : "Preview setup pending",
@@ -144,6 +146,7 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
         description: lesson.description,
         contentText: lesson.contentText ?? null,
         externalUrl: lesson.externalUrl ?? null,
+        dripDelayDays: lesson.dripDelayDays ?? null,
       })),
     })),
     communityEnabled: true,

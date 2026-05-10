@@ -40,16 +40,18 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const legalAccepted = termsAccepted && privacyAccepted;
 
   async function handleEmailSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
-    if (!termsAccepted) {
-      setError("Accept the terms and privacy policy to create your account.");
+    if (!legalAccepted) {
+      setError("Accept the Terms of Service and Privacy Policy to create your account.");
       return;
     }
 
@@ -83,8 +85,8 @@ export function SignupForm() {
   async function handleGoogleSignup() {
     setError("");
 
-    if (!termsAccepted) {
-      setError("Accept the terms and privacy policy before continuing with Google.");
+    if (!legalAccepted) {
+      setError("Accept the Terms of Service and Privacy Policy before continuing with Google.");
       return;
     }
 
@@ -191,11 +193,23 @@ export function SignupForm() {
           required
         />
         <span>
-          I agree to the{" "}
+          I agree to the Skillset{" "}
           <Link href="/legal/terms" className="font-semibold text-[var(--color-primary)]">
-            Terms
-          </Link>{" "}
-          and{" "}
+            Terms of Service
+          </Link>
+          .
+        </span>
+      </label>
+      <label className="flex items-start gap-3 rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-3 text-sm leading-6 text-[var(--color-ink-soft)]">
+        <input
+          type="checkbox"
+          checked={privacyAccepted}
+          onChange={(event) => setPrivacyAccepted(event.target.checked)}
+          className="mt-1"
+          required
+        />
+        <span>
+          I agree to the Skillset{" "}
           <Link href="/legal/privacy" className="font-semibold text-[var(--color-primary)]">
             Privacy Policy
           </Link>
@@ -209,19 +223,19 @@ export function SignupForm() {
           onChange={(event) => setMarketingConsent(event.target.checked)}
           className="mt-1"
         />
-        <span>Send me Skillset updates, launch notes, and creator resources.</span>
+        <span>Receive Skillset product updates and learning recommendations.</span>
       </label>
       {error ? (
         <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
       ) : null}
-      <button type="submit" disabled={isLoading || !termsAccepted} className="button-solid mt-2 px-5 py-3 text-sm disabled:opacity-60">
+      <button type="submit" disabled={isLoading || !legalAccepted} className="button-solid mt-2 px-5 py-3 text-sm disabled:opacity-60">
         {isLoading ? "Creating account..." : "Create account"}
       </button>
       <button
         type="button"
-        disabled={isLoading || !termsAccepted}
+        disabled={isLoading || !legalAccepted}
         onClick={handleGoogleSignup}
         className="button-outline px-5 py-3 text-sm disabled:opacity-60"
       >

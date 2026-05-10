@@ -1,6 +1,7 @@
 import { FeaturedTracks } from "@/components/site/featured-tracks";
 import { InstructorShowcase } from "@/components/site/instructor-showcase";
 import { MarketingHero } from "@/components/site/marketing-hero";
+import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { WaitlistBand } from "@/components/site/waitlist-band";
 
@@ -12,6 +13,7 @@ export default function Home() {
       <FeaturedTracks />
       <InstructorShowcase />
       <WaitlistBand />
+      <SiteFooter />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { CourseAssetUploader } from "@/components/teacher/course-asset-uploader";
+import type { DripStrategy } from "@/domain/drip-policy";
 import type {
   LessonType,
   TeacherCourse,
@@ -22,9 +23,17 @@ import {
   submitTeacherCourseForReview,
   updateTeacherCourseBuilder,
 } from "@/lib/data/teacher-courses";
+import {
+  defaultSkillsetCurrency,
+  getCurrencyLabel,
+  supportedStripeCurrencies,
+  topSkillsetCurrencies,
+} from "@/lib/payments/currencies";
 
 const categories = ["Psychology", "Management", "Health", "Soft Skills"];
-const currencies: Array<NonNullable<TeacherCourse["currency"]>> = ["USD", "BRL", "GYD"];
+const secondaryCurrencies = supportedStripeCurrencies.filter(
+  (currency) => !(topSkillsetCurrencies as readonly string[]).includes(currency),
+);
 const builderTabs = [
   { value: "details", label: "Details" },
   { value: "content", label: "Content" },
@@ -42,6 +51,34 @@ const lessonTypes: { value: LessonType; label: string }[] = [
   { value: "live_recording", label: "Live recording" },
   { value: "download", label: "Download" },
   { value: "external_embed", label: "External embed" },
+];
+
+const dripStrategies: { value: DripStrategy; label: string; detail: string }[] = [
+  {
+    value: "instant",
+    label: "Instant access",
+    detail: "Unlock every lesson immediately after enrollment.",
+  },
+  {
+    value: "sequential_progress",
+    label: "Sequential progress",
+    detail: "Unlock the next lesson after the previous lesson is completed.",
+  },
+  {
+    value: "time_drip_lesson",
+    label: "One lesson per interval",
+    detail: "Release lessons gradually based on enrollment date.",
+  },
+  {
+    value: "time_drip_module",
+    label: "One module per interval",
+    detail: "Release modules gradually based on enrollment date.",
+  },
+  {
+    value: "time_drip_custom",
+    label: "Custom lesson schedule",
+    detail: "Use each lesson's delay field for precise release timing.",
+  },
 ];
 
 const statusLabels: Record<TeacherCourse["status"], string> = {
@@ -90,6 +127,20 @@ function normalizeDurationMinutes(value: string): number | null {
   return Math.round(parsedValue);
 }
 
+function normalizeDripDelayDays(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+    return null;
+  }
+
+  return Math.round(parsedValue);
+}
+
 function getLessonTypeLabel(type: LessonType) {
   return lessonTypes.find((item) => item.value === type)?.label ?? type;
 }
@@ -121,6 +172,10 @@ function sanitizeModules(modules: TeacherCourseModule[]): TeacherCourseModule[] 
       description: lesson.description.trim(),
       contentText: lesson.contentText?.trim() || null,
       externalUrl: lesson.externalUrl?.trim() || null,
+      dripDelayDays:
+        typeof lesson.dripDelayDays === "number"
+          ? Math.max(0, Math.round(lesson.dripDelayDays))
+          : null,
     })),
   }));
 }
@@ -151,7 +206,9 @@ export function CourseBuilderStudio() {
   const [category, setCategory] = useState(categories[0]);
   const [modules, setModules] = useState<TeacherCourseModule[]>([]);
   const [priceAmount, setPriceAmount] = useState("");
-  const [currency, setCurrency] = useState<NonNullable<TeacherCourse["currency"]>>("USD");
+  const [currency, setCurrency] = useState(defaultSkillsetCurrency);
+  const [dripStrategy, setDripStrategy] = useState<DripStrategy>("instant");
+  const [dripIntervalDays, setDripIntervalDays] = useState("1");
   const [freePreviewLessonId, setFreePreviewLessonId] = useState("");
   const [moduleTitle, setModuleTitle] = useState("");
   const [lessonModuleId, setLessonModuleId] = useState("");
@@ -159,6 +216,7 @@ export function CourseBuilderStudio() {
   const [lessonType, setLessonType] = useState<LessonType>("video");
   const [lessonDescription, setLessonDescription] = useState("");
   const [lessonDurationMinutes, setLessonDurationMinutes] = useState("");
+  const [lessonDripDelayDays, setLessonDripDelayDays] = useState("");
   const [lessonContentText, setLessonContentText] = useState("");
   const [lessonExternalUrl, setLessonExternalUrl] = useState("");
   const [lessonIsFreePreview, setLessonIsFreePreview] = useState(false);
@@ -194,7 +252,9 @@ export function CourseBuilderStudio() {
             ? String(nextCourse.priceAmountMinor / 100)
             : "",
         );
-        setCurrency(nextCourse.currency ?? "USD");
+        setCurrency(nextCourse.currency ?? defaultSkillsetCurrency);
+        setDripStrategy(nextCourse.dripStrategy ?? "instant");
+        setDripIntervalDays(String(nextCourse.dripIntervalDays ?? 1));
         setFreePreviewLessonId(nextCourse.freePreviewLessonId ?? "");
         setLessonModuleId(nextCourse.modules?.[0]?.id ?? "");
         setError("");
@@ -299,6 +359,7 @@ export function CourseBuilderStudio() {
       lessonDurationMinutes.trim().length > 0 && Number.isFinite(durationMinutes) && durationMinutes > 0
         ? Math.round(durationMinutes)
         : null;
+    const nextDripDelayDays = normalizeDripDelayDays(lessonDripDelayDays);
 
     setModules((current) =>
       current.map((module) =>
@@ -313,6 +374,7 @@ export function CourseBuilderStudio() {
                   type: lessonType,
                   description: lessonDescription.trim(),
                   durationMinutes: nextDurationMinutes,
+                  dripDelayDays: nextDripDelayDays,
                   contentText: lessonContentText.trim() || null,
                   externalUrl: lessonExternalUrl.trim() || null,
                 },
@@ -327,6 +389,7 @@ export function CourseBuilderStudio() {
     setLessonTitle("");
     setLessonDescription("");
     setLessonDurationMinutes("");
+    setLessonDripDelayDays("");
     setLessonContentText("");
     setLessonExternalUrl("");
     setLessonIsFreePreview(false);
@@ -463,6 +526,10 @@ export function CourseBuilderStudio() {
     setSuccess("");
     setIsSaving(true);
     const nextPriceAmountMinor = parsePriceAmountMinor(priceAmount);
+    const nextDripIntervalDays = Math.max(
+      1,
+      normalizeDripDelayDays(dripIntervalDays) ?? 1,
+    );
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
 
@@ -487,6 +554,8 @@ export function CourseBuilderStudio() {
         priceAmountMinor: nextPriceAmountMinor,
         currency,
         platformFeeBps: course?.platformFeeBps ?? 1500,
+        dripStrategy,
+        dripIntervalDays: nextDripIntervalDays,
         freePreviewLessonId: freePreviewLessonId || null,
       });
       setSuccess("Draft saved.");
@@ -506,6 +575,10 @@ export function CourseBuilderStudio() {
     setSuccess("");
     setIsSubmitting(true);
     const nextPriceAmountMinor = parsePriceAmountMinor(priceAmount);
+    const nextDripIntervalDays = Math.max(
+      1,
+      normalizeDripDelayDays(dripIntervalDays) ?? 1,
+    );
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
 
@@ -530,6 +603,8 @@ export function CourseBuilderStudio() {
         priceAmountMinor: nextPriceAmountMinor,
         currency,
         platformFeeBps: course?.platformFeeBps ?? 1500,
+        dripStrategy,
+        dripIntervalDays: nextDripIntervalDays,
         freePreviewLessonId: freePreviewLessonId || null,
       });
       await submitTeacherCourseForReview(courseId);
@@ -693,20 +768,67 @@ export function CourseBuilderStudio() {
                 Currency
                 <select
                   value={currency}
+                  onChange={(event) => setCurrency(event.target.value)}
+                  disabled={!isEditable}
+                  className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                >
+                  <optgroup label="Most used">
+                    {topSkillsetCurrencies.map((item) => (
+                      <option key={item} value={item}>
+                        {item} - {getCurrencyLabel(item)}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Other supported currencies">
+                    {secondaryCurrencies.map((item) => (
+                      <option key={item} value={item}>
+                        {item} - {getCurrencyLabel(item)}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </label>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-[1fr_180px]">
+              <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                Content release
+                <select
+                  value={dripStrategy}
                   onChange={(event) =>
-                    setCurrency(event.target.value as NonNullable<TeacherCourse["currency"]>)
+                    setDripStrategy(event.target.value as DripStrategy)
                   }
                   disabled={!isEditable}
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
                 >
-                  {currencies.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
+                  {dripStrategies.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>
               </label>
+              <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                Interval days
+                <input
+                  value={dripIntervalDays}
+                  onChange={(event) => setDripIntervalDays(event.target.value)}
+                  disabled={
+                    !isEditable
+                    || !["time_drip_lesson", "time_drip_module"].includes(
+                      dripStrategy,
+                    )
+                  }
+                  inputMode="numeric"
+                  className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                />
+              </label>
             </div>
+            <p className="mt-3 rounded-[10px] border fine-rule bg-white px-4 py-3 text-xs leading-5 text-[var(--color-ink-soft)]">
+              {dripStrategies.find((item) => item.value === dripStrategy)?.detail}
+              {dripStrategy === "time_drip_custom"
+                ? " Set each lesson delay in the curriculum editor."
+                : ""}
+            </p>
             <label className="mt-4 grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
               Free preview lesson
               <select
@@ -793,13 +915,21 @@ export function CourseBuilderStudio() {
                 placeholder="Lesson title"
                 className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
               />
-              <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+              <div className="grid gap-3 md:grid-cols-[160px_160px_1fr]">
                 <input
                   value={lessonDurationMinutes}
                   onChange={(event) => setLessonDurationMinutes(event.target.value)}
                   disabled={!isEditable}
                   inputMode="numeric"
                   placeholder="Minutes"
+                  className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                />
+                <input
+                  value={lessonDripDelayDays}
+                  onChange={(event) => setLessonDripDelayDays(event.target.value)}
+                  disabled={!isEditable}
+                  inputMode="numeric"
+                  placeholder="Drip delay days"
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
                 />
                 <input
@@ -924,7 +1054,7 @@ export function CourseBuilderStudio() {
                             key={lesson.id}
                             className="grid gap-3 rounded-[12px] border border-[var(--color-line)] bg-white p-4"
                           >
-                            <div className="grid gap-3 lg:grid-cols-[1fr_190px_120px_auto] lg:items-end">
+                            <div className="grid gap-3 lg:grid-cols-[1fr_190px_120px_140px_auto] lg:items-end">
                               <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
                                 Lesson title
                                 <input
@@ -964,6 +1094,22 @@ export function CourseBuilderStudio() {
                                   onChange={(event) =>
                                     updateLesson(module.id, lesson.id, {
                                       durationMinutes: normalizeDurationMinutes(
+                                        event.target.value,
+                                      ),
+                                    })
+                                  }
+                                  disabled={!isEditable}
+                                  inputMode="numeric"
+                                  className="rounded-[10px] border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-[var(--color-ink)] outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                                />
+                              </label>
+                              <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+                                Delay days
+                                <input
+                                  value={lesson.dripDelayDays ?? ""}
+                                  onChange={(event) =>
+                                    updateLesson(module.id, lesson.id, {
+                                      dripDelayDays: normalizeDripDelayDays(
                                         event.target.value,
                                       ),
                                     })
@@ -1142,6 +1288,9 @@ export function CourseBuilderStudio() {
                           <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
                             {getLessonTypeLabel(lesson.type)}
                             {lesson.durationMinutes ? ` - ${lesson.durationMinutes} min` : ""}
+                            {typeof lesson.dripDelayDays === "number"
+                              ? ` - D+${lesson.dripDelayDays}`
+                              : ""}
                             {freePreviewLessonId === lesson.id ? " - preview" : ""}
                           </p>
                           {lesson.description ? (

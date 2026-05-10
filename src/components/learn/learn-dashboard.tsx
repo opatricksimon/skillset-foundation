@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { RefundButton } from "@/components/learn/refund-button";
 import { canOpenEnrollment, type Enrollment } from "@/domain/enrollment";
 import { getCourseBySlug } from "@/lib/data/catalog";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
@@ -154,12 +155,15 @@ export function LearnDashboard() {
                       {nextLesson ? ` - Next: ${nextLesson.title}` : ""}
                     </p>
                     {canOpenWorkspace ? (
-                      <Link
-                        href={workspaceHref}
-                        className="button-solid px-4 py-3 text-sm"
-                      >
-                        Open workspace
-                      </Link>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={workspaceHref}
+                          className="button-solid px-4 py-3 text-sm"
+                        >
+                          Open workspace
+                        </Link>
+                        <RefundButton enrollment={enrollment} />
+                      </div>
                     ) : (
                       <button
                         type="button"

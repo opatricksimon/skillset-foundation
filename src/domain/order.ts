@@ -12,12 +12,14 @@ export type Order = {
   id: string;
   userId: string;
   teacherId?: string;
+  teacherStripeConnectedAccountId?: string | null;
   courseId: string;
   courseSlug: string;
   courseTitle: string;
   amountMinor: number;
-  currency: "USD" | "BRL" | "GYD";
+  currency: string;
   platformFeeBps: number;
+  payoutModel?: "separate_charges_and_transfers" | "destination_charge";
   status: OrderStatus;
   provider: PaymentProvider;
   checkoutSessionId: string | null;
@@ -31,7 +33,7 @@ export type Payment = {
   orderId: string;
   userId: string;
   amountMinor: number;
-  currency: "USD" | "BRL" | "GYD";
+  currency: string;
   provider: PaymentProvider;
   providerPaymentId: string;
   courseId?: string;

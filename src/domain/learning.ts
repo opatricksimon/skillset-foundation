@@ -1,3 +1,5 @@
+import type { DripStrategy } from "@/domain/drip-policy";
+
 export type CourseStatus = "draft" | "opening_soon" | "pilot" | "waitlist" | "published";
 
 export type LessonType =
@@ -25,6 +27,7 @@ export type Lesson = {
   description?: string | null;
   contentText?: string | null;
   externalUrl?: string | null;
+  dripDelayDays?: number | null;
 };
 
 export type Course = {
@@ -41,8 +44,10 @@ export type Course = {
   level: "Foundation" | "Professional" | "Advanced";
   priceLabel: string;
   priceAmountMinor: number | null;
-  currency: "USD" | "BRL" | "GYD";
+  currency: string;
   platformFeeBps: number;
+  dripStrategy?: DripStrategy;
+  dripIntervalDays?: number | null;
   freePreviewLabel: string;
   outcomes: string[];
   modules: CourseModule[];

@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 
 export default function AboutPage() {
@@ -27,6 +28,7 @@ export default function AboutPage() {
           ))}
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

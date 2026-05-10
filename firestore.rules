@@ -38,6 +38,11 @@ service cloud.firestore {
       return hasRole('moderator') || isAdmin();
     }
 
+    function emailVerified() {
+      return signedIn()
+        && request.auth.token.email_verified == true;
+    }
+
     function hasOnlyAllowedUserKeys() {
       return request.resource.data.keys().hasOnly([
         'uid',
@@ -52,6 +57,10 @@ service cloud.firestore {
         'onboardingCompleted',
         'termsAcceptedAt',
         'termsVersion',
+        'privacyAcceptedAt',
+        'privacyVersion',
+        'teacherTermsAcceptedAt',
+        'teacherTermsVersion',
         'marketingConsent',
         'stripeConnectedAccountId',
         'stripeConnectStatus',
@@ -134,7 +143,77 @@ service cloud.firestore {
         && (
           !request.resource.data.keys().hasAny(['stripeConnectUpdatedAt'])
           || request.resource.data.stripeConnectUpdatedAt == resource.data.stripeConnectUpdatedAt
+        )
+        && (
+          !request.resource.data.keys().hasAny(['termsAcceptedAt'])
+          || request.resource.data.termsAcceptedAt == null
+          || request.resource.data.termsAcceptedAt is timestamp
+        )
+        && (
+          !request.resource.data.keys().hasAny(['termsVersion'])
+          || request.resource.data.termsVersion == null
+          || (
+            request.resource.data.termsVersion is string
+            && request.resource.data.termsVersion.size() >= 1
+            && request.resource.data.termsVersion.size() <= 40
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['privacyAcceptedAt'])
+          || request.resource.data.privacyAcceptedAt == null
+          || request.resource.data.privacyAcceptedAt is timestamp
+        )
+        && (
+          !request.resource.data.keys().hasAny(['privacyVersion'])
+          || request.resource.data.privacyVersion == null
+          || (
+            request.resource.data.privacyVersion is string
+            && request.resource.data.privacyVersion.size() >= 1
+            && request.resource.data.privacyVersion.size() <= 40
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['marketingConsent'])
+          || request.resource.data.marketingConsent is bool
+        )
+        && (
+          !request.resource.data.keys().hasAny(['teacherTermsAcceptedAt'])
+          || request.resource.data.teacherTermsAcceptedAt == null
+          || request.resource.data.teacherTermsAcceptedAt is timestamp
+        )
+        && (
+          !request.resource.data.keys().hasAny(['teacherTermsVersion'])
+          || request.resource.data.teacherTermsVersion == null
+          || (
+            request.resource.data.teacherTermsVersion is string
+            && request.resource.data.teacherTermsVersion.size() >= 1
+            && request.resource.data.teacherTermsVersion.size() <= 40
+          )
         );
+    }
+
+    function requestedUserRolesAreSelfServiceOnly() {
+      return request.resource.data.roles is list
+        && request.resource.data.roles.size() >= 1
+        && request.resource.data.roles.hasOnly(['student', 'teacher']);
+    }
+
+    function requestedTeacherRoleIsGuarded() {
+      return !request.resource.data.roles.hasAny(['teacher'])
+        || (
+          emailVerified()
+          && request.resource.data.teacherTermsAcceptedAt is timestamp
+          && request.resource.data.teacherTermsVersion is string
+          && request.resource.data.teacherTermsVersion.size() >= 1
+          && request.resource.data.teacherTermsVersion.size() <= 40
+        );
+    }
+
+    function currentUserHasAcceptedTeacherTerms() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teacherTermsAcceptedAt is timestamp
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teacherTermsVersion is string;
     }
 
     function hasOnlyAllowedCourseKeys() {
@@ -149,6 +228,8 @@ service cloud.firestore {
         'priceAmountMinor',
         'currency',
         'platformFeeBps',
+        'dripStrategy',
+        'dripIntervalDays',
         'freePreviewLessonId',
         'coverImageUrl',
         'reviewNote',
@@ -196,7 +277,38 @@ service cloud.firestore {
         )
         && (
           !request.resource.data.keys().hasAny(['currency'])
-          || request.resource.data.currency in ['USD', 'BRL', 'GYD']
+          || request.resource.data.currency in [
+            'USD',
+            'EUR',
+            'GBP',
+            'CAD',
+            'AUD',
+            'BRL',
+            'MXN',
+            'NGN',
+            'ZAR',
+            'GYD',
+            'ARS',
+            'BBD',
+            'BMD',
+            'CLP',
+            'COP',
+            'CRC',
+            'DOP',
+            'GHS',
+            'GTQ',
+            'HKD',
+            'INR',
+            'JMD',
+            'JPY',
+            'KES',
+            'NZD',
+            'PEN',
+            'SGD',
+            'TTD',
+            'UYU',
+            'XCD'
+          ]
         )
         && (
           !request.resource.data.keys().hasAny(['platformFeeBps'])
@@ -204,6 +316,25 @@ service cloud.firestore {
             request.resource.data.platformFeeBps is int
             && request.resource.data.platformFeeBps >= 0
             && request.resource.data.platformFeeBps <= 5000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['dripStrategy'])
+          || request.resource.data.dripStrategy in [
+            'instant',
+            'sequential_progress',
+            'time_drip_lesson',
+            'time_drip_module',
+            'time_drip_custom'
+          ]
+        )
+        && (
+          !request.resource.data.keys().hasAny(['dripIntervalDays'])
+          || request.resource.data.dripIntervalDays == null
+          || (
+            request.resource.data.dripIntervalDays is int
+            && request.resource.data.dripIntervalDays >= 1
+            && request.resource.data.dripIntervalDays <= 365
           )
         )
         && (
@@ -239,6 +370,7 @@ service cloud.firestore {
 
     function teacherCanSaveOwnedCourse() {
       return isTeacher()
+        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
         && resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
@@ -252,6 +384,8 @@ service cloud.firestore {
           'priceAmountMinor',
           'currency',
           'platformFeeBps',
+          'dripStrategy',
+          'dripIntervalDays',
           'freePreviewLessonId',
           'updatedAt'
         ]);
@@ -259,6 +393,7 @@ service cloud.firestore {
 
     function teacherCanUpdateOwnedCourseCover() {
       return isTeacher()
+        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
         && resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
@@ -268,6 +403,7 @@ service cloud.firestore {
 
     function teacherCanSubmitOwnedDraft() {
       return isTeacher()
+        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
         && resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status in ['draft', 'needs_changes', 'inactive']
@@ -894,10 +1030,10 @@ service cloud.firestore {
     }
 
     function userRolesAreClientSafe() {
-      return request.resource.data.roles is list
+      return requestedUserRolesAreSelfServiceOnly()
         && (
           request.resource.data.roles == resource.data.roles
-          || request.resource.data.roles.hasOnly(['student', 'teacher'])
+          || requestedTeacherRoleIsGuarded()
         );
     }
 
@@ -907,8 +1043,8 @@ service cloud.firestore {
         && hasOnlyAllowedUserKeys()
         && validUserIdentityFields()
         && request.resource.data.uid == uid
-        && request.resource.data.roles is list
-        && request.resource.data.roles.hasOnly(['student', 'teacher']);
+        && requestedUserRolesAreSelfServiceOnly()
+        && requestedTeacherRoleIsGuarded();
       allow update: if isSelf(uid)
         && hasOnlyAllowedUserKeys()
         && validUserIdentityFields()
@@ -923,6 +1059,7 @@ service cloud.firestore {
         || (signedIn() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
       allow create: if isTeacher()
+        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
         && validCourseShape()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.status == 'draft';
@@ -1099,6 +1236,12 @@ service cloud.firestore {
     match /payments/{paymentId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /payoutLedger/{ledgerId} {
+      allow read: if isAdmin()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid);
       allow create, update, delete: if isAdmin();
     }
 

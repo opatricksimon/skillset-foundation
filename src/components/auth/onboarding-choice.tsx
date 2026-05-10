@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -109,6 +110,7 @@ export function OnboardingChoice() {
   const [bio, setBio] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
   const [goals, setGoals] = useState<UserGoal[]>([]);
+  const [teacherTermsAccepted, setTeacherTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -136,6 +138,7 @@ export function OnboardingChoice() {
             "America/New_York",
         );
         setGoals(profile?.goals ?? []);
+        setTeacherTermsAccepted(Boolean(profile?.teacherTermsAcceptedAt));
 
         const intendedRole = pathIntent ?? "student";
         const intendedPath = paths.find((path) =>
@@ -166,7 +169,10 @@ export function OnboardingChoice() {
     return [timezone, ...timezoneOptions];
   }, [timezone]);
 
-  const canContinue = selectedPath !== null;
+  const selectedPathIncludesTeacher =
+    selectedPath?.roles.some((role) => role === "teacher") ?? false;
+  const canContinue = selectedPath !== null
+    && (!selectedPathIncludesTeacher || teacherTermsAccepted);
 
   function toggleGoal(goal: UserGoal) {
     setGoals((currentGoals) =>
@@ -189,7 +195,11 @@ export function OnboardingChoice() {
     setError("");
 
     if (step === 0 && !canContinue) {
-      setError("Choose how you want to use Skillset first.");
+      setError(
+        selectedPathIncludesTeacher
+          ? "Accept the Teacher Terms before opening educator tools."
+          : "Choose how you want to use Skillset first.",
+      );
       return;
     }
 
@@ -232,6 +242,7 @@ export function OnboardingChoice() {
       await completeUserOnboarding({
         uid,
         roles: selectedPath.roles,
+        acceptTeacherTerms: selectedPathIncludesTeacher && teacherTermsAccepted,
         identity: {
           displayName,
           username: normalizeUsername(username),
@@ -298,6 +309,29 @@ export function OnboardingChoice() {
               </button>
             );
           })}
+
+          {selectedPathIncludesTeacher ? (
+            <label className="flex gap-3 rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              <input
+                type="checkbox"
+                checked={teacherTermsAccepted}
+                onChange={(event) => setTeacherTermsAccepted(event.target.checked)}
+                className="mt-1 size-4 accent-[var(--color-primary)]"
+              />
+              <span>
+                I accept the{" "}
+                <Link
+                  href="/legal/teacher-terms"
+                  className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+                  target="_blank"
+                >
+                  Teacher Terms
+                </Link>{" "}
+                and understand Skillset reviews courses before marketplace
+                publication.
+              </span>
+            </label>
+          ) : null}
         </div>
       ) : null}
 

@@ -1,9 +1,15 @@
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import {
+  getFirestore,
+  FieldValue,
+  Timestamp,
+  type DocumentReference,
+} from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import Stripe from "stripe";
 
 initializeApp();
@@ -14,7 +20,41 @@ const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const fallbackAppUrl = "https://skillsetusaofficial.web.app";
 
-type SkillsetCurrency = "USD" | "BRL" | "GYD";
+type SkillsetCurrency = string;
+
+const defaultSkillsetCurrency = "USD";
+const supportedStripeCurrencies = new Set([
+  "USD",
+  "EUR",
+  "GBP",
+  "CAD",
+  "AUD",
+  "BRL",
+  "MXN",
+  "NGN",
+  "ZAR",
+  "GYD",
+  "ARS",
+  "BBD",
+  "BMD",
+  "CLP",
+  "COP",
+  "CRC",
+  "DOP",
+  "GHS",
+  "GTQ",
+  "HKD",
+  "INR",
+  "JMD",
+  "JPY",
+  "KES",
+  "NZD",
+  "PEN",
+  "SGD",
+  "TTD",
+  "UYU",
+  "XCD",
+]);
 
 type TeacherCourseRecord = {
   ownerId: string;
@@ -48,8 +88,56 @@ type EnrollmentRecord = {
   courseTitle: string;
   courseCategory: string;
   status: string;
+  source?: string;
   progressPercent?: number;
 };
+
+type PayoutLedgerRecord = {
+  id: string;
+  teacherId: string;
+  teacherStripeConnectedAccountId?: string | null;
+  courseId: string;
+  orderId: string;
+  paymentId: string;
+  grossAmountMinor: number;
+  skillsetFeeMinor: number;
+  netAmountMinor: number;
+  currency: SkillsetCurrency;
+  status: string;
+  releaseAt?: unknown;
+  releaseAttemptCount?: number;
+};
+
+const payoutReleaseDelayDays = 30;
+const automaticRefundWindowDays = 7;
+const automaticRefundProgressCap = 50;
+
+function sanitizeRateLimitKey(value: string) {
+  return value.replace(/[^a-zA-Z0-9_.-]+/g, "_").slice(0, 220);
+}
+
+function getPayoutReleaseAt() {
+  return Timestamp.fromMillis(
+    Date.now() + payoutReleaseDelayDays * 24 * 60 * 60 * 1000,
+  );
+}
+
+function timestampToMillis(value: unknown): number | null {
+  if (value instanceof Timestamp) {
+    return value.toMillis();
+  }
+
+  if (
+    typeof value === "object"
+    && value !== null
+    && "toMillis" in value
+    && typeof (value as { toMillis?: unknown }).toMillis === "function"
+  ) {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+
+  return null;
+}
 
 function getStripeClient() {
   const secretKey = stripeSecretKey.value() || process.env.STRIPE_SECRET_KEY;
@@ -70,6 +158,14 @@ function getAppUrl() {
   return (process.env.SKILLSET_APP_URL || fallbackAppUrl).replace(/\/$/, "");
 }
 
+function normalizeSkillsetCurrency(currency?: string | null) {
+  const normalizedCurrency = (currency || defaultSkillsetCurrency).toUpperCase();
+
+  return supportedStripeCurrencies.has(normalizedCurrency)
+    ? normalizedCurrency
+    : defaultSkillsetCurrency;
+}
+
 function normalizeCoursePrice(course: TeacherCourseRecord) {
   const amountMinor = course.priceAmountMinor;
 
@@ -82,9 +178,47 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
 
   return {
     amountMinor,
-    currency: (course.currency || "USD").toLowerCase(),
+    currency: normalizeSkillsetCurrency(course.currency).toLowerCase(),
     platformFeeBps: course.platformFeeBps ?? 1500,
   };
+}
+
+async function enforceRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+) {
+  const now = Date.now();
+  const rateLimitRef = db
+    .collection("rateLimits")
+    .doc(sanitizeRateLimitKey(key));
+
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(rateLimitRef);
+    const data = snapshot.exists ? snapshot.data() || {} : {};
+    const windowStartedAt = timestampToMillis(data.windowStartedAt) || 0;
+    const count = Number(data.count || 0);
+    const inCurrentWindow = windowStartedAt > 0 && now - windowStartedAt < windowMs;
+
+    if (inCurrentWindow && count >= limit) {
+      throw new HttpsError(
+        "resource-exhausted",
+        "Too many attempts. Please wait before trying again.",
+      );
+    }
+
+    transaction.set(
+      rateLimitRef,
+      {
+        count: inCurrentWindow ? count + 1 : 1,
+        windowStartedAt: inCurrentWindow
+          ? data.windowStartedAt
+          : Timestamp.fromMillis(now),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
 }
 
 export const createCheckoutSession = onCall(
@@ -95,10 +229,13 @@ export const createCheckoutSession = onCall(
     }
 
     const courseId = String(request.data?.courseId || "").trim();
+    const userId = request.auth.uid;
 
     if (!courseId || courseId.length > 160) {
       throw new HttpsError("invalid-argument", "A valid courseId is required.");
     }
+
+    await enforceRateLimit(`checkout_${userId}`, 10, 60 * 60 * 1000);
 
     const courseRef = db.collection("courses").doc(courseId);
     const courseSnapshot = await courseRef.get();
@@ -117,7 +254,6 @@ export const createCheckoutSession = onCall(
     }
 
     const { amountMinor, currency, platformFeeBps } = normalizeCoursePrice(course);
-    const userId = request.auth.uid;
     const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
     const enrollmentSnapshot = await enrollmentRef.get();
 
@@ -168,12 +304,14 @@ export const createCheckoutSession = onCall(
       id: orderRef.id,
       userId,
       teacherId: course.ownerId,
+      teacherStripeConnectedAccountId: connectedAccountId,
       courseId,
       courseSlug: courseId,
       courseTitle: course.title,
       amountMinor,
       currency: currency.toUpperCase(),
       platformFeeBps,
+      payoutModel: "separate_charges_and_transfers",
       status: "pending",
       provider: "stripe",
       checkoutSessionId: null,
@@ -222,17 +360,9 @@ export const createCheckoutSession = onCall(
       cancel_url: `${appUrl}/courses/creator?courseId=${encodeURIComponent(courseId)}&checkout=cancelled`,
     };
 
-    if (connectedAccountId) {
-      sessionParams.payment_intent_data = {
-        ...sessionParams.payment_intent_data,
-        application_fee_amount: Math.floor((amountMinor * platformFeeBps) / 10000),
-        transfer_data: {
-          destination: connectedAccountId,
-        },
-      };
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await stripe.checkout.sessions.create(sessionParams, {
+      idempotencyKey: `checkout_${orderRef.id}`,
+    });
 
     await orderRef.update({
       checkoutSessionId: session.id,
@@ -255,6 +385,13 @@ export const createTeacherStripeAccountLink = onCall(
     }
 
     const userId = request.auth.uid;
+
+    await enforceRateLimit(
+      `stripe_onboarding_${userId}`,
+      10,
+      60 * 60 * 1000,
+    );
+
     const userRef = db.collection("users").doc(userId);
     const userSnapshot = await userRef.get();
 
@@ -366,6 +503,301 @@ export const refreshTeacherStripeAccount = onCall(
     };
   },
 );
+
+export const requestRefund = onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in before requesting a refund.");
+    }
+
+    const userId = request.auth.uid;
+    const enrollmentId = String(request.data?.enrollmentId || "").trim();
+
+    if (!enrollmentId || enrollmentId.length > 220) {
+      throw new HttpsError("invalid-argument", "A valid enrollmentId is required.");
+    }
+
+    await enforceRateLimit(`refund_${userId}`, 5, 60 * 60 * 1000);
+
+    const enrollmentRef = db.collection("enrollments").doc(enrollmentId);
+    const enrollmentSnapshot = await enrollmentRef.get();
+
+    if (!enrollmentSnapshot.exists) {
+      throw new HttpsError("not-found", "Enrollment not found.");
+    }
+
+    const enrollment = enrollmentSnapshot.data() as EnrollmentRecord;
+
+    if (enrollment.userId !== userId) {
+      throw new HttpsError(
+        "permission-denied",
+        "You can only request refunds for your own enrollments.",
+      );
+    }
+
+    if (enrollment.source !== "payment") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only paid enrollments can request a refund.",
+      );
+    }
+
+    if (!["active", "completed"].includes(enrollment.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This enrollment is not eligible for a refund.",
+      );
+    }
+
+    if ((enrollment.progressPercent ?? 0) >= automaticRefundProgressCap) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Automatic refunds are unavailable after substantial course progress.",
+      );
+    }
+
+    const certificateSnapshot = await db
+      .collection("certificates")
+      .doc(enrollmentId)
+      .get();
+
+    if (
+      certificateSnapshot.exists
+      && certificateSnapshot.data()?.status === "issued"
+    ) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This enrollment already has an issued certificate.",
+      );
+    }
+
+    const ordersSnapshot = await db
+      .collection("orders")
+      .where("userId", "==", userId)
+      .limit(50)
+      .get();
+
+    const orderDocument = ordersSnapshot.docs.find((document) => {
+      const order = document.data();
+      return order.courseId === enrollment.courseId && order.status === "paid";
+    });
+
+    if (!orderDocument) {
+      throw new HttpsError("not-found", "Paid order not found.");
+    }
+
+    const order = orderDocument.data();
+    const paidAtMillis =
+      timestampToMillis(order.paidAt)
+      || timestampToMillis(order.createdAt)
+      || 0;
+    const refundDeadline =
+      paidAtMillis + automaticRefundWindowDays * 24 * 60 * 60 * 1000;
+
+    if (!paidAtMillis || Date.now() > refundDeadline) {
+      throw new HttpsError(
+        "failed-precondition",
+        "The automatic refund window has ended.",
+      );
+    }
+
+    const paymentIntentId = String(order.paymentIntentId || "");
+
+    if (!paymentIntentId) {
+      throw new HttpsError("failed-precondition", "Payment intent not found.");
+    }
+
+    const stripe = getStripeClient();
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: paymentIntentId,
+        metadata: {
+          orderId: orderDocument.id,
+          enrollmentId,
+          userId,
+          courseId: enrollment.courseId,
+          source: "student_request",
+        },
+      },
+      {
+        idempotencyKey: `refund_${orderDocument.id}`,
+      },
+    );
+
+    await orderDocument.ref.set(
+      {
+        refundRequestedAt: FieldValue.serverTimestamp(),
+        refundRequestId: refund.id,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
+    };
+  },
+);
+
+export const dailyReleaseTransfers = onSchedule(
+  {
+    schedule: "every day 03:00",
+    timeZone: "Etc/UTC",
+    secrets: [stripeSecretKey],
+  },
+  async () => {
+    const now = Date.now();
+    const stripe = getStripeClient();
+    const ledgerSnapshot = await db
+      .collection("payoutLedger")
+      .where("status", "==", "in_release")
+      .limit(50)
+      .get();
+
+    let releasedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+
+    for (const ledgerDocument of ledgerSnapshot.docs) {
+      const ledger = ledgerDocument.data() as PayoutLedgerRecord;
+      const releaseAtMillis = timestampToMillis(ledger.releaseAt);
+
+      if (!releaseAtMillis || releaseAtMillis > now) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const claimedLedger = await claimLedgerForRelease(ledgerDocument.ref, now);
+
+      if (!claimedLedger) {
+        skippedCount += 1;
+        continue;
+      }
+
+      try {
+        await releaseLedgerTransfer(stripe, ledgerDocument.id, claimedLedger);
+        releasedCount += 1;
+      } catch (error) {
+        failedCount += 1;
+        logger.error("Payout ledger release failed", {
+          ledgerId: ledgerDocument.id,
+          error,
+        });
+
+        await ledgerDocument.ref.set(
+          {
+            status: "in_release",
+            lastReleaseError:
+              error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      }
+    }
+
+    logger.info("Daily release transfers finished", {
+      releasedCount,
+      skippedCount,
+      failedCount,
+    });
+  },
+);
+
+async function claimLedgerForRelease(
+  ledgerRef: DocumentReference,
+  now: number,
+): Promise<PayoutLedgerRecord | null> {
+  return db.runTransaction(async (transaction) => {
+    const ledgerSnapshot = await transaction.get(ledgerRef);
+
+    if (!ledgerSnapshot.exists) {
+      return null;
+    }
+
+    const ledger = ledgerSnapshot.data() as PayoutLedgerRecord;
+    const releaseAtMillis = timestampToMillis(ledger.releaseAt);
+
+    if (
+      ledger.status !== "in_release"
+      || !releaseAtMillis
+      || releaseAtMillis > now
+    ) {
+      return null;
+    }
+
+    transaction.set(
+      ledgerRef,
+      {
+        status: "releasing",
+        releaseAttemptCount: FieldValue.increment(1),
+        lastReleaseAttemptAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return ledger;
+  });
+}
+
+async function releaseLedgerTransfer(
+  stripe: Stripe,
+  ledgerId: string,
+  ledger: PayoutLedgerRecord,
+) {
+  const destination = ledger.teacherStripeConnectedAccountId;
+  const amount = Number(ledger.netAmountMinor || 0);
+  const currency = normalizeSkillsetCurrency(ledger.currency).toLowerCase();
+
+  if (!destination) {
+    throw new Error("Teacher connected account is missing.");
+  }
+
+  if (amount <= 0) {
+    await db.collection("payoutLedger").doc(ledgerId).set(
+      {
+        status: "released",
+        transferId: null,
+        releasedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return;
+  }
+
+  const transfer = await stripe.transfers.create(
+    {
+      amount,
+      currency,
+      destination,
+      description: `Skillset course payout ${ledger.orderId}`,
+      metadata: {
+        ledgerId,
+        orderId: ledger.orderId,
+        courseId: ledger.courseId,
+        teacherId: ledger.teacherId,
+        paymentId: ledger.paymentId,
+      },
+    },
+    {
+      idempotencyKey: `transfer_${ledgerId}`,
+    },
+  );
+
+  await db.collection("payoutLedger").doc(ledgerId).set(
+    {
+      status: "released",
+      transferId: transfer.id,
+      releasedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
 
 export const issueSkillsetCertificate = onCall(async (request) => {
   if (!request.auth) {
@@ -580,6 +1012,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : session.payment_intent?.id || session.id;
   const paymentRef = db.collection("payments").doc(paymentIntentId);
   const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
+  const ledgerRef = db.collection("payoutLedger").doc(orderId);
 
   await db.runTransaction(async (transaction) => {
     const [orderSnapshot, courseSnapshot, enrollmentSnapshot] = await Promise.all([
@@ -598,6 +1031,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     const order = orderSnapshot.data() || {};
     const course = courseSnapshot.data() as TeacherCourseRecord;
+    const grossAmountMinor = Number(order.amountMinor || 0);
+    const platformFeeBps = Number(order.platformFeeBps || 1500);
+    const skillsetFeeMinor = Math.floor((grossAmountMinor * platformFeeBps) / 10000);
+    const netAmountMinor = Math.max(0, grossAmountMinor - skillsetFeeMinor);
 
     transaction.set(
       paymentRef,
@@ -621,8 +1058,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       status: "paid",
       checkoutSessionId: session.id,
       paymentIntentId,
+      paidAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    transaction.set(
+      ledgerRef,
+      {
+        id: ledgerRef.id,
+        teacherId: course.ownerId,
+        teacherStripeConnectedAccountId:
+          order.teacherStripeConnectedAccountId || course.stripeConnectedAccountId || null,
+        courseId,
+        orderId,
+        paymentId: paymentIntentId,
+        grossAmountMinor,
+        skillsetFeeMinor,
+        netAmountMinor,
+        currency: order.currency,
+        platformFeeBps,
+        status: "in_release",
+        releaseAt: getPayoutReleaseAt(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     if (!enrollmentSnapshot.exists) {
       transaction.set(enrollmentRef, {
@@ -675,6 +1136,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     }
 
     const orderRef = db.collection("orders").doc(orderId);
+    const ledgerRef = db.collection("payoutLedger").doc(orderId);
     const orderSnapshot = await transaction.get(orderRef);
 
     if (!orderSnapshot.exists) {
@@ -704,6 +1166,17 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       refundedAmountMinor: charge.amount_refunded,
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    transaction.set(
+      ledgerRef,
+      {
+        status: isFullRefund ? "refunded" : "partially_refunded",
+        refundedAmountMinor: charge.amount_refunded,
+        refundedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     if (enrollmentRef && enrollmentSnapshot?.exists) {
       transaction.update(enrollmentRef, {

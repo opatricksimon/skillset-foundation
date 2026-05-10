@@ -5,8 +5,10 @@ import { startTransition, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import type { Order } from "@/domain/order";
+import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import type { UserProfile } from "@/domain/user-profile";
 import { subscribeToTeacherOrders } from "@/lib/data/orders";
+import { subscribeToTeacherPayoutLedger } from "@/lib/data/payout-ledger";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
 import {
   refreshTeacherStripeAccountStatus,
@@ -22,6 +24,7 @@ export function TeacherWalletPanel() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<PayoutLedgerEntry[]>([]);
   const stripeReturn = searchParams.get("stripe");
 
   useEffect(() => {
@@ -38,6 +41,20 @@ export function TeacherWalletPanel() {
       () => {
         setError("We could not load your payout profile.");
         setIsLoading(false);
+      },
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherPayoutLedger(
+      user.uid,
+      setLedgerEntries,
+      () => {
+        setError("We could not load payout release reporting.");
       },
     );
   }, [user]);
@@ -119,6 +136,18 @@ export function TeacherWalletPanel() {
     0,
   );
   const teacherNetMinor = grossPaidMinor - platformFeeMinor;
+  const inReleaseMinor = ledgerEntries
+    .filter((entry) => ["in_release", "releasing"].includes(entry.status))
+    .reduce((sum, entry) => sum + entry.netAmountMinor, 0);
+  const releasedMinor = ledgerEntries
+    .filter((entry) => ["released", "released_advance"].includes(entry.status))
+    .reduce((sum, entry) => sum + entry.netAmountMinor, 0);
+  const refundedMinor = ledgerEntries
+    .filter((entry) => ["refunded", "partially_refunded"].includes(entry.status))
+    .reduce(
+      (sum, entry) => sum + (entry.refundedAmountMinor ?? entry.grossAmountMinor),
+      0,
+    );
   const money = new Intl.NumberFormat("en", {
     style: "currency",
     currency: "USD",
@@ -186,6 +215,26 @@ export function TeacherWalletPanel() {
           <div
             key={label}
             className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+              {label}
+            </p>
+            <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
+              {value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        {[
+          ["In release", money.format(inReleaseMinor / 100)],
+          ["Released", money.format(releasedMinor / 100)],
+          ["Refunded", money.format(refundedMinor / 100)],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            className="rounded-[12px] border fine-rule bg-white p-4"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
               {label}

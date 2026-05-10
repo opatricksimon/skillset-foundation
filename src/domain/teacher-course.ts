@@ -1,3 +1,5 @@
+import type { DripStrategy } from "@/domain/drip-policy";
+
 export type TeacherCourseStatus =
   | "draft"
   | "in_review"
@@ -22,6 +24,7 @@ export type TeacherLesson = {
   durationMinutes?: number | null;
   contentText?: string | null;
   externalUrl?: string | null;
+  dripDelayDays?: number | null;
 };
 
 export type TeacherCourseModule = {
@@ -40,8 +43,10 @@ export type TeacherCourse = {
   modules: TeacherCourseModule[];
   lessonCount: number;
   priceAmountMinor?: number | null;
-  currency?: "USD" | "BRL" | "GYD";
+  currency?: string;
   platformFeeBps?: number;
+  dripStrategy?: DripStrategy;
+  dripIntervalDays?: number | null;
   freePreviewLessonId?: string | null;
   coverImageUrl?: string | null;
   reviewNote?: string | null;
@@ -62,8 +67,10 @@ export type UpdateTeacherCourseBuilderInput = {
   category: string;
   modules: TeacherCourseModule[];
   priceAmountMinor: number | null;
-  currency: "USD" | "BRL" | "GYD";
+  currency: string;
   platformFeeBps: number;
+  dripStrategy: DripStrategy;
+  dripIntervalDays: number | null;
   freePreviewLessonId: string | null;
 };
 

@@ -16,10 +16,14 @@ import type {
   UserProfile,
 } from "@/domain/user-profile";
 import { getFirestoreDb } from "@/lib/firebase/client";
+import {
+  currentPrivacyVersion,
+  currentTeacherTermsVersion,
+  currentTermsVersion,
+} from "@/lib/legal/versions";
 import type { Role } from "@/lib/permissions";
 
 const usersCollection = "users";
-const currentTermsVersion = "2026-04-26";
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snapshot = await getDoc(doc(getFirestoreDb(), usersCollection, uid));
@@ -80,10 +84,19 @@ export async function updateUserRoles(
   uid: string,
   roles: ReadonlyArray<Extract<Role, "student" | "teacher">>,
 ) {
+  const normalizedRoles = Array.from(new Set(roles));
+  const includesTeacher = normalizedRoles.includes("teacher");
+
   await setDoc(
     doc(getFirestoreDb(), usersCollection, uid),
     {
-      roles: Array.from(new Set(roles)),
+      roles: normalizedRoles,
+      ...(includesTeacher
+        ? {
+            teacherTermsAcceptedAt: serverTimestamp(),
+            teacherTermsVersion: currentTeacherTermsVersion,
+          }
+        : {}),
       onboardingCompleted: true,
       updatedAt: serverTimestamp(),
     },
@@ -136,16 +149,27 @@ export async function completeUserOnboarding({
   uid,
   roles,
   identity,
+  acceptTeacherTerms = false,
 }: {
   uid: string;
   roles: ReadonlyArray<Extract<Role, "student" | "teacher">>;
   identity: UserIdentityInput;
+  acceptTeacherTerms?: boolean;
 }) {
+  const normalizedRoles = Array.from(new Set(roles));
+  const includesTeacher = normalizedRoles.includes("teacher");
+
   await setDoc(
     doc(getFirestoreDb(), usersCollection, uid),
     {
       ...buildIdentityPatch(identity),
-      roles: Array.from(new Set(roles)),
+      roles: normalizedRoles,
+      ...(includesTeacher && acceptTeacherTerms
+        ? {
+            teacherTermsAcceptedAt: serverTimestamp(),
+            teacherTermsVersion: currentTeacherTermsVersion,
+          }
+        : {}),
       onboardingCompleted: true,
       updatedAt: serverTimestamp(),
     },
@@ -159,6 +183,8 @@ export async function acceptUserTerms(uid: string, marketingConsent: boolean) {
     {
       termsAcceptedAt: serverTimestamp(),
       termsVersion: currentTermsVersion,
+      privacyAcceptedAt: serverTimestamp(),
+      privacyVersion: currentPrivacyVersion,
       marketingConsent,
       updatedAt: serverTimestamp(),
     },

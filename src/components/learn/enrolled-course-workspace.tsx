@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { CourseAsset } from "@/domain/course-asset";
 import { courseAssetKindLabels, formatCourseAssetSize } from "@/domain/course-asset";
+import {
+  getLessonUnlockState,
+  type LessonUnlockState,
+} from "@/domain/drip-policy";
 import type { Enrollment } from "@/domain/enrollment";
 import type { Course, Lesson, LessonType } from "@/domain/learning";
 import {
@@ -180,11 +184,21 @@ export function EnrolledCourseWorkspace({
   const progressPercent = getCourseProgressPercent(course, completedLessonIds);
   const nextLesson = getNextCourseLesson(course, completedLessonIds)?.lesson ?? null;
   const allLessons = course.modules.flatMap((module) => module.lessons);
+  const lessonUnlockStateById = new Map(
+    allLessons.map((lesson) => [
+      lesson.id,
+      getLessonUnlockState(course, lesson, enrollment, completedLessonIds),
+    ]),
+  );
   const selectedLesson =
     allLessons.find((lesson) => lesson.id === selectedLessonId)
     ?? nextLesson
     ?? allLessons[0]
     ?? null;
+  const selectedLessonUnlockState = selectedLesson
+    ? lessonUnlockStateById.get(selectedLesson.id)
+      ?? { unlocked: true, unlocksAt: null, reason: "available" }
+    : null;
   const selectedLessonAssets =
     assetsState.key === course.id && selectedLesson
       ? assetsState.assets.filter((asset) => asset.lessonId === selectedLesson.id)
@@ -208,6 +222,13 @@ export function EnrolledCourseWorkspace({
 
   async function toggleLessonCompletion(lessonId: string, completed: boolean) {
     if (!user || !enrollment) {
+      return;
+    }
+
+    const unlockState = lessonUnlockStateById.get(lessonId);
+
+    if (unlockState && !unlockState.unlocked) {
+      setError("This lesson is still locked by the course release schedule.");
       return;
     }
 
@@ -299,6 +320,7 @@ export function EnrolledCourseWorkspace({
             )}
             isSaving={activeLessonId === selectedLesson.id}
             lesson={selectedLesson}
+            unlockState={selectedLessonUnlockState}
             onToggleComplete={() =>
               toggleLessonCompletion(
                 selectedLesson.id,
@@ -339,6 +361,13 @@ export function EnrolledCourseWorkspace({
               </p>
               <div className="mt-4 grid gap-2">
                 {module.lessons.map((lesson) => (
+                  (() => {
+                    const unlockState =
+                      lessonUnlockStateById.get(lesson.id)
+                      ?? { unlocked: true, unlocksAt: null, reason: "available" };
+                    const isCompleted = completedLessonIds.includes(lesson.id);
+
+                    return (
                   <div
                     key={lesson.id}
                     className="grid gap-3 rounded-[10px] bg-white px-3 py-3 text-xs sm:grid-cols-[1fr_auto]"
@@ -348,6 +377,11 @@ export function EnrolledCourseWorkspace({
                       <p className="mt-1 uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
                         {lessonTypeLabels[lesson.type]}
                       </p>
+                      {!unlockState.unlocked ? (
+                        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-accent)]">
+                          {formatUnlockMessage(unlockState)}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                       {assetCountByLessonId.get(lesson.id) ? (
@@ -364,27 +398,35 @@ export function EnrolledCourseWorkspace({
                         onClick={() => setSelectedLessonId(lesson.id)}
                         className="button-outline px-3 py-2 text-[11px]"
                       >
-                        Open
+                        {unlockState.unlocked ? "Open" : "Preview lock"}
                       </button>
                       <button
                         type="button"
                         onClick={() =>
                           toggleLessonCompletion(
                             lesson.id,
-                            completedLessonIds.includes(lesson.id),
+                            isCompleted,
                           )
                         }
-                        disabled={isProgressLoading || activeLessonId === lesson.id}
+                        disabled={
+                          !unlockState.unlocked
+                          || isProgressLoading
+                          || activeLessonId === lesson.id
+                        }
                         className="button-outline px-3 py-2 text-[11px] disabled:opacity-60"
                       >
                         {activeLessonId === lesson.id
                           ? "Saving..."
-                          : completedLessonIds.includes(lesson.id)
+                          : isCompleted
                             ? "Completed"
+                            : !unlockState.unlocked
+                              ? "Locked"
                             : "Mark complete"}
                       </button>
                     </div>
                   </div>
+                    );
+                  })()
                 ))}
               </div>
             </article>
@@ -427,6 +469,26 @@ const lessonTypeDescriptions: Record<LessonType, string> = {
   download: "Downloadable files and supporting materials will appear here after upload.",
   external_embed: "External learning embeds will appear here when the instructor connects a trusted provider link.",
 };
+
+function formatUnlockMessage(unlockState: LessonUnlockState) {
+  if (unlockState.unlocked) {
+    return "Available";
+  }
+
+  if (unlockState.reason === "previous_lesson_required") {
+    return "Complete the previous lesson to unlock";
+  }
+
+  if (unlockState.unlocksAt) {
+    return `Unlocks ${new Intl.DateTimeFormat("en", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(unlockState.unlocksAt)}`;
+  }
+
+  return "Locked";
+}
 
 function CourseAssetResourceList({
   assets,
@@ -486,6 +548,7 @@ function LessonContentPanel({
   isLoadingAssets,
   isSaving,
   lesson,
+  unlockState,
   onToggleComplete,
 }: {
   assets: CourseAsset[];
@@ -494,8 +557,11 @@ function LessonContentPanel({
   isLoadingAssets: boolean;
   isSaving: boolean;
   lesson: Lesson;
+  unlockState: LessonUnlockState | null;
   onToggleComplete: () => void;
 }) {
+  const locked = Boolean(unlockState && !unlockState.unlocked);
+
   return (
     <div className="mt-6 rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -516,17 +582,22 @@ function LessonContentPanel({
         <p className="text-sm font-semibold text-[var(--color-ink)]">
           Lesson content
         </p>
-        {lesson.description ? (
+        {locked ? (
+          <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.18)] bg-[rgba(178,34,52,0.05)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">
+            {unlockState ? formatUnlockMessage(unlockState) : "Locked"}
+          </p>
+        ) : null}
+        {!locked && lesson.description ? (
           <p className="mt-3 text-sm leading-7 text-[var(--color-ink)]">
             {lesson.description}
           </p>
         ) : null}
-        {lesson.contentText ? (
+        {!locked && lesson.contentText ? (
           <div className="mt-4 whitespace-pre-line rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
             {lesson.contentText}
           </div>
         ) : null}
-        {lesson.externalUrl ? (
+        {!locked && lesson.externalUrl ? (
           <a
             href={lesson.externalUrl}
             target="_blank"
@@ -539,7 +610,7 @@ function LessonContentPanel({
         <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
           {lessonTypeDescriptions[lesson.type]}
         </p>
-        {enableFirestoreAssets ? (
+        {!locked && enableFirestoreAssets ? (
           <LessonAssetList assets={assets} isLoading={isLoadingAssets} />
         ) : null}
         {lesson.isPreview ? (
@@ -552,10 +623,16 @@ function LessonContentPanel({
       <button
         type="button"
         onClick={onToggleComplete}
-        disabled={isSaving}
+        disabled={locked || isSaving}
         className="button-solid mt-5 px-4 py-3 text-sm disabled:opacity-60"
       >
-        {isSaving ? "Saving..." : completed ? "Mark as incomplete" : "Mark complete"}
+        {locked
+          ? "Lesson locked"
+          : isSaving
+            ? "Saving..."
+            : completed
+              ? "Mark as incomplete"
+              : "Mark complete"}
       </button>
     </div>
   );

@@ -24,6 +24,10 @@ export type UserProfile = {
   onboardingCompleted: boolean;
   termsAcceptedAt?: string;
   termsVersion?: string;
+  privacyAcceptedAt?: unknown;
+  privacyVersion?: string;
+  teacherTermsAcceptedAt?: unknown;
+  teacherTermsVersion?: string;
   marketingConsent?: boolean;
   stripeConnectedAccountId?: string | null;
   stripeConnectStatus?: "created" | "onboarding_required" | "ready" | null;

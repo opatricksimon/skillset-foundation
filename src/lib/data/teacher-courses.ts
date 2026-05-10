@@ -35,6 +35,8 @@ export async function createTeacherCourse(input: CreateTeacherCourseInput) {
     priceAmountMinor: null,
     currency: "USD",
     platformFeeBps: 1500,
+    dripStrategy: "instant",
+    dripIntervalDays: 1,
     freePreviewLessonId: null,
     coverImageUrl: null,
     createdAt: serverTimestamp(),
@@ -77,6 +79,8 @@ export async function updateTeacherCourseBuilder(
     priceAmountMinor: input.priceAmountMinor,
     currency: input.currency,
     platformFeeBps: input.platformFeeBps,
+    dripStrategy: input.dripStrategy,
+    dripIntervalDays: input.dripIntervalDays,
     freePreviewLessonId: input.freePreviewLessonId,
     updatedAt: serverTimestamp(),
   });

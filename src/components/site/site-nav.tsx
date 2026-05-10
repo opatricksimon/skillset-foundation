@@ -1,9 +1,13 @@
+"use client";
+
+import { useAuth } from "@/components/auth/auth-provider";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
+import type { SkillsetUser } from "@/domain/auth";
 import Link from "next/link";
 
 const navItems = [
-  { href: "/courses", label: "Programs" },
-  { href: "/instructors", label: "Faculty" },
+  { href: "/courses", label: "Courses" },
+  { href: "/instructors", label: "Instructors" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/platform", label: "Platform" },
@@ -27,6 +31,9 @@ const accessPaths = [
 ];
 
 export function SiteNav() {
+  const { status, user, signOut } = useAuth();
+  const isAuthenticated = status === "authenticated" && user;
+
   return (
     <header className="sticky top-0 z-30 border-b fine-rule bg-[rgba(255,255,255,0.94)] backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-1.5 sm:px-8">
@@ -54,35 +61,152 @@ export function SiteNav() {
                 </Link>
               ))}
               <div className="mt-1 grid gap-2 border-t border-[var(--color-line)] pt-2">
-                {accessPaths.map((path) => (
-                  <AccessPathCard key={path.title} {...path} compact />
-                ))}
+                {isAuthenticated ? (
+                  <AccountMenu user={user} onSignOut={signOut} compact />
+                ) : (
+                  accessPaths.map((path) => (
+                    <AccessPathCard key={path.title} {...path} compact />
+                  ))
+                )}
               </div>
             </div>
           </details>
-          <details className="group relative">
-            <summary className="button-solid list-none px-3.5 py-2 text-xs marker:hidden sm:text-sm [&::-webkit-details-marker]:hidden">
-              Get started
-            </summary>
-            <div className="absolute right-0 mt-2 grid w-[min(calc(100vw-2rem),28rem)] gap-3 rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-strong)]">
-              <div className="px-1">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                  Choose your path
-                </p>
-                <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-                  One Skillset account can learn, teach, or do both after setup.
-                </p>
+          {isAuthenticated ? (
+            <AccountMenu user={user} onSignOut={signOut} />
+          ) : (
+            <details className="group relative">
+              <summary className="button-solid list-none px-3.5 py-2 text-xs marker:hidden sm:text-sm [&::-webkit-details-marker]:hidden">
+                Get started
+              </summary>
+              <div className="absolute right-0 mt-2 grid w-[min(calc(100vw-2rem),28rem)] gap-3 rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-strong)]">
+                <div className="px-1">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                    Choose your path
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
+                    One Skillset account can learn, teach, or do both after setup.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {accessPaths.map((path) => (
+                    <AccessPathCard key={path.title} {...path} />
+                  ))}
+                </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {accessPaths.map((path) => (
-                  <AccessPathCard key={path.title} {...path} />
-                ))}
-              </div>
-            </div>
-          </details>
+            </details>
+          )}
         </div>
       </div>
     </header>
+  );
+}
+
+function getPrimaryWorkspaceHref(user: SkillsetUser) {
+  if (user.roles.includes("admin") || user.roles.includes("support")) {
+    return "/ops";
+  }
+
+  if (user.roles.includes("teacher")) {
+    return "/teach";
+  }
+
+  return "/learn";
+}
+
+function getPrimaryRoleLabel(user: SkillsetUser) {
+  if (user.roles.includes("admin")) {
+    return "Admin";
+  }
+
+  if (user.roles.includes("support")) {
+    return "Support";
+  }
+
+  if (user.roles.includes("teacher")) {
+    return "Educator";
+  }
+
+  return "Learner";
+}
+
+function getUserInitials(user: SkillsetUser) {
+  const source = user.displayName || user.email || "Skillset";
+  const parts = source.split(/[ @._-]+/).filter(Boolean);
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "S";
+}
+
+function AccountMenu({
+  user,
+  onSignOut,
+  compact = false,
+}: {
+  user: SkillsetUser;
+  onSignOut: () => Promise<void>;
+  compact?: boolean;
+}) {
+  const workspaceHref = getPrimaryWorkspaceHref(user);
+
+  return (
+    <details className={compact ? "" : "group relative"}>
+      <summary
+        className={`list-none rounded-[10px] border border-[var(--color-line)] bg-white text-left marker:hidden [&::-webkit-details-marker]:hidden ${
+          compact ? "p-3" : "px-2.5 py-1.5"
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <span className="grid size-8 place-items-center rounded-[8px] bg-[var(--color-primary)] text-xs font-bold text-white">
+            {getUserInitials(user)}
+          </span>
+          <span className={compact ? "grid" : "hidden text-left sm:grid"}>
+            <span className="max-w-32 truncate text-xs font-bold text-[var(--color-ink)]">
+              {user.displayName || user.email || "Skillset member"}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+              {getPrimaryRoleLabel(user)}
+            </span>
+          </span>
+        </span>
+      </summary>
+      <div
+        className={`grid gap-1 rounded-[12px] border border-[var(--color-line)] bg-white p-2 shadow-[var(--shadow-soft)] ${
+          compact ? "mt-2" : "absolute right-0 mt-2 w-60"
+        }`}
+      >
+        <Link
+          href={workspaceHref}
+          className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)]"
+        >
+          Open workspace
+        </Link>
+        <Link
+          href="/learn/settings"
+          className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
+        >
+          Account settings
+        </Link>
+        {user.roles.includes("teacher") ? (
+          <Link
+            href="/teach"
+            className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
+          >
+            Teacher Studio
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => {
+            void onSignOut();
+          }}
+          className="rounded-[8px] px-3 py-2 text-left text-sm font-semibold text-[var(--color-accent)] hover:bg-[rgba(178,34,52,0.06)]"
+        >
+          Sign out
+        </button>
+      </div>
+    </details>
   );
 }
 

@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 
 export default function ContactPage() {
@@ -46,6 +47,7 @@ export default function ContactPage() {
             ))}
           </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

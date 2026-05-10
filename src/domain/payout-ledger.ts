@@ -1,0 +1,28 @@
+export type PayoutLedgerStatus =
+  | "in_release"
+  | "releasing"
+  | "released"
+  | "released_advance"
+  | "refunded"
+  | "partially_refunded";
+
+export type PayoutLedgerEntry = {
+  id: string;
+  teacherId: string;
+  teacherStripeConnectedAccountId?: string | null;
+  courseId: string;
+  orderId: string;
+  paymentId: string;
+  grossAmountMinor: number;
+  skillsetFeeMinor: number;
+  netAmountMinor: number;
+  currency: string;
+  platformFeeBps?: number;
+  status: PayoutLedgerStatus;
+  releaseAt?: unknown;
+  releasedAt?: unknown;
+  transferId?: string | null;
+  refundedAmountMinor?: number;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
