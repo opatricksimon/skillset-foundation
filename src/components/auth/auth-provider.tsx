@@ -15,13 +15,19 @@ import {
   acceptUserTerms,
   getUserProfile,
 } from "@/lib/data/user-profiles";
-import { listenToAuthState, signOutOfSkillset } from "@/lib/auth/firebase-auth";
+import {
+  listenToAuthState,
+  mapFirebaseUser,
+  signOutOfSkillset,
+} from "@/lib/auth/firebase-auth";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import {
   currentPrivacyVersion,
   currentTermsVersion,
 } from "@/lib/legal/versions";
 
 type AuthContextValue = AuthSession & {
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -37,10 +43,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return listenToAuthState(setSession);
   }, []);
 
+  async function refreshUser() {
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      setSession({ status: "unauthenticated", user: null });
+      return;
+    }
+
+    await currentUser.reload();
+    const profile = await getUserProfile(currentUser.uid);
+
+    setSession({
+      status: "authenticated",
+      user: mapFirebaseUser(currentUser, profile),
+    });
+  }
+
   return (
     <AuthContext.Provider
       value={{
         ...session,
+        refreshUser,
         signOut: signOutOfSkillset,
       }}
     >

@@ -34,7 +34,7 @@ export function mapFirebaseUser(
     email: user.email,
     emailVerified: user.emailVerified,
     displayName: profile?.displayName ?? user.displayName,
-    photoURL: user.photoURL,
+    photoURL: profile?.photoURL ?? user.photoURL,
     roles: profile?.roles ?? ["student"],
   };
 }
