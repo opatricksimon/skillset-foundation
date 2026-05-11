@@ -18,7 +18,7 @@ import {
 } from "@/lib/auth/profile-validation";
 import {
   getAuthPathIntentFromSearchParams,
-  getPostAuthRoute,
+  getLoadingRoute,
 } from "@/lib/auth/routing";
 import {
   acceptUserTerms,
@@ -80,8 +80,7 @@ export function SignupForm() {
         displayName,
         username: normalizedUsername,
       });
-      const profile = await getUserProfile(user.uid);
-      router.push(getPostAuthRoute(profile, pathIntent));
+      router.push(getLoadingRoute("welcome", pathIntent));
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -120,7 +119,11 @@ export function SignupForm() {
         await updateUserIdentity(user.uid, { username: normalizedUsername });
       }
       const profile = await getUserProfile(user.uid);
-      router.push(getPostAuthRoute(profile, pathIntent));
+      router.push(
+        profile?.onboardingCompleted
+          ? getLoadingRoute("route", pathIntent)
+          : getLoadingRoute("welcome", pathIntent),
+      );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {

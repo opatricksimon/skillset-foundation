@@ -23,12 +23,25 @@ export function getAuthPathQuery(intent: AuthPathIntent | null): string {
   return intent ? `?path=${intent}` : "";
 }
 
+export function getLoadingRoute(
+  next: "route" | "welcome",
+  intent: AuthPathIntent | null = null,
+): string {
+  const searchParams = new URLSearchParams({ next });
+
+  if (intent) {
+    searchParams.set("path", intent);
+  }
+
+  return `/loading?${searchParams.toString()}`;
+}
+
 export function getPostAuthRoute(
   profile: UserProfile | null,
   intent: AuthPathIntent | null = null,
 ): string {
   if (!profile?.onboardingCompleted) {
-    return `/onboarding${getAuthPathQuery(intent)}`;
+    return `/welcome${getAuthPathQuery(intent)}`;
   }
 
   if (profile.roles.includes("admin") || profile.roles.includes("support")) {

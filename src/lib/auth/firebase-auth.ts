@@ -199,7 +199,7 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 
   if (code.includes("auth/weak-password")) {
-    return "Use a stronger password with at least 6 characters.";
+    return "Use a stronger password with at least 8 characters.";
   }
 
   if (code.includes("auth/popup-closed-by-user")) {

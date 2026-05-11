@@ -13,7 +13,7 @@ import {
 } from "@/lib/auth/firebase-auth";
 import {
   getAuthPathIntentFromSearchParams,
-  getPostAuthRoute,
+  getLoadingRoute,
 } from "@/lib/auth/routing";
 import { getUserProfile } from "@/lib/data/user-profiles";
 
@@ -41,7 +41,11 @@ export function LoginForm() {
     try {
       const user = await signInWithEmail({ email, password });
       const profile = await getUserProfile(user.uid);
-      router.push(getPostAuthRoute(profile, pathIntent));
+      router.push(
+        profile?.onboardingCompleted
+          ? getLoadingRoute("route", pathIntent)
+          : getLoadingRoute("welcome", pathIntent),
+      );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -56,7 +60,11 @@ export function LoginForm() {
     try {
       const user = await signInWithGoogle();
       const profile = await getUserProfile(user.uid);
-      router.push(getPostAuthRoute(profile, pathIntent));
+      router.push(
+        profile?.onboardingCompleted
+          ? getLoadingRoute("route", pathIntent)
+          : getLoadingRoute("welcome", pathIntent),
+      );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {

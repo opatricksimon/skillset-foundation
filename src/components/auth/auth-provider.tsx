@@ -80,8 +80,11 @@ function LegalAcceptanceGate() {
 
       if (
         pathname.startsWith("/legal")
+        || pathname.startsWith("/auth")
         || pathname.startsWith("/login")
+        || pathname.startsWith("/loading")
         || pathname.startsWith("/signup")
+        || pathname.startsWith("/welcome")
       ) {
         setNeedsAcceptance(false);
         return;
