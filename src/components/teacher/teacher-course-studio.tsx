@@ -1,30 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { ListingSearchBar } from "@/components/shared/listing-search-bar";
 import { StatusChip } from "@/components/shared/status-chip";
+import { StatusFilterDropdown } from "@/components/shared/status-filter-dropdown";
+import { CreateCourseModal } from "@/components/teacher/create-course-modal";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { teacherCanSubmitCourse } from "@/domain/teacher-course";
 import {
-  createTeacherCourse,
   subscribeToTeacherCourses,
   submitTeacherCourseForReview,
 } from "@/lib/data/teacher-courses";
 
-const categories = ["Psychology", "Management", "Health", "Soft Skills"];
+const statusFilterMatches: Record<string, (course: TeacherCourse) => boolean> = {
+  active: (course) => course.status === "published",
+  all: () => true,
+  draft: (course) => course.status === "draft",
+  in_review: (course) => course.status === "in_review",
+  inactive: (course) => course.status === "inactive",
+  needs_changes: (course) => course.status === "needs_changes",
+};
 
 export function TeacherCourseStudio() {
   const { user } = useAuth();
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
-  const [category, setCategory] = useState(categories[0]);
   const [courseQuery, setCourseQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [error, setError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [reviewingCourseId, setReviewingCourseId] = useState<string | null>(null);
   const normalizedCourseQuery = courseQuery.toLowerCase().trim();
@@ -35,6 +40,9 @@ export function TeacherCourseStudio() {
           .includes(normalizedCourseQuery),
       )
     : courses;
+  const statusFilteredCourses = visibleCourses.filter(
+    statusFilterMatches[statusFilter] ?? statusFilterMatches.all,
+  );
 
   useEffect(() => {
     if (!user) {
@@ -53,34 +61,6 @@ export function TeacherCourseStudio() {
       },
     );
   }, [user]);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!user) {
-      setError("Please sign in again to continue.");
-      return;
-    }
-
-    setError("");
-    setIsSaving(true);
-
-    try {
-      await createTeacherCourse({
-        ownerId: user.uid,
-        title,
-        summary,
-        category,
-      });
-      setTitle("");
-      setSummary("");
-      setCategory(categories[0]);
-    } catch {
-      setError("We could not create this course. Please try again or contact Skillset support.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   async function handleSubmitForReview(courseId: string) {
     setError("");
@@ -105,58 +85,36 @@ export function TeacherCourseStudio() {
           Start a course submission
         </h3>
         <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-          Add the essential details for a course you want to offer on Skillset.
-          Your draft stays private until you submit it for review.
+          Create a draft, shape the learner path in Course Builder, and submit
+          when the structure is ready for Skillset review.
         </p>
-
-        <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Course title
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-              placeholder="Example: Practical Leadership Development"
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Category
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+        <div className="mt-6">
+          {user ? <CreateCourseModal ownerId={user.uid} /> : null}
+        </div>
+        <div className="mt-6 grid gap-3">
+          {[
+            "Choose one-time payment or free course.",
+            "Add modules, lessons, pricing, and a preview lesson in the builder.",
+            "Submit for review when the learning path is ready.",
+          ].map((item, index) => (
+            <div
+              key={item}
+              className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
             >
-              {categories.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Course summary
-            <textarea
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              required
-              minLength={20}
-              rows={4}
-              placeholder="Who is this for, what will learners gain, and what outcome should they expect?"
-              className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-            />
-          </label>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand)]">
+                Step {index + 1}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                {item}
+              </p>
+            </div>
+          ))}
+        </div>
           {error ? (
-            <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+            <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
               {error}
             </p>
           ) : null}
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="button-solid px-5 py-3 text-sm disabled:opacity-60"
-          >
-            {isSaving ? "Creating course..." : "Create course"}
-          </button>
-        </form>
       </section>
 
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
@@ -180,6 +138,10 @@ export function TeacherCourseStudio() {
             placeholder="Search your courses..."
             className="mt-1"
           />
+          <StatusFilterDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+          />
         </div>
         <div className="mt-6 grid gap-3">
           {isLoadingCourses ? (
@@ -189,12 +151,12 @@ export function TeacherCourseStudio() {
               No courses yet. Start a course when you are ready to prepare a
               submission for Skillset review.
             </p>
-          ) : visibleCourses.length === 0 ? (
+          ) : statusFilteredCourses.length === 0 ? (
             <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-              No courses match this search.
+              No courses match these filters.
             </p>
           ) : (
-            visibleCourses.map((course) => (
+            statusFilteredCourses.map((course) => (
               <article
                 key={course.id}
                 className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
