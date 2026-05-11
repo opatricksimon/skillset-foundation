@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth/profile-validation";
 import {
   getAuthPathIntentFromSearchParams,
+  getAuthPathQuery,
   getLoadingRoute,
 } from "@/lib/auth/routing";
 import {
@@ -80,7 +81,7 @@ export function SignupForm() {
         displayName,
         username: normalizedUsername,
       });
-      router.push(getLoadingRoute("welcome", pathIntent));
+      router.push(`/welcome${getAuthPathQuery(pathIntent)}`);
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -122,7 +123,7 @@ export function SignupForm() {
       router.push(
         profile?.onboardingCompleted
           ? getLoadingRoute("route", pathIntent)
-          : getLoadingRoute("welcome", pathIntent),
+          : `/welcome${getAuthPathQuery(pathIntent)}`,
       );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
@@ -210,7 +211,7 @@ export function SignupForm() {
             const file = event.target.files?.[0] ?? null;
             if (file && !isAllowedAvatarFile(file)) {
               setAvatarFile(null);
-              setError("Use a profile image under 5 MB.");
+              setError("Use a JPG or PNG profile image under 2 MB.");
               return;
             }
             setError("");
