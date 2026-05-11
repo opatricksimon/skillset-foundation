@@ -24,7 +24,7 @@ export function ForCreatorsBand() {
               <Link href="/auth?mode=signup&path=teacher" className="button-solid-light px-5 py-3 text-sm">
                 Start teaching
               </Link>
-              <Link href="/trust" className="button-outline-light px-5 py-3 text-sm">
+              <Link href="/promise" className="button-outline-light px-5 py-3 text-sm">
                 Read the Creator Promise
               </Link>
             </div>

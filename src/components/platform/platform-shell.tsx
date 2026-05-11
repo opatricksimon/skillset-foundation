@@ -31,7 +31,7 @@ export function PlatformShell({
                     Skillset
                   </h1>
                   <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
-                    International learning network
+                    Professional learning network
                   </p>
                 </div>
                 <span className="rounded-[8px] border border-[rgba(178,34,52,0.18)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">

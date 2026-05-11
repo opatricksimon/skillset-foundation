@@ -1,0 +1,127 @@
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteNav } from "@/components/site/site-nav";
+import Link from "next/link";
+
+const promises = [
+  {
+    number: "01",
+    title: "Fee-lock for 24 months",
+    body: "The 15% platform fee you sign up with is the fee you keep for the next 24 months. If Skillset ever needs to change it, Skillset gives 90 days notice and you keep the right to export everything and leave with no friction.",
+    practice:
+      "If a creator joins at 15%, that creator does not wake up to a surprise fee increase after building a business here.",
+  },
+  {
+    number: "02",
+    title: "Feature parity for everyone",
+    body: "No add-ons. No premium tiers locking certificates, quizzes, drip content, custom domains, analytics, community, or affiliate tools. Everything Skillset builds is included in the 15%. Always.",
+    practice:
+      "A new educator and a high-volume educator get the same product surface. Skillset does not tax growth with feature paywalls.",
+  },
+  {
+    number: "03",
+    title: "Data portability, one click",
+    body: "At any moment you can export your full business: courses with all videos and materials, your student list with progress, your sales history, your community posts, your event records. ZIP file. No calls. No retention attempts. No questions asked.",
+    practice:
+      "Skillset can host your business, but Skillset does not own the business you built.",
+  },
+  {
+    number: "04",
+    title: "Cancellation in one click",
+    body: "Delete your account in one click. Your existing students keep access for the time they paid for, but no new enrollments will go through. Skillset will not chain you in email loops, hide the cancel button, or send 12 different agents. Skillset will simply do it.",
+    practice:
+      "Leaving should be a product action, not a negotiation.",
+  },
+  {
+    number: "05",
+    title: "Funds protection by contract",
+    body: "Chargebacks below 1.5% rolling 90 days will never auto-suspend your account. Holds above that threshold trigger human review with a 72h SLA, not a black box. Disputes go to documented arbitration. Skillset will not freeze your money to protect itself first.",
+    practice:
+      "Creators need abuse protection. Students need refund protection. The policy must protect both sides without a black box.",
+  },
+  {
+    number: "06",
+    title: "Human support SLA",
+    body: "Financial questions — refunds, payouts, holds, chargebacks — get a human reply within 24 hours. No chatbot wall. No escalation maze. A real person, by email, with the authority to fix it.",
+    practice:
+      "Money issues do not belong behind a bot maze.",
+  },
+];
+
+export default function PromisePage() {
+  return (
+    <div className="page-shell">
+      <SiteNav />
+      <main>
+        <section className="relative overflow-hidden bg-[var(--color-primary)] text-white">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#07172a] via-[#102944] to-[#1a365d]" />
+          <div
+            className="absolute inset-0 opacity-[0.1]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 18% 28%, rgba(255,255,255,0.45), transparent 32%), radial-gradient(circle at 86% 64%, rgba(178,34,52,0.46), transparent 34%)",
+            }}
+          />
+          <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-16 sm:px-8 lg:py-24">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/78">
+              The Skillset Creator Promise
+            </p>
+            <h1 className="display-title mt-5 max-w-4xl text-5xl leading-none text-white sm:text-7xl">
+              Six commitments. In writing. Public.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg">
+              These promises are contractual product rules for creators building
+              on Skillset: fee-locked, portable, cancellable, protected, and
+              supported by humans when money is involved.
+            </p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-accent)]" />
+        </section>
+
+        <section className="mx-auto grid w-full max-w-5xl gap-5 px-6 py-14 sm:px-8 lg:py-20">
+          {promises.map((promise) => (
+            <article
+              key={promise.number}
+              className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] sm:p-8"
+            >
+              <div className="grid gap-5 lg:grid-cols-[120px_1fr]">
+                <p className="display-title text-7xl leading-none text-[var(--color-accent-soft)]">
+                  {promise.number}
+                </p>
+                <div>
+                  <h2 className="display-title text-4xl leading-tight text-[var(--color-primary)]">
+                    {promise.title}
+                  </h2>
+                  <p className="mt-4 text-sm leading-8 text-[var(--color-ink-soft)]">
+                    {promise.body}
+                  </p>
+                  <div className="mt-5 rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      What this means in practice
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+                      {promise.practice}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="mx-auto w-full max-w-5xl px-6 pb-16 sm:px-8">
+          <div className="rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+            <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+              These are not aspirations. They are the rules Skillset holds itself
+              to. The next page lists every change ever made to them, including
+              the date and reason.
+            </p>
+            <Link href="/promise/changelog" className="button-solid mt-5 px-5 py-3 text-sm">
+              Read the changelog
+            </Link>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}

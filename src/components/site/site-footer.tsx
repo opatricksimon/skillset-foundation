@@ -9,6 +9,7 @@ const footerColumns = [
       ["Courses", "/courses"],
       ["How it works", "/how-it-works"],
       ["Pricing", "/pricing"],
+      ["Promise", "/promise"],
       ["Trust", "/trust"],
     ],
   },
@@ -16,6 +17,7 @@ const footerColumns = [
     title: "For creators",
     links: [
       ["Creator overview", "/for-creators"],
+      ["Creator Promise", "/promise"],
       ["Fees and payouts", "/fees-and-payouts"],
       ["Teacher terms", "/legal/teacher-terms"],
     ],

@@ -23,6 +23,7 @@ const navItems = [
   { href: "/courses", label: "Programs", hasCaret: true },
   { href: "/instructors", label: "Faculty", hasCaret: true },
   { href: "/pricing", label: "Pricing" },
+  { href: "/promise", label: "Promise" },
   { href: "/courses", label: "Browse a course" },
   { href: "/help", label: "Help" },
 ];
@@ -268,12 +269,12 @@ function AccountMenu({
             </div>
           </div>
           <MenuLink href={workspaceHref} icon={LayoutDashboard} label="Open workspace" />
-          <MenuLink href="/profile" icon={UserRound} label="Profile settings" />
-          <MenuLink href="/profile" icon={Settings} label="Email & security" />
+          <MenuLink href="/account/profile" icon={UserRound} label="Profile settings" />
+          <MenuLink href="/account/security" icon={Settings} label="Email & security" />
           {user.roles.includes("teacher") ? (
             <MenuLink href="/teach" icon={Presentation} label="Teacher Studio" />
           ) : null}
-          <MenuLink href="/fees-and-payouts" icon={Receipt} label="Fees & tax" />
+          <MenuLink href="/account/billing" icon={Receipt} label="Billing" />
           <div className="mt-1 border-t border-[var(--color-line)] pt-1">
             <MenuLink href="/help" icon={CircleHelp} label="Help" />
             <button
