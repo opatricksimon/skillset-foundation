@@ -16,10 +16,18 @@ vi.mock("@/components/auth/auth-provider", () => ({
       uid: "test-user",
       email: "test@example.com",
       displayName: "Test User",
+      emailVerified: true,
       photoURL: null,
       roles: mockAuthState.roles,
     },
     signOut: vi.fn(),
+  }),
+}));
+
+vi.mock("@/lib/data/user-profiles", () => ({
+  subscribeToUserProfile: vi.fn((_uid, onNext) => {
+    onNext(null);
+    return vi.fn();
   }),
 }));
 

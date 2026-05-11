@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { NotificationBell } from "@/components/platform/notification-bell";
 import { AccountMenu } from "@/components/site/account-menu";
 
 const surfaceCopy = {
@@ -80,14 +81,7 @@ export function PlatformHeader() {
                 {action.label}
               </Link>
             ))}
-            <button
-              type="button"
-              disabled
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-3 py-2 text-xs font-semibold text-[var(--color-ink-soft)] opacity-70"
-              title="Notifications will be connected after the core course and payment loop is stable."
-            >
-              Alerts
-            </button>
+            <NotificationBell />
             {user ? <AccountMenu user={user} onSignOut={signOut} /> : null}
           </div>
         </div>
