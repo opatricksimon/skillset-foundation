@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { StatusChip } from "@/components/shared/status-chip";
 import {
   subscribeToAccountActionRequests,
   type AccountActionRequest,
@@ -51,13 +52,15 @@ export function AccountActionRequestsPanel() {
         Export and deletion requests.
       </h3>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-        Promise §03 and §04 requests land here while export and deletion are
-        processed manually.
+        Promise Section 03 and Section 04 requests land here while export and
+        deletion are processed manually.
       </p>
 
       <div className="mt-5 grid gap-3">
         {isLoading ? (
-          <p className="text-sm text-[var(--color-ink-soft)]">Loading account action requests...</p>
+          <p className="text-sm text-[var(--color-ink-soft)]">
+            Loading account action requests...
+          </p>
         ) : error ? (
           <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
             {error}
@@ -79,15 +82,13 @@ export function AccountActionRequestsPanel() {
                   </p>
                   <p className="mt-1 text-xs leading-5 text-[var(--color-ink-soft)]">
                     User {request.requestedBy}
-                    {request.email ? ` · ${request.email}` : ""}
+                    {request.email ? ` - ${request.email}` : ""}
                   </p>
                 </div>
-                <span className="rounded-[8px] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-                  {request.status}
-                </span>
+                <StatusChip status={request.status} />
               </div>
               <p className="mt-3 text-xs leading-5 text-[var(--color-ink-soft)]">
-                Requested {formatDate(request)} · Request ID {request.id}
+                Requested {formatDate(request)} - Request ID {request.id}
               </p>
             </article>
           ))

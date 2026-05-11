@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { StatusChip } from "@/components/shared/status-chip";
 import { CourseAssetUploader } from "@/components/teacher/course-asset-uploader";
 import type { DripStrategy } from "@/domain/drip-policy";
 import type {
@@ -80,14 +81,6 @@ const dripStrategies: { value: DripStrategy; label: string; detail: string }[] =
     detail: "Use each lesson's delay field for precise release timing.",
   },
 ];
-
-const statusLabels: Record<TeacherCourse["status"], string> = {
-  draft: "Draft",
-  in_review: "In review",
-  needs_changes: "Needs changes",
-  published: "Published",
-  inactive: "Inactive",
-};
 
 function createLocalId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -662,9 +655,7 @@ export function CourseBuilderStudio() {
               Shape the learner path
             </h3>
           </div>
-          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-            {course ? statusLabels[course.status] : "Draft"}
-          </span>
+          <StatusChip status={course?.status ?? "draft"} />
         </div>
 
         {course?.status === "in_review" ? (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { StatusChip } from "@/components/shared/status-chip";
 import {
   supportTicketCategoryLabels,
   supportTicketStatusLabels,
@@ -95,9 +96,10 @@ export function SupportTicketQueue() {
                     {ticket.subject}
                   </h4>
                 </div>
-                <span className="rounded-[8px] bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-                  {supportTicketStatusLabels[ticket.status]}
-                </span>
+                <StatusChip
+                  status={ticket.status}
+                  label={supportTicketStatusLabels[ticket.status]}
+                />
               </div>
               <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
                 {ticket.userName || "Unnamed user"} - {ticket.userEmail || ticket.userId}
