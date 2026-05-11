@@ -8,3 +8,4 @@
 - `[P6-SB-1][frontend]` Added a collapsible platform sidebar with persistent local state, hover expansion, a compact session avatar state, and mobile bottom navigation with a drawer.
 - `[P6-AM-1][frontend]` Extracted AccountMenu into a shared component, added producer/learner switch view, and connected the same avatar menu to the platform header.
 - `[P6-ADD-01/04/27][frontend]` Added platform setup status banners, a notification bell empty state, and a floating help bubble for authenticated surfaces.
+- `[P6-ADD-07/17/19][frontend]` Added shared table empty rows, listing search bars, and canonical status chips across teacher, learner, support, and ops surfaces.

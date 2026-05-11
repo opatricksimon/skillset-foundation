@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { StatusChip } from "@/components/shared/status-chip";
 import type { Order } from "@/domain/order";
 import { subscribeToRecentOrders } from "@/lib/data/orders";
 
@@ -114,9 +115,7 @@ export function PaymentOperationsPanel() {
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                    {order.status}
-                  </p>
+                  <StatusChip status={order.status} />
                   <h4 className="mt-2 text-base font-semibold text-[var(--color-ink)]">
                     {order.courseTitle}
                   </h4>

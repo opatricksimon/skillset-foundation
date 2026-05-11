@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { ListingSearchBar } from "@/components/shared/listing-search-bar";
+import { StatusChip } from "@/components/shared/status-chip";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { teacherCanSubmitCourse } from "@/domain/teacher-course";
 import {
@@ -13,24 +15,26 @@ import {
 } from "@/lib/data/teacher-courses";
 
 const categories = ["Psychology", "Management", "Health", "Soft Skills"];
-const statusLabels: Record<TeacherCourse["status"], string> = {
-  draft: "Draft",
-  in_review: "In review",
-  needs_changes: "Needs changes",
-  published: "Published",
-  inactive: "Inactive",
-};
 
 export function TeacherCourseStudio() {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [category, setCategory] = useState(categories[0]);
+  const [courseQuery, setCourseQuery] = useState("");
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [reviewingCourseId, setReviewingCourseId] = useState<string | null>(null);
+  const normalizedCourseQuery = courseQuery.toLowerCase().trim();
+  const visibleCourses = normalizedCourseQuery
+    ? courses.filter((course) =>
+        `${course.title} ${course.summary} ${course.category} ${course.status}`
+          .toLowerCase()
+          .includes(normalizedCourseQuery),
+      )
+    : courses;
 
   useEffect(() => {
     if (!user) {
@@ -156,16 +160,27 @@ export function TeacherCourseStudio() {
       </section>
 
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Your submissions
-        </p>
-        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-          Courses in progress
-        </h3>
-        <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-          Drafts stay private. Approved courses can keep receiving new lessons
-          and materials while Skillset controls marketplace visibility.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+              Your submissions
+            </p>
+            <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+              Courses in progress
+            </h3>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              Drafts stay private. Approved courses can keep receiving new
+              lessons and materials while Skillset controls marketplace
+              visibility.
+            </p>
+          </div>
+          <ListingSearchBar
+            value={courseQuery}
+            onChange={setCourseQuery}
+            placeholder="Search your courses..."
+            className="mt-1"
+          />
+        </div>
         <div className="mt-6 grid gap-3">
           {isLoadingCourses ? (
             <p className="text-sm text-[var(--color-ink-soft)]">Loading your courses...</p>
@@ -174,8 +189,12 @@ export function TeacherCourseStudio() {
               No courses yet. Start a course when you are ready to prepare a
               submission for Skillset review.
             </p>
+          ) : visibleCourses.length === 0 ? (
+            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              No courses match this search.
+            </p>
           ) : (
-            courses.map((course) => (
+            visibleCourses.map((course) => (
               <article
                 key={course.id}
                 className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
@@ -189,9 +208,7 @@ export function TeacherCourseStudio() {
                       {course.title}
                     </h4>
                   </div>
-                  <span className="rounded-[8px] bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-                    {statusLabels[course.status]}
-                  </span>
+                  <StatusChip status={course.status} />
                 </div>
                 <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
                   {course.summary}

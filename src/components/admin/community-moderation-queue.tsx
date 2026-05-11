@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { StatusChip } from "@/components/shared/status-chip";
 import type { CommunityReport, CommunityReportStatus } from "@/domain/community-report";
 import {
   communityReportReasonLabels,
@@ -115,9 +116,10 @@ export function CommunityModerationQueue() {
                     {report.targetType} in {report.courseSlug}
                   </p>
                 </div>
-                <span className="rounded-[8px] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
-                  {communityReportStatusLabels[report.status]}
-                </span>
+                <StatusChip
+                  status={report.status}
+                  label={communityReportStatusLabels[report.status]}
+                />
               </div>
               <div className="mt-3 grid gap-2 text-sm leading-6 text-[var(--color-ink-soft)]">
                 <p>

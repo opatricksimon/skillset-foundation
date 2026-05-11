@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useEffect, useState } from "react";
 
+import { ListingSearchBar } from "@/components/shared/listing-search-bar";
 import type { UserProfile } from "@/domain/user-profile";
 import { subscribeToAdminUserProfiles } from "@/lib/data/admin-users";
 
@@ -54,15 +55,12 @@ export function UserLookupPanel() {
         </span>
       </div>
 
-      <label className="mt-6 grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-        Search users
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by name, email, or uid"
-          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-        />
-      </label>
+      <ListingSearchBar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search by email or username..."
+        className="mt-6"
+      />
 
       {error ? (
         <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { RefundButton } from "@/components/learn/refund-button";
+import { ListingSearchBar } from "@/components/shared/listing-search-bar";
+import { StatusChip } from "@/components/shared/status-chip";
 import { canOpenEnrollment, type Enrollment } from "@/domain/enrollment";
 import { getCourseBySlug } from "@/lib/data/catalog";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
@@ -13,8 +15,17 @@ import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
 export function LearnDashboard() {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [enrollmentQuery, setEnrollmentQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const normalizedEnrollmentQuery = enrollmentQuery.toLowerCase().trim();
+  const visibleEnrollments = normalizedEnrollmentQuery
+    ? enrollments.filter((enrollment) =>
+        `${enrollment.courseTitle} ${enrollment.courseCategory} ${enrollment.status}`
+          .toLowerCase()
+          .includes(normalizedEnrollmentQuery),
+      )
+    : enrollments;
 
   useEffect(() => {
     if (!user) {
@@ -108,11 +119,22 @@ export function LearnDashboard() {
       </section>
 
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          My courses
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
+            My courses
+          </p>
+          <ListingSearchBar
+            value={enrollmentQuery}
+            onChange={setEnrollmentQuery}
+            placeholder="Search your enrollments..."
+          />
+        </div>
         <div className="mt-5 grid gap-4">
-          {enrollments.map((enrollment) => {
+          {visibleEnrollments.length === 0 ? (
+            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              No enrollments match this search.
+            </p>
+          ) : visibleEnrollments.map((enrollment) => {
             const course = getCourseBySlug(enrollment.courseSlug);
             const nextLesson = course?.modules[0]?.lessons[0];
             const workspaceHref = course
@@ -139,9 +161,12 @@ export function LearnDashboard() {
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-accent)]">
                       {enrollment.courseCategory}
                     </p>
-                    <h3 className="mt-2 text-2xl font-semibold text-[var(--color-primary)]">
-                      {enrollment.courseTitle}
-                    </h3>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <h3 className="text-2xl font-semibold text-[var(--color-primary)]">
+                        {enrollment.courseTitle}
+                      </h3>
+                      <StatusChip status={enrollment.status} />
+                    </div>
                     <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
                       {course?.summary ??
                         "This enrollment is connected. The private course workspace is ready for the next lesson and progress tools."}
