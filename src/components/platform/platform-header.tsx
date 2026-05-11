@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
-import { UserAvatar } from "@/components/shared/user-avatar";
+import { AccountMenu } from "@/components/site/account-menu";
 
 const surfaceCopy = {
   learn: {
@@ -43,7 +43,7 @@ const surfaceCopy = {
 
 export function PlatformHeader() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { signOut, user } = useAuth();
   const surface = getSurface(pathname);
   const copy = surfaceCopy[surface];
 
@@ -88,18 +88,7 @@ export function PlatformHeader() {
             >
               Alerts
             </button>
-            <Link
-              href="/profile"
-              className="cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.28)] focus-visible:ring-offset-2"
-              aria-label="Open profile settings"
-            >
-              <UserAvatar
-                name={user?.displayName || user?.email}
-                photoURL={user?.photoURL}
-                size="md"
-                className="shadow-[0_8px_18px_rgba(26,54,93,0.14)]"
-              />
-            </Link>
+            {user ? <AccountMenu user={user} onSignOut={signOut} /> : null}
           </div>
         </div>
       </div>
