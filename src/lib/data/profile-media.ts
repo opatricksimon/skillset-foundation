@@ -14,7 +14,7 @@ import {
 
 import { getFirebaseAuth, getFirebaseStorage, getFirestoreDb } from "@/lib/firebase/client";
 
-const maxAvatarBytes = 5 * 1024 * 1024;
+const maxAvatarBytes = 2 * 1024 * 1024;
 
 export type UploadAvatarProgress = {
   bytesTransferred: number;
@@ -35,7 +35,7 @@ function sanitizeFileName(fileName: string) {
 export function isAllowedAvatarFile(file: File) {
   return file.size > 0
     && file.size <= maxAvatarBytes
-    && file.type.startsWith("image/");
+    && ["image/jpeg", "image/png"].includes(file.type);
 }
 
 export async function uploadUserAvatar(
@@ -75,7 +75,8 @@ export async function uploadUserAvatar(
     );
   });
 
-  const photoURL = await getDownloadURL(storageRef);
+  const downloadURL = await getDownloadURL(storageRef);
+  const photoURL = `${downloadURL}${downloadURL.includes("?") ? "&" : "?"}v=${Date.now()}`;
 
   await updateDoc(doc(getFirestoreDb(), "users", uid), {
     photoURL,

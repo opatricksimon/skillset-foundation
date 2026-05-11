@@ -38,7 +38,7 @@ const timezoneOptions = [
 ];
 
 export function ProfileSettingsPanel() {
-  const { user } = useAuth();
+  const { refreshUser, user } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
@@ -153,7 +153,7 @@ export function ProfileSettingsPanel() {
     }
 
     if (!isAllowedAvatarFile(file)) {
-      setError("Use a profile image under 5 MB.");
+      setError("Use a JPG or PNG profile image under 2 MB.");
       return;
     }
 
@@ -169,6 +169,7 @@ export function ProfileSettingsPanel() {
         setAvatarProgress,
       );
       setPhotoURL(uploadedPhotoURL);
+      await refreshUser();
       setSuccess("Profile photo updated.");
     } catch {
       setError("We could not upload your profile photo. Try a smaller image.");
