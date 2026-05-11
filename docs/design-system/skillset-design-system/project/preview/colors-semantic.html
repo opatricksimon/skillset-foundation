@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Semantic Colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background: var(--color-base); color: var(--color-ink); }
+  .card { box-sizing:border-box; padding: 24px; width: 700px; display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row { display:flex; align-items:stretch; border-radius: 12px; overflow:hidden; border:1px solid var(--color-line); }
+  .swatch { width: 56px; }
+  .body { flex:1; padding: 12px 14px; background: #fff; display:flex; flex-direction:column; gap:4px; }
+  .nm { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .msg { font-size: 12px; color: var(--color-ink-soft); }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--color-ink-muted); }
+</style></head>
+<body>
+<div class="card">
+  <div class="row"><div class="swatch" style="background:#b22234;"></div><div class="body"><span class="nm" style="color:#b22234">Danger</span><span class="msg">We could not create this course.</span><span class="hex">#b22234 · soft rgba(178,34,52,.06)</span></div></div>
+  <div class="row"><div class="swatch" style="background:#1f8a5b;"></div><div class="body"><span class="nm" style="color:#1f8a5b">Success</span><span class="msg">Course approved and published.</span><span class="hex">#1f8a5b · soft #e4f3eb</span></div></div>
+  <div class="row"><div class="swatch" style="background:#c07b0a;"></div><div class="body"><span class="nm" style="color:#c07b0a">Warning</span><span class="msg">Pricing pending. Set a price before review.</span><span class="hex">#c07b0a · soft #fcefd2</span></div></div>
+  <div class="row"><div class="swatch" style="background:#2c5282;"></div><div class="body"><span class="nm" style="color:#2c5282">Info</span><span class="msg">Skillset is being built. Watch this space.</span><span class="hex">#2c5282 · soft #ebf3fb</span></div></div>
+</div>
+</body></html>

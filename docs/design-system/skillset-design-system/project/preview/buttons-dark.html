@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Buttons · Dark Surface</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background: #07172a; color:#fff; }
+  .card { box-sizing:border-box; padding: 28px; width: 700px; display:flex; flex-direction:column; gap: 18px;
+          background: linear-gradient(135deg, #07172a 0%, #102944 50%, #1a365d 100%); }
+  .row { display:flex; align-items:center; gap: 14px; }
+  .lbl { width: 96px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.66); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:8px; font-family: var(--font-sans); font-weight: 600; line-height: 1; transition: all 180ms ease; padding: 12px 18px; font-size: 14px; }
+  .solid-light { background:#b22234; border:1px solid rgba(178,34,52,.92); color:#fff; box-shadow: 0 14px 28px rgba(15,39,68,.28); }
+  .solid-light.hover { background:#9e1f2f; transform: translateY(-1px); }
+  .outline-light { background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.42); color:#fff; }
+  .outline-light.hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+</style></head>
+<body>
+<div class="card">
+  <div class="row"><span class="lbl">Solid · red</span><span class="btn solid-light">Start teaching</span><span class="btn solid-light hover">Hover</span></div>
+  <div class="row"><span class="lbl">Outline</span><span class="btn outline-light">Explore courses</span><span class="btn outline-light hover">Hover</span></div>
+  <div class="row" style="gap:10px;"><span class="lbl">Chip</span><span style="border:1px solid rgba(255,255,255,.20); background: rgba(255,255,255,.10); padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;">International professional learning</span></div>
+</div>
+</body></html>

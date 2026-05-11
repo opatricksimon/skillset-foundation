@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cards</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background:#fbfdff; color: var(--color-ink); padding: 4px; }
+  .card { box-sizing:border-box; padding: 18px; width: 700px; display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .course { background: rgba(255,255,255,.92); border:1px solid var(--color-line); border-radius: 18px; overflow:hidden; box-shadow: var(--shadow-soft); }
+  .course .img { aspect-ratio: 4/3; background: linear-gradient(180deg, #2c5282, #0f2744); position:relative; }
+  .course .img::after { content:""; position:absolute; inset:0; background: linear-gradient(to top, rgba(15,39,68,.84), transparent 60%); }
+  .chip { position:absolute; left: 16px; top:16px; background: rgba(255,255,255,.94); border:1px solid rgba(255,255,255,.7); border-radius: 999px; padding: 5px 12px; font-size: 10px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--color-accent); box-shadow: 0 10px 24px rgba(15,39,68,.14); }
+  .body { padding: 18px; }
+  .meta-row { display:flex; justify-content: space-between; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; font-weight: 600; color: var(--color-accent); }
+  .meta-row .dur { color: var(--color-ink-soft); }
+  .title { font-family: var(--font-display); color: var(--color-primary); font-weight: 600; font-size: 26px; line-height: 1; margin: 12px 0 0; }
+  .desc { font-size: 13px; line-height: 1.7; color: var(--color-ink-soft); margin: 10px 0 14px; }
+  .btn { display:inline-flex; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid rgba(26,54,93,.18); background: #fff; color: var(--color-primary); }
+  .panel { background:#fff; border:1px solid var(--color-line); border-radius: 14px; padding: 16px; box-shadow: var(--shadow-soft); }
+  .eye { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; font-weight: 600; color: var(--color-brand); }
+  .ph { font-family: var(--font-display); color: var(--color-ink); font-weight: 600; font-size: 22px; line-height: 1.05; margin-top: 8px; }
+  .pd  { font-size: 12px; line-height: 1.7; color: var(--color-ink-soft); margin-top: 10px; }
+</style></head>
+<body>
+<div class="card">
+  <article class="course">
+    <div class="img"><span class="chip">Opening soon</span></div>
+    <div class="body">
+      <div class="meta-row"><span>Psychology</span><span class="dur">1.5–3 years</span></div>
+      <h3 class="title">Clinical Psychology</h3>
+      <p class="desc">A flagship pathway for learners who want a serious, career-focused experience.</p>
+      <span class="btn">View program</span>
+    </div>
+  </article>
+  <div style="display:flex; flex-direction:column; gap: 14px;">
+    <div class="panel">
+      <div class="eye">My learning</div>
+      <div class="ph">Courses in progress</div>
+      <div class="pd">Approved courses keep receiving lessons while Skillset controls visibility.</div>
+    </div>
+    <div class="panel" style="background:#f5f9ff; border-radius: 12px;">
+      <div class="eye" style="color: var(--color-accent);">Skillset review note</div>
+      <div class="pd" style="margin-top: 6px;">Add a clearer outcome to module 1 before publishing.</div>
+    </div>
+  </div>
+</div>
+</body></html>

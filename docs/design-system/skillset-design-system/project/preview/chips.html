@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Chips & Badges</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background: var(--color-base); color: var(--color-ink); }
+  .card { box-sizing:border-box; padding: 26px; width: 700px; display:flex; flex-direction:column; gap: 14px; }
+  .row { display:flex; align-items:center; flex-wrap:wrap; gap: 10px; }
+  .lbl { width: 110px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .accent-chip { background: rgba(255,255,255,.94); border:1px solid rgba(255,255,255,.7); box-shadow: 0 10px 24px rgba(15,39,68,.14);
+    border-radius: 999px; padding: 5px 12px; font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--color-accent); }
+  .role-chip { border:1px solid rgba(178,34,52,.18); background:#fff; padding: 5px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+  .beta { border:1px solid rgba(178,34,52,.18); background:#fff; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+  .count { background:#f5f9ff; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-primary); }
+  .status { background:#fff; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-primary); border:1px solid var(--color-line); }
+  .dark-row { padding: 14px 16px; background: linear-gradient(135deg,#0f2744,#1a365d); border-radius: 14px; }
+</style></head>
+<body>
+<div class="card">
+  <div class="row"><span class="lbl">Status chip</span>
+    <span class="accent-chip" style="color:#b22234;">Opening soon</span>
+    <span class="accent-chip" style="color:#1a365d;">Preview</span>
+    <span class="accent-chip" style="color:#1f8a5b;">Published</span>
+  </div>
+  <div class="row"><span class="lbl">Role chip</span>
+    <span class="role-chip">Educator</span>
+    <span class="role-chip">Learner</span>
+    <span class="role-chip">Admin</span>
+  </div>
+  <div class="row"><span class="lbl">Section pill</span>
+    <span class="count">12 pending</span>
+    <span class="count">3 modules / 14 lessons</span>
+    <span class="beta">Beta</span>
+  </div>
+  <div class="row"><span class="lbl">Course status</span>
+    <span class="status">Draft</span>
+    <span class="status" style="color:#c07b0a;">In review</span>
+    <span class="status" style="color:#1f8a5b;">Published</span>
+    <span class="status" style="color:#b22234;">Needs changes</span>
+  </div>
+  <div class="dark-row"><span class="accent-chip">International professional learning</span></div>
+</div>
+</body></html>

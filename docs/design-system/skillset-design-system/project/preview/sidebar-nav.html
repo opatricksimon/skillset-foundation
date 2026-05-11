@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sidebar Nav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background:#fbfdff; color: var(--color-ink); }
+  .card { box-sizing:border-box; padding: 18px; width: 700px; }
+  .panel { background:#fff; border:1px solid var(--color-line); border-radius: 14px; padding: 12px; box-shadow: var(--shadow-soft); }
+  .topcard { background:#f5f9ff; border:1px solid var(--color-line); border-radius: 12px; padding: 12px; display:flex; justify-content: space-between; align-items:center; gap: 10px; }
+  .brand-title { font-size: 13px; font-weight: 700; color: var(--color-primary); }
+  .brand-sub { font-size: 11px; color: var(--color-ink-soft); margin-top: 2px; }
+  .beta { border:1px solid rgba(178,34,52,.18); background:#fff; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+  .group { margin-top: 16px; }
+  .group + .group { border-top: 1px solid var(--color-line); padding-top: 14px; }
+  .sec { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--color-ink-soft); padding: 0 8px 8px; }
+  .item { display:flex; align-items:center; gap: 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; font-size: 14px; font-weight: 600; color: var(--color-ink-soft); margin-bottom: 4px; }
+  .item .ck { width: 28px; height: 28px; display:grid; place-items:center; border: 1px solid var(--color-line); background:#fff; color: var(--color-primary); border-radius: 8px; font-size: 10px; font-weight: 700; }
+  .item.active { background: #1a365d; color: #fff; border-color: rgba(24,58,94,.2); box-shadow: 0 10px 22px rgba(26,54,93,.16); }
+  .item.active .ck { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.2); color: #fff; }
+</style></head>
+<body>
+<div class="card" style="display:grid; grid-template-columns: 232px 1fr; gap: 20px;">
+  <aside class="panel">
+    <div class="topcard">
+      <div>
+        <div class="brand-title">Skillset</div>
+        <div class="brand-sub">International learning network</div>
+      </div>
+      <span class="beta">beta</span>
+    </div>
+    <div class="group">
+      <div class="sec">Learn</div>
+      <div class="item active"><span class="ck">C</span> Classroom</div>
+      <div class="item"><span class="ck">Co</span> Community</div>
+      <div class="item"><span class="ck">Cr</span> Credentials</div>
+    </div>
+    <div class="group">
+      <div class="sec">Teach</div>
+      <div class="item"><span class="ck">T</span> Teacher Studio</div>
+      <div class="item"><span class="ck">B</span> Course Builder</div>
+    </div>
+  </aside>
+  <div style="display:flex; align-items:flex-start; padding-top: 8px;">
+    <div>
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--color-accent);">Letter ciphers</div>
+      <div style="font-family: var(--font-display); font-weight: 600; font-size: 28px; color: var(--color-primary); margin-top: 6px; line-height: 1.05;">A signature device.</div>
+      <div style="font-size: 12px; color: var(--color-ink-soft); line-height: 1.7; margin-top: 8px;">1–2 letters of the destination name render in a 28×28 rounded square — white on navy when active, navy on white when idle.</div>
+    </div>
+  </div>
+</div>
+</body></html>

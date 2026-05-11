@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background: var(--color-base); color: var(--color-ink); }
+  .card { box-sizing:border-box; padding: 24px; width: 700px; display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { display:grid; gap: 8px; font-size: 13px; font-weight: 600; color: var(--color-ink); }
+  input, select, textarea { font: inherit; font-weight: 400; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--color-line); background: #fff; outline: none; }
+  input:focus { border-color: var(--color-primary-light); }
+  .focus { border-color: var(--color-primary-light) !important; }
+  .err { border-color: rgba(178,34,52,.4); background: rgba(178,34,52,.04); }
+  .helper { font-size: 11px; font-weight: 400; color: var(--color-ink-soft); }
+  .errmsg { font-size: 12px; font-weight: 600; color: var(--color-accent); padding: 8px 12px; border-radius: 10px; background: rgba(178,34,52,.06); border: 1px solid rgba(178,34,52,.2); }
+</style></head>
+<body>
+<div class="card">
+  <label>Course title<input placeholder="Practical Leadership Development"></label>
+  <label>Email<input class="focus" value="you@example.com"></label>
+  <label>Category
+    <select><option>Psychology</option><option>Management</option></select>
+  </label>
+  <label>Search<input placeholder="Search skill, category, or outcome"></label>
+  <label style="grid-column: 1 / -1;">Course summary
+    <textarea rows="3" placeholder="Who is this for, what will learners gain?"></textarea>
+  </label>
+  <div class="errmsg" style="grid-column: 1 / -1;">We could not create this course. Please try again.</div>
+</div>
+</body></html>

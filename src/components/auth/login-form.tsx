@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 
+import { AppleMark } from "@/components/auth/apple-mark";
 import { GoogleMark } from "@/components/auth/google-mark";
 import {
   getAuthErrorMessage,
@@ -12,7 +13,6 @@ import {
 } from "@/lib/auth/firebase-auth";
 import {
   getAuthPathIntentFromSearchParams,
-  getAuthPathQuery,
   getPostAuthRoute,
 } from "@/lib/auth/routing";
 import { getUserProfile } from "@/lib/data/user-profiles";
@@ -24,8 +24,10 @@ export function LoginForm() {
     () => getAuthPathIntentFromSearchParams(searchParams),
     [searchParams],
   );
-  const pathQuery = getAuthPathQuery(pathIntent);
   const pathLabel = pathIntent === "teacher" ? "educator" : "learner";
+  const signupHref = pathIntent
+    ? `/auth?mode=signup&path=${pathIntent}`
+    : "/auth?mode=signup";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -111,6 +113,15 @@ export function LoginForm() {
         <GoogleMark />
         Continue with Google
       </button>
+      <button
+        type="button"
+        disabled={isLoading}
+        onClick={() => setError("Apple sign-in opens next week.")}
+        className="button-outline px-5 py-3 text-sm disabled:opacity-60"
+      >
+        <AppleMark />
+        Continue with Apple
+      </button>
       <Link
         href="/forgot-password"
         className="inline-flex text-sm font-semibold text-[var(--color-primary)]"
@@ -118,7 +129,7 @@ export function LoginForm() {
         Forgot password?
       </Link>
       <Link
-        href={`/signup${pathQuery}`}
+        href={signupHref}
         className="inline-flex text-sm font-semibold text-[var(--color-primary)]"
       >
         Need an account for this path?

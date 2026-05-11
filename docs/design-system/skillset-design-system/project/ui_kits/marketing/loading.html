@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Signing you in… · Skillset</title>
+  <link rel="stylesheet" href="../../colors_and_type.css"/>
+  <link rel="stylesheet" href="auth.css"/>
+</head>
+<body>
+  <div class="loading-page" data-screen-label="Auth · Loading">
+    <div class="loading-card">
+      <div class="ring"></div>
+      <div class="ttl">Preparing your workspace</div>
+      <div class="sub">One moment — we're getting things ready.</div>
+    </div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const next = params.get("next");
+    const role = params.get("role");
+    let dest = "welcome.html";
+    if (next === "platform" && role) dest = "../platform/index.html?role=" + role;
+    setTimeout(() => { location.href = dest; }, 1400);
+  </script>
+</body>
+</html>

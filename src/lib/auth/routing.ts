@@ -13,7 +13,10 @@ export function parseAuthPathIntent(value: string | null | undefined): AuthPathI
 export function getAuthPathIntentFromSearchParams(
   searchParams: URLSearchParams,
 ): AuthPathIntent | null {
-  return parseAuthPathIntent(searchParams.get("path"));
+  return (
+    parseAuthPathIntent(searchParams.get("path")) ??
+    parseAuthPathIntent(searchParams.get("role"))
+  );
 }
 
 export function getAuthPathQuery(intent: AuthPathIntent | null): string {

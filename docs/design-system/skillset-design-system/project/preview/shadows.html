@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Shadows & Elevation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; font-family: var(--font-sans); background: var(--color-base); color: var(--color-ink); padding: 8px;}
+  .card { box-sizing:border-box; padding: 30px 24px 36px; width: 700px; display:grid; grid-template-columns: repeat(3,1fr); gap: 22px; background: #fbfdff; }
+  .item { display:flex; flex-direction:column; align-items:center; gap: 12px; }
+  .tile { width: 170px; height: 100px; background:#fff; border:1px solid var(--color-line); border-radius: 14px; }
+  .nm { font-family: var(--font-mono); font-size: 11px; color: var(--color-primary); }
+  .desc { font-size: 11px; color: var(--color-ink-soft); text-align:center; }
+</style></head>
+<body>
+<div class="card">
+  <div class="item">
+    <div class="tile" style="box-shadow: 0 12px 28px rgba(26,54,93,.06);"></div>
+    <span class="nm">--shadow-soft</span>
+    <span class="desc">Default for cards</span>
+  </div>
+  <div class="item">
+    <div class="tile" style="box-shadow: 0 18px 44px rgba(15,39,68,.14);"></div>
+    <span class="nm">--shadow-strong</span>
+    <span class="desc">Dropdowns &amp; CTA bands</span>
+  </div>
+  <div class="item">
+    <div class="tile" style="background:#1a365d; box-shadow: inset 0 -2px 0 rgba(178,34,52,.35), 0 10px 22px rgba(26,54,93,.14);"></div>
+    <span class="nm">--shadow-button</span>
+    <span class="desc">Solid button (inset red bottom + drop)</span>
+  </div>
+</div>
+</body></html>

@@ -4,101 +4,178 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import type { SkillsetUser } from "@/domain/auth";
+import {
+  ChevronDown,
+  CircleHelp,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Presentation,
+  Receipt,
+  Settings,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 const navItems = [
-  { href: "/courses", label: "Courses" },
-  { href: "/about", label: "About" },
+  { href: "/courses", label: "Programs", hasCaret: true },
+  { href: "/instructors", label: "Faculty", hasCaret: true },
   { href: "/pricing", label: "Pricing" },
-  { href: "/fees-and-payouts", label: "Fees & tax" },
-  { href: "/contact", label: "Contact" },
+  { href: "/courses", label: "Browse a course" },
+  { href: "/help", label: "Help" },
 ];
 
-const accessPaths = [
+const signInOptions = [
   {
-    title: "Learner",
-    eyebrow: "Study",
-    description: "Browse courses, join communities, attend events, and track progress.",
-    signInHref: "/login?path=student",
-    signUpHref: "/signup?path=student",
+    href: "/auth?mode=signin&path=student&role=student",
+    icon: GraduationCap,
+    title: "Access my learning",
+    description: "Continue your enrolled programs",
   },
   {
-    title: "Educator",
-    eyebrow: "Teach",
-    description: "Build courses, manage students, upload lessons, and submit for review.",
-    signInHref: "/login?path=teacher",
-    signUpHref: "/signup?path=teacher",
+    href: "/auth?mode=signin&path=teacher&role=teacher",
+    icon: Presentation,
+    title: "Manage my teaching",
+    description: "Open Teacher Studio",
   },
 ];
 
 export function SiteNav() {
   const { status, user, signOut } = useAuth();
+  const [scrolled, setScrolled] = useState(false);
   const isAuthenticated = status === "authenticated" && user;
 
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
-    <header className="sticky top-0 z-30 border-b fine-rule bg-[rgba(255,255,255,0.94)] backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-1.5 sm:px-8">
+    <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
+      <div className="site-header__inner">
         <LogoWordmark nav />
-        <nav className="hidden items-center gap-4 text-[13px] font-medium text-[var(--color-ink-soft)] md:flex">
+        <nav
+          aria-label="Primary navigation"
+          className="site-header__links"
+        >
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href}>
+            <Link key={`${item.href}-${item.label}`} href={item.href} className="site-header__link">
               {item.label}
+              {item.hasCaret ? (
+                <ChevronDown aria-hidden="true" size={12} strokeWidth={1.8} opacity={0.55} />
+              ) : null}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2.5">
-          <details className="relative md:hidden">
-            <summary className="button-outline list-none px-3 py-2 text-xs marker:hidden [&::-webkit-details-marker]:hidden">
-              Menu
-            </summary>
-            <div className="absolute right-0 mt-2 grid w-[min(calc(100vw-2rem),22rem)] gap-2 rounded-[12px] border border-[var(--color-line)] bg-white p-2 shadow-[var(--shadow-soft)]">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="mt-1 grid gap-2 border-t border-[var(--color-line)] pt-2">
-                {isAuthenticated ? (
-                  <AccountMenu user={user} onSignOut={signOut} compact />
-                ) : (
-                  accessPaths.map((path) => (
-                    <AccessPathCard key={path.title} {...path} compact />
-                  ))
-                )}
-              </div>
-            </div>
-          </details>
+        <div className="site-header__actions">
           {isAuthenticated ? (
             <AccountMenu user={user} onSignOut={signOut} />
           ) : (
-            <details className="group relative">
-              <summary className="button-solid list-none px-3.5 py-2 text-xs marker:hidden sm:text-sm [&::-webkit-details-marker]:hidden">
-                Get started
-              </summary>
-              <div className="absolute right-0 mt-2 grid w-[min(calc(100vw-2rem),28rem)] gap-3 rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-strong)]">
-                <div className="px-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                    Choose your path
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-                    One Skillset account can learn, teach, or do both after setup.
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {accessPaths.map((path) => (
-                    <AccessPathCard key={path.title} {...path} />
-                  ))}
-                </div>
-              </div>
-            </details>
+            <>
+              <SignInDropdown />
+              <Link href="/auth?mode=signup" className="btn-cta-hero">
+                Get started free
+              </Link>
+            </>
           )}
         </div>
       </div>
     </header>
+  );
+}
+
+function useDismissableLayer(
+  ref: RefObject<HTMLElement | null>,
+  isOpen: boolean,
+  onDismiss: () => void,
+) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handleMouseDown(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        onDismiss();
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onDismiss();
+      }
+    }
+
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onDismiss, ref]);
+}
+
+function SignInDropdown() {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        className={`btn-signin ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        Sign in
+        <ChevronDown
+          aria-hidden="true"
+          size={12}
+          strokeWidth={1.8}
+          className={isOpen ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"}
+        />
+      </button>
+      {isOpen ? (
+        <div role="menu" className="signin-dropdown">
+          {signInOptions.map((option) => {
+            const Icon = option.icon;
+
+            return (
+              <Link
+                key={option.href}
+                href={option.href}
+                role="menuitem"
+                className="signin-dropdown__item"
+              >
+                <span className="signin-dropdown__icon">
+                  <Icon aria-hidden="true" size={18} strokeWidth={1.7} />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                    {option.title}
+                  </span>
+                  <span className="signin-dropdown__sub">{option.description}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -133,114 +210,103 @@ function getPrimaryRoleLabel(user: SkillsetUser) {
 function AccountMenu({
   user,
   onSignOut,
-  compact = false,
 }: {
   user: SkillsetUser;
   onSignOut: () => Promise<void>;
-  compact?: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const workspaceHref = getPrimaryWorkspaceHref(user);
 
+  useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
+
   return (
-    <details className={compact ? "" : "group relative"}>
-      <summary
-        className={`cursor-pointer select-none list-none rounded-[10px] border border-[var(--color-line)] bg-white text-left marker:hidden [&::-webkit-details-marker]:hidden ${
-          compact ? "p-3" : "px-2.5 py-1.5"
-        }`}
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-label="Open account menu"
+        className="flex cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-left transition hover:bg-[var(--color-surface-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
+        onClick={() => setIsOpen((current) => !current)}
       >
-        <span className="flex items-center gap-2">
-          <UserAvatar
-            name={user.displayName || user.email}
-            photoURL={user.photoURL}
-            size="sm"
-          />
-          <span className={compact ? "grid" : "hidden text-left sm:grid"}>
-            <span className="max-w-32 truncate text-xs font-bold text-[var(--color-ink)]">
-              {user.displayName || user.email || "Skillset member"}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-              {getPrimaryRoleLabel(user)}
-            </span>
+        <UserAvatar
+          name={user.displayName || user.email}
+          photoURL={user.photoURL}
+          size="sm"
+        />
+        <span className="hidden text-left sm:grid">
+          <span className="max-w-32 truncate text-xs font-bold text-[var(--color-ink)]">
+            {user.displayName || user.email || "Skillset member"}
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+            {getPrimaryRoleLabel(user)}
           </span>
         </span>
-      </summary>
-      <div
-        className={`grid gap-1 rounded-[12px] border border-[var(--color-line)] bg-white p-2 shadow-[var(--shadow-soft)] ${
-          compact ? "mt-2" : "absolute right-0 mt-2 w-60"
-        }`}
-      >
-        <Link
-          href={workspaceHref}
-          className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)]"
-        >
-          Open workspace
-        </Link>
-        <Link
-          href="/profile"
-          className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
-        >
-          Profile settings
-        </Link>
-        {user.roles.includes("teacher") ? (
-          <Link
-            href="/teach"
-            className="rounded-[8px] px-3 py-2 text-sm font-semibold text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)]"
-          >
-            Teacher Studio
-          </Link>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => {
-            void onSignOut();
-          }}
-          className="rounded-[8px] px-3 py-2 text-left text-sm font-semibold text-[var(--color-accent)] hover:bg-[rgba(178,34,52,0.06)]"
-        >
-          Sign out
-        </button>
-      </div>
-    </details>
+        <ChevronDown
+          aria-hidden="true"
+          size={12}
+          strokeWidth={1.8}
+          className={isOpen ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"}
+        />
+      </button>
+      {isOpen ? (
+        <div role="menu" className="account-menu-panel">
+          <div className="flex items-center gap-3 border-b border-[var(--color-line)] px-2 py-3">
+            <UserAvatar
+              name={user.displayName || user.email}
+              photoURL={user.photoURL}
+              size="md"
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-[var(--color-ink)]">
+                {user.displayName || "Skillset member"}
+              </p>
+              <p className="truncate text-xs text-[var(--color-ink-soft)]">
+                {user.email}
+              </p>
+            </div>
+          </div>
+          <MenuLink href={workspaceHref} icon={LayoutDashboard} label="Open workspace" />
+          <MenuLink href="/profile" icon={UserRound} label="Profile settings" />
+          <MenuLink href="/profile" icon={Settings} label="Email & security" />
+          {user.roles.includes("teacher") ? (
+            <MenuLink href="/teach" icon={Presentation} label="Teacher Studio" />
+          ) : null}
+          <MenuLink href="/fees-and-payouts" icon={Receipt} label="Fees & tax" />
+          <div className="mt-1 border-t border-[var(--color-line)] pt-1">
+            <MenuLink href="/help" icon={CircleHelp} label="Help" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                void onSignOut();
+              }}
+              className="account-menu-item text-[var(--color-accent)] hover:bg-[rgba(178,34,52,0.06)] hover:text-[var(--color-accent)]"
+            >
+              <LogOut aria-hidden="true" size={16} strokeWidth={1.8} />
+              Sign out
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-function AccessPathCard({
-  title,
-  eyebrow,
-  description,
-  signInHref,
-  signUpHref,
-  compact = false,
+function MenuLink({
+  href,
+  icon: Icon,
+  label,
 }: {
-  title: string;
-  eyebrow: string;
-  description: string;
-  signInHref: string;
-  signUpHref: string;
-  compact?: boolean;
+  href: string;
+  icon: LucideIcon;
+  label: string;
 }) {
   return (
-    <div
-      className={`rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] ${
-        compact ? "p-3" : "p-4"
-      }`}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-        {eyebrow}
-      </p>
-      <h3 className="mt-1 text-sm font-bold text-[var(--color-primary)]">
-        {title}
-      </h3>
-      <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
-        {description}
-      </p>
-      <div className="mt-3 grid gap-2">
-        <Link href={signUpHref} className="button-solid px-3 py-2 text-xs">
-          Create account
-        </Link>
-        <Link href={signInHref} className="button-outline px-3 py-2 text-xs">
-          Sign in
-        </Link>
-      </div>
-    </div>
+    <Link href={href} role="menuitem" className="account-menu-item">
+      <Icon aria-hidden="true" size={16} strokeWidth={1.8} />
+      {label}
+    </Link>
   );
 }

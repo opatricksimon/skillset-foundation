@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 
+import { AppleMark } from "@/components/auth/apple-mark";
 import { GoogleMark } from "@/components/auth/google-mark";
 import {
   getAuthErrorMessage,
@@ -17,7 +18,6 @@ import {
 } from "@/lib/auth/profile-validation";
 import {
   getAuthPathIntentFromSearchParams,
-  getAuthPathQuery,
   getPostAuthRoute,
 } from "@/lib/auth/routing";
 import {
@@ -34,8 +34,10 @@ export function SignupForm() {
     () => getAuthPathIntentFromSearchParams(searchParams),
     [searchParams],
   );
-  const pathQuery = getAuthPathQuery(pathIntent);
   const pathLabel = pathIntent === "teacher" ? "educator" : "learner";
+  const signinHref = pathIntent
+    ? `/auth?mode=signin&path=${pathIntent}`
+    : "/auth?mode=signin";
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -190,8 +192,8 @@ export function SignupForm() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="Create a password"
-          minLength={6}
+          placeholder="At least 8 characters"
+          minLength={8}
           required
           className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
         />
@@ -275,8 +277,17 @@ export function SignupForm() {
         <GoogleMark />
         Create with Google
       </button>
+      <button
+        type="button"
+        disabled={isLoading || !legalAccepted}
+        onClick={() => setError("Apple sign-in opens next week.")}
+        className="button-outline px-5 py-3 text-sm disabled:opacity-60"
+      >
+        <AppleMark />
+        Create with Apple
+      </button>
       <Link
-        href={`/login${pathQuery}`}
+        href={signinHref}
         className="inline-flex text-sm font-semibold text-[var(--color-primary)]"
       >
         Already have an account?
