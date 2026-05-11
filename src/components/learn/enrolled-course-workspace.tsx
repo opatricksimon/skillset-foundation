@@ -34,15 +34,19 @@ import { issueSkillsetCertificate } from "@/lib/data/certificates";
 type EnrolledCourseWorkspaceProps = {
   course: Course;
   enableFirestoreAssets?: boolean;
+  previewExitHref?: string;
+  previewMode?: boolean;
 };
 
 export function EnrolledCourseWorkspace({
   course,
   enableFirestoreAssets = false,
+  previewExitHref,
+  previewMode = false,
 }: EnrolledCourseWorkspaceProps) {
   const { user } = useAuth();
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!previewMode);
   const [progressState, setProgressState] = useState<{
     key: string | null;
     lessonIds: string[];
@@ -64,9 +68,27 @@ export function EnrolledCourseWorkspace({
     ready: false,
   });
   const [error, setError] = useState("");
-  const progressKey = enrollment?.id ?? null;
+  const previewEnrollment: Enrollment = {
+    id: `preview__${course.id}`,
+    userId: user?.uid ?? "preview",
+    courseId: course.id,
+    courseSlug: course.slug,
+    courseTitle: course.title,
+    courseCategory: course.category,
+    courseImage: course.image,
+    status: "active",
+    source: "admin",
+    progressPercent: 0,
+    lastLessonId: null,
+  };
+  const workspaceEnrollment = previewMode ? previewEnrollment : enrollment;
+  const progressKey = workspaceEnrollment?.id ?? null;
 
   useEffect(() => {
+    if (previewMode) {
+      return;
+    }
+
     if (!user) {
       return;
     }
@@ -83,18 +105,18 @@ export function EnrolledCourseWorkspace({
         setIsLoading(false);
       },
     );
-  }, [course.slug, user]);
+  }, [course.slug, previewMode, user]);
 
   useEffect(() => {
-    if (!enrollment) {
+    if (previewMode || !workspaceEnrollment) {
       return;
     }
 
     return subscribeToCompletedLessons(
-      enrollment.id,
+      workspaceEnrollment.id,
       (lessonIds) => {
         setProgressState({
-          key: enrollment.id,
+          key: workspaceEnrollment.id,
           lessonIds,
           ready: true,
         });
@@ -102,16 +124,16 @@ export function EnrolledCourseWorkspace({
       () => {
         setError("We could not load lesson progress for this course.");
         setProgressState({
-          key: enrollment.id,
+          key: workspaceEnrollment.id,
           lessonIds: [],
           ready: true,
         });
       },
     );
-  }, [enrollment]);
+  }, [previewMode, workspaceEnrollment]);
 
   useEffect(() => {
-    if (!enableFirestoreAssets || !enrollment) {
+    if (!enableFirestoreAssets || !workspaceEnrollment) {
       return;
     }
 
@@ -133,7 +155,7 @@ export function EnrolledCourseWorkspace({
         });
       },
     );
-  }, [course.id, enableFirestoreAssets, enrollment]);
+  }, [course.id, enableFirestoreAssets, workspaceEnrollment]);
 
   if (isLoading) {
     return (
@@ -153,7 +175,7 @@ export function EnrolledCourseWorkspace({
     );
   }
 
-  if (!enrollment) {
+  if (!workspaceEnrollment) {
     return (
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -180,15 +202,17 @@ export function EnrolledCourseWorkspace({
 
   const completedLessonIds = progressState.lessonIds;
   const isProgressLoading = Boolean(
-    enrollment && (!progressState.ready || progressState.key !== progressKey),
+    !previewMode
+      && workspaceEnrollment
+      && (!progressState.ready || progressState.key !== progressKey),
   );
   const progressPercent = getCourseProgressPercent(course, completedLessonIds);
   const nextLesson = getNextCourseLesson(course, completedLessonIds)?.lesson ?? null;
   const allLessons = course.modules.flatMap((module) => module.lessons);
   const lessonUnlockStateById = new Map(
     allLessons.map((lesson) => [
-      lesson.id,
-      getLessonUnlockState(course, lesson, enrollment, completedLessonIds),
+        lesson.id,
+        getLessonUnlockState(course, lesson, workspaceEnrollment, completedLessonIds),
     ]),
   );
   const selectedLesson =
@@ -222,7 +246,12 @@ export function EnrolledCourseWorkspace({
   }
 
   async function toggleLessonCompletion(lessonId: string, completed: boolean) {
-    if (!user || !enrollment) {
+    if (previewMode) {
+      setError("Preview mode is read-only. Student progress is not saved here.");
+      return;
+    }
+
+    if (!user || !workspaceEnrollment) {
       return;
     }
 
@@ -244,9 +273,9 @@ export function EnrolledCourseWorkspace({
 
     try {
       if (completed) {
-        await unmarkLessonCompleted(enrollment.id, lessonId);
+        await unmarkLessonCompleted(workspaceEnrollment.id, lessonId);
       } else {
-        await markLessonCompleted(enrollment.id, user.uid, lessonId);
+        await markLessonCompleted(workspaceEnrollment.id, user.uid, lessonId);
       }
 
       await updateEnrollmentProgress(
@@ -258,7 +287,7 @@ export function EnrolledCourseWorkspace({
       );
 
       if (!completed && nextProgressPercent === 100) {
-        await issueSkillsetCertificate(enrollment.id);
+        await issueSkillsetCertificate(workspaceEnrollment.id);
       }
     } catch {
       setError("We could not update lesson progress. Please try again.");
@@ -269,6 +298,20 @@ export function EnrolledCourseWorkspace({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
+      {previewMode ? (
+        <section className="xl:col-span-2 rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 shadow-[var(--shadow-soft)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-[var(--color-primary)]">
+              Preview mode - this is how students will see your course.
+            </p>
+            {previewExitHref ? (
+              <Link href={previewExitHref} className="button-outline px-4 py-2 text-xs">
+                Exit preview
+              </Link>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Course workspace
@@ -293,7 +336,7 @@ export function EnrolledCourseWorkspace({
               Status
             </p>
             <p className="mt-2 text-2xl font-semibold text-[var(--color-primary)]">
-              {progressPercent === 100 ? "completed" : enrollment.status}
+              {progressPercent === 100 ? "completed" : workspaceEnrollment.status}
             </p>
           </div>
           <div className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
@@ -322,6 +365,7 @@ export function EnrolledCourseWorkspace({
             isSaving={activeLessonId === selectedLesson.id}
             lesson={selectedLesson}
             unlockState={selectedLessonUnlockState}
+            previewMode={previewMode}
             onToggleComplete={() =>
               toggleLessonCompletion(
                 selectedLesson.id,
@@ -410,6 +454,8 @@ export function EnrolledCourseWorkspace({
                           )
                         }
                         disabled={
+                          previewMode
+                          ||
                           !unlockState.unlocked
                           || isProgressLoading
                           || activeLessonId === lesson.id
@@ -418,7 +464,9 @@ export function EnrolledCourseWorkspace({
                       >
                         {activeLessonId === lesson.id
                           ? "Saving..."
-                          : isCompleted
+                            : previewMode
+                              ? "Preview only"
+                              : isCompleted
                             ? "Completed"
                             : !unlockState.unlocked
                               ? "Locked"
@@ -549,6 +597,7 @@ function LessonContentPanel({
   isLoadingAssets,
   isSaving,
   lesson,
+  previewMode,
   unlockState,
   onToggleComplete,
 }: {
@@ -558,6 +607,7 @@ function LessonContentPanel({
   isLoadingAssets: boolean;
   isSaving: boolean;
   lesson: Lesson;
+  previewMode: boolean;
   unlockState: LessonUnlockState | null;
   onToggleComplete: () => void;
 }) {
@@ -624,10 +674,12 @@ function LessonContentPanel({
       <button
         type="button"
         onClick={onToggleComplete}
-        disabled={locked || isSaving}
+        disabled={previewMode || locked || isSaving}
         className="button-solid mt-5 px-4 py-3 text-sm disabled:opacity-60"
       >
-        {locked
+        {previewMode
+          ? "Preview only"
+          : locked
           ? "Lesson locked"
           : isSaving
             ? "Saving..."

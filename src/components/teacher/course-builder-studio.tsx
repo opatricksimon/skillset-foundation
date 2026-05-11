@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -655,7 +656,19 @@ export function CourseBuilderStudio() {
               Shape the learner path
             </h3>
           </div>
-          <StatusChip status={course?.status ?? "draft"} />
+          <div className="flex flex-wrap items-center gap-2">
+            {courseId ? (
+              <Link
+                href={`/teach/builder/${courseId}/preview`}
+                target="_blank"
+                className="button-outline px-4 py-2 text-xs"
+              >
+                <ExternalLink aria-hidden="true" size={14} strokeWidth={1.8} />
+                Preview
+              </Link>
+            ) : null}
+            <StatusChip status={course?.status ?? "draft"} />
+          </div>
         </div>
 
         {course?.status === "in_review" ? (
