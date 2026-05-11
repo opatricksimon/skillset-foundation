@@ -8,7 +8,12 @@ import {
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions } from "firebase-functions/v2";
-import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
+import {
+  HttpsError,
+  onCall,
+  onRequest,
+  type CallableRequest,
+} from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import Stripe from "stripe";
 
@@ -107,6 +112,8 @@ type PayoutLedgerRecord = {
   releaseAt?: unknown;
   releaseAttemptCount?: number;
 };
+
+type AccountActionRequestType = "account_deletion" | "data_export";
 
 type CertificateVerificationResult =
   | {
@@ -235,6 +242,52 @@ async function enforceRateLimit(
     );
   });
 }
+
+async function createAccountActionRequest(
+  request: CallableRequest,
+  type: AccountActionRequestType,
+) {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before requesting account actions.");
+  }
+
+  const uid = request.auth.uid;
+  const email =
+    typeof request.auth.token.email === "string"
+      ? request.auth.token.email
+      : null;
+  const requestRef = db.collection("accountActionRequests").doc();
+
+  await enforceRateLimit(`account_action_${type}_${uid}`, 4, 24 * 60 * 60 * 1000);
+  await requestRef.set({
+    id: requestRef.id,
+    type,
+    requestedBy: uid,
+    email,
+    status: "pending",
+    requestedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  logger.info("Account action request created", {
+    requestId: requestRef.id,
+    requestedBy: uid,
+    type,
+  });
+
+  return {
+    success: true,
+    requestId: requestRef.id,
+  };
+}
+
+export const requestDataExport = onCall(async (request) =>
+  createAccountActionRequest(request, "data_export"),
+);
+
+export const requestAccountDeletion = onCall(async (request) =>
+  createAccountActionRequest(request, "account_deletion"),
+);
 
 export const createCheckoutSession = onCall(
   { secrets: [stripeSecretKey] },

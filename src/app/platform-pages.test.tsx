@@ -59,6 +59,10 @@ vi.mock("@/components/admin/payment-operations-panel", () => ({
   PaymentOperationsPanel: () => <div>Payment operations panel</div>,
 }));
 
+vi.mock("@/components/admin/account-action-requests-panel", () => ({
+  AccountActionRequestsPanel: () => <div>Account action requests panel</div>,
+}));
+
 vi.mock("@/components/admin/community-moderation-queue", () => ({
   CommunityModerationQueue: () => <div>Community moderation queue</div>,
 }));

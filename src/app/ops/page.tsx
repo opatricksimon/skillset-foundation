@@ -1,4 +1,5 @@
 import { ProtectedSurface } from "@/components/auth/protected-surface";
+import { AccountActionRequestsPanel } from "@/components/admin/account-action-requests-panel";
 import { AdminEnrollmentPanel } from "@/components/admin/admin-enrollment-panel";
 import { CommunityModerationQueue } from "@/components/admin/community-moderation-queue";
 import { CourseReviewQueue } from "@/components/admin/course-review-queue";
@@ -47,6 +48,7 @@ export default function OpsPage() {
         </div>
         <CourseReviewQueue />
         <PaymentOperationsPanel />
+        <AccountActionRequestsPanel />
         <CommunityModerationQueue />
         <AdminEnrollmentPanel />
         <SupportTicketQueue />
