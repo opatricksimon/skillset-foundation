@@ -4,11 +4,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { MobileSidebarDrawer } from "@/components/platform/mobile-sidebar-drawer";
+import { HelpBubble } from "@/components/platform/help-bubble";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { SessionCard } from "@/components/platform/session-card";
+import { StatusBanner } from "@/components/platform/status-banner";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
 type PlatformShellProps = {
@@ -34,6 +36,7 @@ export function PlatformShell({
 
   return (
     <main className="page-shell min-h-screen">
+      <StatusBanner />
       <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
         <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
           <aside
@@ -89,6 +92,7 @@ export function PlatformShell({
         </div>
       </div>
       <MobileSidebarDrawer />
+      <HelpBubble />
     </main>
   );
 }
