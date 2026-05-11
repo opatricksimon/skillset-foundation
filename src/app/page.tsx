@@ -1,18 +1,18 @@
-import { FeaturedTracks } from "@/components/site/featured-tracks";
-import { InstructorShowcase } from "@/components/site/instructor-showcase";
+import { CapabilitiesGrid } from "@/components/site/capabilities-grid";
+import { ForCreatorsBand } from "@/components/site/for-creators-band";
+import { HowItWorksStrip } from "@/components/site/how-it-works-strip";
 import { MarketingHero } from "@/components/site/marketing-hero";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
-import { WaitlistBand } from "@/components/site/waitlist-band";
 
 export default function Home() {
   return (
     <div className="page-shell">
       <SiteNav />
       <MarketingHero />
-      <FeaturedTracks />
-      <InstructorShowcase />
-      <WaitlistBand />
+      <HowItWorksStrip />
+      <CapabilitiesGrid />
+      <ForCreatorsBand />
       <SiteFooter />
     </div>
   );

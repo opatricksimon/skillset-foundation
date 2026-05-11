@@ -16,10 +16,10 @@ describe("marketing home", () => {
     render(<Home />);
 
     expect(
-      screen.getByText("Learn From The Best."),
+      screen.getByText("Skillset Is Being Built."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Featured learning pathways"),
+      screen.getByText("Three steps from idea to income."),
     ).toBeInTheDocument();
   });
 });

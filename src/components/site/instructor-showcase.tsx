@@ -1,3 +1,8 @@
+/**
+ * @deprecated Removed from public home in MVP launch.
+ * Kept for future reuse when real verified instructors exist.
+ * Do not import in src/app/page.tsx.
+ */
 import Image from "next/image";
 import Link from "next/link";
 

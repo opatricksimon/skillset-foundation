@@ -18,33 +18,35 @@ export function MarketingHero() {
           </div>
           <div className="mt-10 space-y-5 sm:mt-16 lg:mt-20">
             <h1 className="display-title text-4xl leading-[0.98] text-white sm:text-6xl lg:text-7xl">
-              Learn From The Best.
+              Skillset Is Being Built.
               <span className="block text-[var(--color-accent-soft)]">
-                Become The Best.
+                Watch This Space.
               </span>
             </h1>
             <p className="max-w-2xl text-base leading-7 text-white/84 sm:text-lg">
-              A premium learning platform for expert-led courses, focused
-              student progress, and communities built around professional growth.
+              Skillset is an international platform of professional courses and
+              live programs. Independent experts publish full courses with
+              structured learning, course communities, live sessions, and
+              verifiable credentials reviewed before they go live.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/courses" className="button-solid-light px-5 py-3 text-sm">
-                Explore courses
+              <Link href="/auth?mode=signup" className="button-solid-light px-5 py-3 text-sm">
+                Get started free
               </Link>
-              <Link href="/signup?path=teacher" className="button-outline-light px-5 py-3 text-sm">
-                Start teaching
+              <Link href="/auth?mode=signup&path=teacher" className="button-outline-light px-5 py-3 text-sm">
+                Become a teacher
               </Link>
             </div>
           </div>
           <dl className="mt-10 hidden max-w-2xl grid-cols-3 gap-4 border-t border-white/20 pt-5 sm:mt-12 sm:grid">
             {[
-              ["Courses", "structured learning"],
-              ["Community", "peer support"],
-              ["Certificates", "proof of progress"],
+              ["Reviewed", "every program goes through Skillset review before publishing"],
+              ["Global", "multi-currency checkout in 30+ currencies via Stripe"],
+              ["Verifiable", "every certificate has a public verification URL"],
             ].map(([value, label]) => (
               <div key={label}>
-                <dt className="display-title text-3xl leading-none text-white">{value}</dt>
-                <dd className="mt-1 text-xs uppercase tracking-[0.18em] text-white/66">
+                <dt className="text-sm font-bold text-white">{value}</dt>
+                <dd className="mt-1 text-xs leading-5 text-white/66">
                   {label}
                 </dd>
               </div>

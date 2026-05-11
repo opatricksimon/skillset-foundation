@@ -1,4 +1,9 @@
 import Image from "next/image";
+/**
+ * @deprecated Removed from public home in MVP launch.
+ * Kept for future reuse when real published courses exist.
+ * Do not import in src/app/page.tsx.
+ */
 import Link from "next/link";
 
 import { featuredTracks } from "@/data/site";

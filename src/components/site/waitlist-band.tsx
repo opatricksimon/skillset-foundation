@@ -1,3 +1,8 @@
+/**
+ * @deprecated Removed from public home in MVP launch.
+ * Kept for future reuse if a waitlist returns.
+ * Do not import in src/app/page.tsx.
+ */
 import Link from "next/link";
 
 export function WaitlistBand() {
