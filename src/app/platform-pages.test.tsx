@@ -51,6 +51,15 @@ vi.mock("@/components/teacher/teacher-wallet-panel", () => ({
   TeacherWalletPanel: () => <div>Teacher wallet panel</div>,
 }));
 
+vi.mock("@/components/teacher/teacher-studio-dashboard", () => ({
+  TeacherStudioDashboard: () => (
+    <div>
+      <h3>Publishing flow</h3>
+      <p>Educator support</p>
+    </div>
+  ),
+}));
+
 vi.mock("@/components/learn/learn-dashboard", () => ({
   LearnDashboard: () => <div>Learn dashboard</div>,
 }));
