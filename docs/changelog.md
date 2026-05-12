@@ -16,3 +16,4 @@
 - `[P6-ADD-02/03][frontend]` Added URL-synced horizontal tabs to billing and operations, plus canonical period/status filters for the ops workspace.
 - `[P6-ADD-18/20][frontend]` Added canonical plan selector cards and a Course Builder payment model section for one-time, free, and future subscription courses with installment controls.
 - `[P6-ADD-15/16][frontend]` Added inline contextual help and client-side CSV/JSON export controls for payments, support tickets, and course review queues.
+- `[P6-ADD-22][frontend]` Added a Teacher Studio sale detail route with payment summary, Stripe IDs, timeline, course context, and links from recent wallet sales.
