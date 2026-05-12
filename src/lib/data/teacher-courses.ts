@@ -24,6 +24,7 @@ import { getFirestoreDb } from "@/lib/firebase/client";
 const coursesCollection = "courses";
 
 export async function createTeacherCourse(input: CreateTeacherCourseInput) {
+  const paymentType = input.paymentType ?? "one_time";
   const courseRef = await addDoc(collection(getFirestoreDb(), coursesCollection), {
     ownerId: input.ownerId,
     title: input.title.trim(),
@@ -32,8 +33,11 @@ export async function createTeacherCourse(input: CreateTeacherCourseInput) {
     status: "draft",
     modules: [],
     lessonCount: 0,
-    priceAmountMinor: null,
+    priceAmountMinor: paymentType === "free" ? 0 : null,
     currency: "USD",
+    paymentType,
+    installmentsEnabled: false,
+    installmentsMax: null,
     platformFeeBps: 1500,
     dripStrategy: "instant",
     dripIntervalDays: 1,
@@ -78,6 +82,9 @@ export async function updateTeacherCourseBuilder(
     lessonCount: countCourseLessons(input.modules),
     priceAmountMinor: input.priceAmountMinor,
     currency: input.currency,
+    paymentType: input.paymentType,
+    installmentsEnabled: input.installmentsEnabled,
+    installmentsMax: input.installmentsMax,
     platformFeeBps: input.platformFeeBps,
     dripStrategy: input.dripStrategy,
     dripIntervalDays: input.dripIntervalDays,
