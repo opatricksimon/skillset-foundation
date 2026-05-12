@@ -4,6 +4,11 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import {
+  isStrongPassword,
+  PasswordStrengthChecklist,
+} from "@/components/auth/password-strength-checklist";
+import {
+  changeSkillsetPassword,
   getAuthErrorMessage,
   requestSkillsetEmailChange,
   refreshCurrentUserEmailVerification,
@@ -14,9 +19,12 @@ export function SecuritySettingsPanel() {
   const { user } = useAuth();
   const [emailVerified, setEmailVerified] = useState(user?.emailVerified ?? false);
   const [newEmail, setNewEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [nextPassword, setNextPassword] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const passwordReady = isStrongPassword(nextPassword);
 
   async function handleSendVerification() {
     setIsBusy(true);
@@ -64,6 +72,28 @@ export function SecuritySettingsPanel() {
         "Verification sent to the new email. Open it to confirm the email change.",
       );
       setNewEmail("");
+    } catch (caughtError) {
+      setError(getAuthErrorMessage(caughtError));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handlePasswordChangeRequest() {
+    if (!passwordReady) {
+      setError("Use a password that meets every requirement.");
+      return;
+    }
+
+    setIsBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await changeSkillsetPassword(currentPassword, nextPassword);
+      setCurrentPassword("");
+      setNextPassword("");
+      setMessage("Password updated.");
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -149,6 +179,43 @@ export function SecuritySettingsPanel() {
               className="button-outline justify-self-start px-4 py-2 text-xs disabled:opacity-60"
             >
               Send change confirmation
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-[14px] border border-[var(--color-line)] bg-white p-4">
+          <p className="font-semibold text-[var(--color-ink)]">
+            Change password
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+            Enter your current password before choosing a new one. Social-only
+            accounts should use password recovery to add an email password.
+          </p>
+          <div className="mt-4 grid gap-3">
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Current password"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
+            />
+            <input
+              type="password"
+              value={nextPassword}
+              onChange={(event) => setNextPassword(event.target.value)}
+              placeholder="New password"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
+            />
+            {nextPassword ? (
+              <PasswordStrengthChecklist password={nextPassword} />
+            ) : null}
+            <button
+              type="button"
+              onClick={handlePasswordChangeRequest}
+              disabled={isBusy || !currentPassword || !passwordReady}
+              className="button-outline justify-self-start px-4 py-2 text-xs disabled:opacity-60"
+            >
+              Update password
             </button>
           </div>
         </div>

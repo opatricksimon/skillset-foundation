@@ -29,6 +29,7 @@ export type UserProfile = {
   displayName: string | null;
   username?: string | null;
   bio?: string | null;
+  phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
   photoURL: string | null;
@@ -65,6 +66,7 @@ export type UserIdentityInput = {
   displayName?: string | null;
   username?: string | null;
   bio?: string | null;
+  phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
 };

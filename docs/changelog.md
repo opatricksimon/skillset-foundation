@@ -12,3 +12,4 @@
 - `[P6-ADD-02/03/06/08/09][frontend]` Reworked Teacher Studio with horizontal tabs, dashboard filters, a revenue milestone strip, a status filter, and a create-course modal that routes into Course Builder.
 - `[P6-ADD-12/13][frontend]` Added a read-only members-area preview route for Course Builder and a canonical Preview button in the builder header.
 - `[P6-ADD-14/23/24/25/26][frontend]` Added Teacher Studio surfaces for co-productions, refunds, coupons, team, and integrations with honest placeholder states where backend flows are still P2.
+- `[P6-ADD-10/11][frontend]` Added password requirement checklists to signup and account security, implemented password change with Firebase reauthentication, and added E.164 phone capture to profile settings.
