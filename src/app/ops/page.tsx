@@ -1,11 +1,5 @@
 import { ProtectedSurface } from "@/components/auth/protected-surface";
-import { AccountActionRequestsPanel } from "@/components/admin/account-action-requests-panel";
-import { AdminEnrollmentPanel } from "@/components/admin/admin-enrollment-panel";
-import { CommunityModerationQueue } from "@/components/admin/community-moderation-queue";
-import { CourseReviewQueue } from "@/components/admin/course-review-queue";
-import { PaymentOperationsPanel } from "@/components/admin/payment-operations-panel";
-import { SupportTicketQueue } from "@/components/admin/support-ticket-queue";
-import { UserLookupPanel } from "@/components/admin/user-lookup-panel";
+import { OpsDashboard } from "@/components/admin/ops-dashboard";
 import { PlatformShell } from "@/components/platform/platform-shell";
 
 const opsCards = [
@@ -46,13 +40,7 @@ export default function OpsPage() {
             </div>
           ))}
         </div>
-        <CourseReviewQueue />
-        <PaymentOperationsPanel />
-        <AccountActionRequestsPanel />
-        <CommunityModerationQueue />
-        <AdminEnrollmentPanel />
-        <SupportTicketQueue />
-        <UserLookupPanel />
+        <OpsDashboard />
       </PlatformShell>
     </ProtectedSurface>
   );
