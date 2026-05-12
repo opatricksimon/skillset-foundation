@@ -307,6 +307,9 @@ service cloud.firestore {
         'lessonCount',
         'priceAmountMinor',
         'currency',
+        'paymentType',
+        'installmentsEnabled',
+        'installmentsMax',
         'platformFeeBps',
         'dripStrategy',
         'dripIntervalDays',
@@ -391,6 +394,41 @@ service cloud.firestore {
           ]
         )
         && (
+          !request.resource.data.keys().hasAny(['paymentType'])
+          || request.resource.data.paymentType in [
+            'one_time',
+            'subscription_monthly',
+            'subscription_yearly',
+            'free'
+          ]
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsEnabled'])
+          || request.resource.data.installmentsEnabled is bool
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsMax'])
+          || request.resource.data.installmentsMax == null
+          || (
+            request.resource.data.installmentsMax is int
+            && request.resource.data.installmentsMax >= 1
+            && request.resource.data.installmentsMax <= 36
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['paymentType'])
+          || request.resource.data.paymentType != 'free'
+          || request.resource.data.priceAmountMinor == 0
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsEnabled'])
+          || request.resource.data.installmentsEnabled == false
+          || (
+            request.resource.data.keys().hasAny(['paymentType'])
+            && request.resource.data.paymentType == 'one_time'
+          )
+        )
+        && (
           !request.resource.data.keys().hasAny(['platformFeeBps'])
           || (
             request.resource.data.platformFeeBps is int
@@ -463,6 +501,9 @@ service cloud.firestore {
           'lessonCount',
           'priceAmountMinor',
           'currency',
+          'paymentType',
+          'installmentsEnabled',
+          'installmentsMax',
           'platformFeeBps',
           'dripStrategy',
           'dripIntervalDays',

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import type { CreateTeacherCourseInput } from "@/domain/teacher-course";
 import { createTeacherCourse } from "@/lib/data/teacher-courses";
 
 type CreateCourseModalProps = {
@@ -16,7 +17,8 @@ const draftSummary =
 export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [courseType, setCourseType] = useState("one_time");
+  const [courseType, setCourseType] =
+    useState<NonNullable<CreateTeacherCourseInput["paymentType"]>>("one_time");
   const [delivery, setDelivery] = useState("hosted");
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -39,6 +41,7 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
         title,
         summary: draftSummary,
         category: "Management",
+        paymentType: courseType,
       });
 
       setOpen(false);
@@ -91,7 +94,12 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
                 Course type
                 <select
                   value={courseType}
-                  onChange={(event) => setCourseType(event.target.value)}
+                  onChange={(event) =>
+                    setCourseType(
+                      event.target
+                        .value as NonNullable<CreateTeacherCourseInput["paymentType"]>,
+                    )
+                  }
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
                 >
                   <option value="one_time">One-time payment</option>
