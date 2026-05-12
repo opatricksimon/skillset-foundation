@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { isValidE164Phone, PhoneInput } from "@/components/shared/phone-input";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import type { UserGoal } from "@/domain/user-profile";
 import {
@@ -42,6 +43,7 @@ export function ProfileSettingsPanel() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
   const [goals, setGoals] = useState<UserGoal[]>([]);
   const [photoURL, setPhotoURL] = useState<string | null>(null);
@@ -68,6 +70,7 @@ export function ProfileSettingsPanel() {
         setDisplayName(profile?.displayName ?? user.displayName ?? "");
         setUsername(profile?.username ?? "");
         setBio(profile?.bio ?? "");
+        setPhoneNumber(profile?.phoneNumber ?? "");
         setPhotoURL(profile?.photoURL ?? user.photoURL ?? null);
         setTimezone(
           profile?.timezone ??
@@ -120,6 +123,7 @@ export function ProfileSettingsPanel() {
       validateDisplayName(displayName) ||
       validateUsername(username) ||
       validateBio(bio) ||
+      (!isValidE164Phone(phoneNumber) ? "Use a valid phone number." : "") ||
       (!timezone ? "Choose your timezone." : "");
 
     if (validationError) {
@@ -136,6 +140,7 @@ export function ProfileSettingsPanel() {
         displayName,
         username: normalizeUsername(username),
         bio,
+        phoneNumber,
         timezone,
         goals,
       });
@@ -264,6 +269,12 @@ export function ProfileSettingsPanel() {
             {bio.trim().length}/280 characters
           </span>
         </label>
+
+        <PhoneInput
+          value={phoneNumber}
+          onChange={setPhoneNumber}
+          label="Phone number"
+        />
 
         <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
           Timezone

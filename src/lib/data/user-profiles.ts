@@ -139,6 +139,10 @@ function buildIdentityPatch(input: UserIdentityInput) {
     patch.bio = input.bio?.trim() || null;
   }
 
+  if (input.phoneNumber !== undefined) {
+    patch.phoneNumber = input.phoneNumber?.trim() || null;
+  }
+
   if (input.timezone !== undefined) {
     patch.timezone = input.timezone?.trim() || null;
   }
