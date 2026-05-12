@@ -11,6 +11,7 @@ import { PlatformNav } from "@/components/platform/platform-nav";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { SessionCard } from "@/components/platform/session-card";
 import { StatusBanner } from "@/components/platform/status-banner";
+import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
 type PlatformShellProps = {
@@ -35,7 +36,8 @@ export function PlatformShell({
   } = useSidebarState();
 
   return (
-    <main className="page-shell min-h-screen">
+    <ThemeProvider>
+      <main className="page-shell min-h-screen">
       <StatusBanner />
       <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
         <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
@@ -93,7 +95,8 @@ export function PlatformShell({
       </div>
       <MobileSidebarDrawer />
       <HelpBubble />
-    </main>
+      </main>
+    </ThemeProvider>
   );
 }
 

@@ -36,6 +36,29 @@
   --radius-4xl: 22px;
 }
 
+[data-theme="dark"] {
+  --color-base: #0a0f1a;
+  --color-surface: #0f1626;
+  --color-surface-soft: #141d33;
+  --color-surface-strong: #1c2841;
+  --color-brand: #7fa7dc;
+  --color-primary: #8fb4e4;
+  --color-primary-dark: #d9e8fb;
+  --color-primary-light: #b8d2f0;
+  --color-ink: #e8edf5;
+  --color-ink-soft: #a4b3c8;
+  --color-ink-muted: #6b7e9a;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-success-soft: rgba(31, 138, 91, 0.18);
+  --color-warning-soft: rgba(192, 123, 10, 0.18);
+  --color-info: #8fb4e4;
+  --color-info-soft: rgba(143, 180, 228, 0.14);
+  --color-danger-soft: rgba(178, 34, 52, 0.18);
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --shadow-strong: 0 22px 54px rgba(0, 0, 0, 0.42);
+}
+
 @theme inline {
   --color-background: var(--color-base);
   --color-foreground: var(--color-ink);
@@ -81,6 +104,40 @@ select {
   background:
     radial-gradient(circle at 8% 0%, rgba(44, 82, 130, 0.07), transparent 28rem),
     linear-gradient(180deg, #ffffff 0%, #fbfdff 50%, #f5f8fc 100%);
+}
+
+[data-theme="dark"] .page-shell::before {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(143, 180, 228, 0.12), transparent 28rem),
+    linear-gradient(180deg, #0a0f1a 0%, #0d1424 50%, #111a2d 100%);
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .text-white {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .button-outline {
+  background: var(--color-surface);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--color-surface) !important;
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] option {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .platform-mobile-nav {
+  background: var(--color-surface);
 }
 
 .page-shell::after {
