@@ -21,6 +21,8 @@
   --color-success-soft: #e4f3eb;
   --color-warning: #c07b0a;
   --color-warning-soft: #fcefd2;
+  --color-info: #2c5282;
+  --color-info-soft: #ebf3fb;
   --color-danger: #b22234;
   --color-danger-soft: rgba(178, 34, 52, 0.06);
   --shadow-soft: 0 12px 28px rgba(26, 54, 93, 0.06);

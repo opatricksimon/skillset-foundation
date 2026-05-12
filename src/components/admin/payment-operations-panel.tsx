@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { ExportTableButton } from "@/components/shared/export-table-button";
 import { StatusChip } from "@/components/shared/status-chip";
 import type { Order } from "@/domain/order";
 import { subscribeToRecentOrders } from "@/lib/data/orders";
@@ -51,6 +52,20 @@ export function PaymentOperationsPanel() {
       { paid: 0, refunds: 0, grossMinor: 0, feeMinor: 0 },
     );
   }, [orders]);
+  const exportRows = useMemo(
+    () =>
+      orders.map((order) => ({
+        id: order.id,
+        courseTitle: order.courseTitle,
+        userId: order.userId,
+        provider: order.provider,
+        status: order.status,
+        amount: formatMoney(order.amountMinor, order.currency),
+        currency: order.currency,
+        platformFeeBps: order.platformFeeBps,
+      })),
+    [orders],
+  );
 
   return (
     <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
@@ -68,9 +83,12 @@ export function PaymentOperationsPanel() {
             payment and creates the enrollment.
           </p>
         </div>
-        <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-          Admin only
-        </span>
+        <div className="flex items-center gap-2">
+          <ExportTableButton filename="skillset-orders" rows={exportRows} />
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+            Admin only
+          </span>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">

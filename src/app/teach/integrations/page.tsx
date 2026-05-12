@@ -2,6 +2,7 @@ import { CreditCard, RadioTower, Video, Workflow, Zap } from "lucide-react";
 
 import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { InlineHelp } from "@/components/shared/inline-help";
 import { StatusChip } from "@/components/shared/status-chip";
 
 const integrations = [
@@ -60,6 +61,10 @@ export default function TeacherIntegrationsPage() {
         title="Integrations."
         description="Connect tools that support course delivery, payments, and creator operations."
       >
+        <InlineHelp topic="integrations" href="/help#integrations" className="mb-5">
+          Start with Stripe Connect. Delivery and automation integrations can be
+          connected after the course workflow is stable.
+        </InlineHelp>
         <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {integrations.map((integration) => {
             const Icon = integration.icon;

@@ -10,6 +10,7 @@ import {
   PlanSelectorCards,
   type PlanSelectorOption,
 } from "@/components/shared/plan-selector-cards";
+import { InlineHelp } from "@/components/shared/inline-help";
 import { StatusChip } from "@/components/shared/status-chip";
 import { CourseAssetUploader } from "@/components/teacher/course-asset-uploader";
 import type { DripStrategy } from "@/domain/drip-policy";
@@ -1028,6 +1029,14 @@ export function CourseBuilderStudio() {
               These fields prepare the public listing. Paid access still requires
               Stripe checkout before enrollment opens.
             </p>
+            <InlineHelp
+              topic="course pricing"
+              href="/help#course-pricing"
+              className="mt-4"
+            >
+              Set the public payment model before review so checkout, free access,
+              and creator payouts can be checked consistently.
+            </InlineHelp>
           </div>
         ) : null}
 
@@ -1059,6 +1068,14 @@ export function CourseBuilderStudio() {
             <h4 className="text-sm font-semibold text-[var(--color-ink)]">
               Add lesson
             </h4>
+            <InlineHelp
+              topic="drip-released content"
+              href="/help#drip-release"
+              className="mt-3"
+            >
+              Use lesson delays and preview selection to protect the course while
+              still giving learners enough context before enrollment.
+            </InlineHelp>
             <form className="mt-3 grid gap-3" onSubmit={handleAddLesson}>
               <div className="grid gap-3 md:grid-cols-2">
                 <select
@@ -1421,6 +1438,14 @@ export function CourseBuilderStudio() {
               Review stays lightweight: Skillset checks structure, basic quality,
               trust, pricing readiness, and whether the public listing should go live.
             </p>
+            <InlineHelp
+              topic="course review"
+              href="/help#course-review"
+              className="mt-4"
+            >
+              Submit only when the core promise, course structure, pricing, and
+              preview lesson are ready for Skillset review.
+            </InlineHelp>
           </div>
         ) : null}
       </section>

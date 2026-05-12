@@ -15,3 +15,4 @@
 - `[P6-ADD-10/11][frontend]` Added password requirement checklists to signup and account security, implemented password change with Firebase reauthentication, and added E.164 phone capture to profile settings.
 - `[P6-ADD-02/03][frontend]` Added URL-synced horizontal tabs to billing and operations, plus canonical period/status filters for the ops workspace.
 - `[P6-ADD-18/20][frontend]` Added canonical plan selector cards and a Course Builder payment model section for one-time, free, and future subscription courses with installment controls.
+- `[P6-ADD-15/16][frontend]` Added inline contextual help and client-side CSV/JSON export controls for payments, support tickets, and course review queues.
