@@ -2,6 +2,7 @@
 
 import {
   collection,
+  doc,
   limit,
   onSnapshot,
   query,
@@ -13,6 +14,28 @@ import type { Order } from "@/domain/order";
 import { getFirestoreDb } from "@/lib/firebase/client";
 
 const ordersCollection = "orders";
+
+export function subscribeToOrder(
+  orderId: string,
+  callback: (order: Order | null) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(getFirestoreDb(), ordersCollection, orderId),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null);
+        return;
+      }
+
+      callback({
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<Order, "id">),
+      });
+    },
+    onError,
+  );
+}
 
 export function subscribeToRecentOrders(
   callback: (orders: Order[]) => void,
