@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { InlineHelp } from "@/components/shared/inline-help";
 import type { Order } from "@/domain/order";
 import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import type { UserProfile } from "@/domain/user-profile";
@@ -166,6 +167,10 @@ export function TeacherWalletPanel() {
         Skillset Checkout; Stripe can route the teacher share to the connected
         account while Skillset keeps the platform fee.
       </p>
+      <InlineHelp topic="D+30 payouts" href="/help#payouts" className="mt-4">
+        Payouts stay in release until the refund window closes, which keeps
+        learner protection and creator reporting aligned.
+      </InlineHelp>
 
       <div className="mt-5 grid gap-3 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm">
         <div className="flex items-center justify-between gap-4">
