@@ -17,3 +17,4 @@
 - `[P6-ADD-18/20][frontend]` Added canonical plan selector cards and a Course Builder payment model section for one-time, free, and future subscription courses with installment controls.
 - `[P6-ADD-15/16][frontend]` Added inline contextual help and client-side CSV/JSON export controls for payments, support tickets, and course review queues.
 - `[P6-ADD-22][frontend]` Added a Teacher Studio sale detail route with payment summary, Stripe IDs, timeline, course context, and links from recent wallet sales.
+- `[P6-ADD-05][frontend]` Added an authenticated-workspace theme provider and light/dark toggle without changing public marketing pages.

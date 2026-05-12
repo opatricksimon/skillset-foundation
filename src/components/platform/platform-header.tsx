@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { NotificationBell } from "@/components/platform/notification-bell";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { AccountMenu } from "@/components/site/account-menu";
 
 const surfaceCopy = {
@@ -81,6 +82,7 @@ export function PlatformHeader() {
                 {action.label}
               </Link>
             ))}
+            <ThemeToggle />
             <NotificationBell />
             {user ? <AccountMenu user={user} onSignOut={signOut} /> : null}
           </div>
