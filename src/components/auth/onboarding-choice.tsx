@@ -121,6 +121,11 @@ export function OnboardingChoice() {
   const [error, setError] = useState("");
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // Streamlined teacher activation: user already completed the new
+  // onboarding wizard. Do not re-ask path/profile/goals. Only gate the
+  // teacher role behind email verification + Teacher Terms.
+  const [streamlinedTeacherActivation, setStreamlinedTeacherActivation] =
+    useState(false);
 
   useEffect(() => {
     const auth = getAuth(getFirebaseApp());
@@ -158,7 +163,30 @@ export function OnboardingChoice() {
             )
           : null;
 
-        if (intendedPath || existingPath) {
+        // Wizard already gathered the survey. If this is a teacher who
+        // finished the wizard but does not yet hold the teacher role,
+        // collapse to a single activation step instead of re-asking
+        // path/profile/goals.
+        const finishedWizardAsTeacher =
+          pathIntent === "teacher" &&
+          Boolean(profile?.onboardingCompleted) &&
+          profile?.onboardingPath === "teacher" &&
+          !(profile?.roles ?? []).includes("teacher");
+
+        if (finishedWizardAsTeacher) {
+          const teacherPath = paths.find((path) => {
+            const roles = path.roles as readonly Role[];
+            return roles.includes("teacher") && !roles.includes("student");
+          });
+          setStreamlinedTeacherActivation(true);
+          setSelectedPath(teacherPath ?? null);
+          // Seed a default goal so the existing finish guard
+          // (goals.length === 0) does not block activation. The wizard's
+          // category answers use a different taxonomy.
+          if (!profile?.goals || profile.goals.length === 0) {
+            setGoals(["teach_online"]);
+          }
+        } else if (intendedPath || existingPath) {
           setSelectedPath(intendedPath ?? existingPath ?? null);
         }
       } catch {
@@ -268,17 +296,22 @@ export function OnboardingChoice() {
       return;
     }
 
-    const validationError = validateProfileStep();
+    // Streamlined teacher activation skips profile/goals re-validation:
+    // the wizard already captured identity and survey answers. Only the
+    // security gate (verified email + Teacher Terms) matters here.
+    if (!streamlinedTeacherActivation) {
+      const validationError = validateProfileStep();
 
-    if (validationError) {
-      setStep(1);
-      setError(validationError);
-      return;
-    }
+      if (validationError) {
+        setStep(1);
+        setError(validationError);
+        return;
+      }
 
-    if (goals.length === 0) {
-      setError("Select at least one goal so Skillset can shape your workspace.");
-      return;
+      if (goals.length === 0) {
+        setError("Select at least one goal so Skillset can shape your workspace.");
+        return;
+      }
     }
 
     if (selectedPathIncludesTeacher && !emailVerified) {
@@ -314,6 +347,116 @@ export function OnboardingChoice() {
     return (
       <div className="mt-6 rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-5 text-sm font-semibold text-[var(--color-ink-soft)]">
         Preparing your account setup...
+      </div>
+    );
+  }
+
+  if (streamlinedTeacherActivation) {
+    return (
+      <div className="mt-6 grid gap-5">
+        <div className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="font-semibold text-[var(--color-ink)]">
+            One last step to open Teacher Studio
+          </p>
+          <p className="mt-1">
+            Your profile is already set from onboarding. Verify your email and
+            accept the Teacher Terms to activate creator tools.
+          </p>
+        </div>
+
+        <div className="rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-semibold text-[var(--color-ink)]">
+                Email verification
+              </p>
+              <p className="mt-1">
+                Creator tools require a verified email before Skillset can
+                assign the teacher role.
+              </p>
+            </div>
+            <span
+              className={`shrink-0 rounded-[8px] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                emailVerified
+                  ? "bg-[rgba(26,54,93,0.08)] text-[var(--color-primary)]"
+                  : "bg-[rgba(178,34,52,0.08)] text-[var(--color-accent)]"
+              }`}
+            >
+              {emailVerified ? "Verified" : "Required"}
+            </span>
+          </div>
+          {!emailVerified ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleSendVerification}
+                disabled={isSendingVerification}
+                className="button-outline px-4 py-2 text-xs disabled:opacity-60"
+              >
+                Send verification email
+              </button>
+              <button
+                type="button"
+                onClick={handleRefreshVerification}
+                disabled={isSendingVerification}
+                className="button-solid px-4 py-2 text-xs disabled:opacity-60"
+              >
+                I verified my email
+              </button>
+            </div>
+          ) : null}
+          {verificationMessage ? (
+            <p className="mt-3 text-xs font-semibold text-[var(--color-primary)]">
+              {verificationMessage}
+            </p>
+          ) : null}
+        </div>
+
+        <label className="flex gap-3 rounded-[12px] border border-[var(--color-line)] bg-white p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <input
+            type="checkbox"
+            checked={teacherTermsAccepted}
+            onChange={(event) => setTeacherTermsAccepted(event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-primary)]"
+          />
+          <span>
+            I accept the{" "}
+            <Link
+              href="/legal/teacher-terms"
+              className="font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+              target="_blank"
+            >
+              Teacher Terms
+            </Link>{" "}
+            and understand Skillset reviews courses before marketplace
+            publication.
+          </span>
+        </label>
+
+        {error ? (
+          <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/learn")}
+            disabled={isSaving}
+            className="button-outline px-5 py-3 text-sm disabled:opacity-60"
+          >
+            Skip for now
+          </button>
+          <button
+            type="button"
+            onClick={handleFinish}
+            disabled={isSaving || !emailVerified || !teacherTermsAccepted}
+            className="button-solid px-5 py-3 text-sm disabled:opacity-60"
+          >
+            {isSaving ? "Activating..." : "Activate teaching"}
+          </button>
+        </div>
       </div>
     );
   }
