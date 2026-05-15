@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { platformNav } from "@/data/site";
 import { hasPermission } from "@/lib/permissions";
 
-export function PlatformNav() {
+export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const subject = { roles: user?.roles ?? ["guest"] };
@@ -25,7 +25,7 @@ export function PlatformNav() {
             index === 0 ? "" : "border-t border-[var(--color-line)] pt-4"
           }`}
         >
-          <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+          <p className="platform-sidebar-label px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
             {section}
           </p>
           {visibleItems
@@ -37,6 +37,7 @@ export function PlatformNav() {
                 label={item.label}
                 shortLabel={item.shortLabel}
                 active={isActivePlatformRoute(pathname, item.href)}
+                collapsed={collapsed}
               />
             ))}
         </div>
@@ -58,17 +59,20 @@ function PlatformNavLink({
   label,
   shortLabel,
   active,
+  collapsed,
 }: {
   href: string;
   label: string;
   shortLabel: string;
   active: boolean;
+  collapsed: boolean;
 }) {
   return (
     <Link
       href={href}
+      title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+      className={`group flex items-center gap-2 rounded-[10px] border py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
           ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)] hover:text-white"
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
@@ -83,7 +87,9 @@ function PlatformNavLink({
       >
         {shortLabel}
       </span>
-      <span className={active ? "text-white" : ""}>{label}</span>
+      <span className={`platform-sidebar-label ${active ? "text-white" : ""}`}>
+        {label}
+      </span>
     </Link>
   );
 }

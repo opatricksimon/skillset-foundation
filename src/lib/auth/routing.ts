@@ -44,6 +44,10 @@ export function getPostAuthRoute(
     return `/welcome${getAuthPathQuery(intent)}`;
   }
 
+  if (profile.onboardingPath === "teacher" && !profile.roles.includes("teacher")) {
+    return "/onboarding?path=teacher";
+  }
+
   if (profile.roles.includes("admin") || profile.roles.includes("support")) {
     return "/ops";
   }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { ExportTableButton } from "@/components/shared/export-table-button";
+import { StatusChip } from "@/components/shared/status-chip";
 import {
   supportTicketCategoryLabels,
   supportTicketStatusLabels,
@@ -33,6 +35,18 @@ export function SupportTicketQueue() {
       },
     );
   }, []);
+  const exportRows = useMemo(
+    () =>
+      tickets.map((ticket) => ({
+        id: ticket.id,
+        category: supportTicketCategoryLabels[ticket.category],
+        status: supportTicketStatusLabels[ticket.status],
+        subject: ticket.subject,
+        user: ticket.userName || ticket.userEmail || ticket.userId,
+        message: ticket.message,
+      })),
+    [tickets],
+  );
 
   async function handleStatusUpdate(ticketId: string, status: SupportTicketStatus) {
     setError("");
@@ -62,9 +76,12 @@ export function SupportTicketQueue() {
             a simple status workflow.
           </p>
         </div>
-        <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-          {tickets.length} tickets
-        </span>
+        <div className="flex items-center gap-2">
+          <ExportTableButton filename="skillset-support-tickets" rows={exportRows} />
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+            {tickets.length} tickets
+          </span>
+        </div>
       </div>
 
       {error ? (
@@ -95,9 +112,10 @@ export function SupportTicketQueue() {
                     {ticket.subject}
                   </h4>
                 </div>
-                <span className="rounded-[8px] bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-                  {supportTicketStatusLabels[ticket.status]}
-                </span>
+                <StatusChip
+                  status={ticket.status}
+                  label={supportTicketStatusLabels[ticket.status]}
+                />
               </div>
               <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
                 {ticket.userName || "Unnamed user"} - {ticket.userEmail || ticket.userId}

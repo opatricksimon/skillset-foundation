@@ -1,9 +1,18 @@
-import type { ReactNode } from "react";
+"use client";
 
+import type { ReactNode } from "react";
+import Link from "next/link";
+
+import { MobileSidebarDrawer } from "@/components/platform/mobile-sidebar-drawer";
+import { HelpBubble } from "@/components/platform/help-bubble";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
+import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { SessionCard } from "@/components/platform/session-card";
+import { StatusBanner } from "@/components/platform/status-banner";
+import { ThemeProvider } from "@/lib/theme/theme-provider";
+import { useSidebarState } from "@/lib/ui/sidebar-state";
 
 type PlatformShellProps = {
   eyebrow: string;
@@ -18,31 +27,56 @@ export function PlatformShell({
   description,
   children,
 }: PlatformShellProps) {
+  const {
+    handleMouseEnter,
+    handleMouseLeave,
+    isCollapsed,
+    persistentState,
+    toggle,
+  } = useSidebarState();
+
   return (
-    <main className="page-shell min-h-screen">
+    <ThemeProvider>
+      <main className="page-shell min-h-screen">
+      <StatusBanner />
       <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
-        <div className="platform-grid gap-6">
-          <aside className="platform-sidebar h-fit rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-soft)]">
+        <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
+          <aside
+            className={`platform-sidebar platform-sidebar-panel h-fit rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-soft)] ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <SidebarToggle
+              state={persistentState}
+              isCollapsed={isCollapsed}
+              onToggle={toggle}
+            />
             <div className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3">
-              <LogoWordmark nav href="/" />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <div>
-                  <h1 className="text-sm font-bold text-[var(--color-primary)]">
-                    Skillset
-                  </h1>
-                  <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
-                    Professional learning network
-                  </p>
-                </div>
-                <span className="rounded-[8px] border border-[rgba(178,34,52,0.18)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-                  beta
-                </span>
-              </div>
+              {isCollapsed ? (
+                <LinkLogo />
+              ) : (
+                <>
+                  <LogoWordmark nav href="/" />
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="platform-sidebar-label">
+                      <h1 className="text-sm font-bold text-[var(--color-primary)]">
+                        Skillset
+                      </h1>
+                      <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
+                        Professional learning network
+                      </p>
+                    </div>
+                    <span className="platform-sidebar-label rounded-[8px] border border-[rgba(178,34,52,0.18)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
+                      beta
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
-            <PlatformNav />
-            <SessionCard />
+            <PlatformNav collapsed={isCollapsed} />
+            <SessionCard collapsed={isCollapsed} />
           </aside>
-          <section className="space-y-6">
+          <section className="platform-content space-y-6">
             <PlatformHeader />
             <div className="rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -59,6 +93,21 @@ export function PlatformShell({
           </section>
         </div>
       </div>
-    </main>
+      <MobileSidebarDrawer />
+      <HelpBubble />
+      </main>
+    </ThemeProvider>
+  );
+}
+
+function LinkLogo() {
+  return (
+    <Link
+      href="/"
+      aria-label="Skillset"
+      className="mx-auto grid size-10 place-items-center rounded-[10px] bg-white text-lg font-bold text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
+    >
+      S
+    </Link>
   );
 }

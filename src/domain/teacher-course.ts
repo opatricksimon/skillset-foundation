@@ -16,6 +16,12 @@ export type LessonType =
   | "download"
   | "external_embed";
 
+export type TeacherCoursePaymentType =
+  | "one_time"
+  | "subscription_monthly"
+  | "subscription_yearly"
+  | "free";
+
 export type TeacherLesson = {
   id: string;
   title: string;
@@ -44,6 +50,9 @@ export type TeacherCourse = {
   lessonCount: number;
   priceAmountMinor?: number | null;
   currency?: string;
+  paymentType?: TeacherCoursePaymentType;
+  installmentsEnabled?: boolean;
+  installmentsMax?: number | null;
   platformFeeBps?: number;
   dripStrategy?: DripStrategy;
   dripIntervalDays?: number | null;
@@ -59,6 +68,7 @@ export type CreateTeacherCourseInput = {
   title: string;
   summary: string;
   category: string;
+  paymentType?: Extract<TeacherCoursePaymentType, "one_time" | "free">;
 };
 
 export type UpdateTeacherCourseBuilderInput = {
@@ -68,6 +78,9 @@ export type UpdateTeacherCourseBuilderInput = {
   modules: TeacherCourseModule[];
   priceAmountMinor: number | null;
   currency: string;
+  paymentType: TeacherCoursePaymentType;
+  installmentsEnabled: boolean;
+  installmentsMax: number | null;
   platformFeeBps: number;
   dripStrategy: DripStrategy;
   dripIntervalDays: number | null;
@@ -76,6 +89,14 @@ export type UpdateTeacherCourseBuilderInput = {
 
 export function countCourseLessons(modules: TeacherCourseModule[]): number {
   return modules.reduce((total, module) => total + module.lessons.length, 0);
+}
+
+export function normalizeInstallmentsMax(value: number | null): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.min(36, Math.max(1, Math.round(value)));
 }
 
 export function teacherCanEditCourse(status: TeacherCourseStatus): boolean {

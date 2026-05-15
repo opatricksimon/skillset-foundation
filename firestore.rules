@@ -50,11 +50,15 @@ service cloud.firestore {
         'displayName',
         'username',
         'bio',
+        'phoneNumber',
         'timezone',
         'goals',
         'photoURL',
         'roles',
         'onboardingCompleted',
+        'onboardingAnswers',
+        'onboardingPath',
+        'onboardingCompletedAt',
         'termsAcceptedAt',
         'termsVersion',
         'privacyAcceptedAt',
@@ -99,6 +103,14 @@ service cloud.firestore {
           )
         )
         && (
+          !request.resource.data.keys().hasAny(['phoneNumber'])
+          || request.resource.data.phoneNumber == null
+          || (
+            request.resource.data.phoneNumber is string
+            && request.resource.data.phoneNumber.matches('^\\+[1-9][0-9]{6,14}$')
+          )
+        )
+        && (
           !request.resource.data.keys().hasAny(['timezone'])
           || request.resource.data.timezone == null
           || (
@@ -120,6 +132,74 @@ service cloud.firestore {
               'live_mentorship',
               'business_training'
             ])
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['onboardingPath'])
+          || request.resource.data.onboardingPath in ['student', 'teacher', 'both']
+        )
+        && (
+          !request.resource.data.keys().hasAny(['onboardingCompletedAt'])
+          || request.resource.data.onboardingCompletedAt == null
+          || request.resource.data.onboardingCompletedAt is timestamp
+        )
+        && (
+          !request.resource.data.keys().hasAny(['onboardingAnswers'])
+          || (
+            request.resource.data.onboardingAnswers is map
+            && request.resource.data.onboardingAnswers.keys().hasOnly([
+              'path',
+              'sourceOfDiscovery',
+              'instagramHandle',
+              'monthlyRevenue',
+              'alreadySold',
+              'primaryGoal',
+              'contentArea',
+              'audienceSize'
+            ])
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['path'])
+              || request.resource.data.onboardingAnswers.path in ['student', 'teacher', 'both']
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['sourceOfDiscovery'])
+              || request.resource.data.onboardingAnswers.sourceOfDiscovery in [
+                'Instagram',
+                'YouTube',
+                'LinkedIn',
+                'A friend or colleague',
+                'Search engine',
+                'Podcast',
+                'Other'
+              ]
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['alreadySold'])
+              || request.resource.data.onboardingAnswers.alreadySold in ['yes', 'no']
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['monthlyRevenue'])
+              || request.resource.data.onboardingAnswers.monthlyRevenue is string
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['instagramHandle'])
+              || request.resource.data.onboardingAnswers.instagramHandle == null
+              || (
+                request.resource.data.onboardingAnswers.instagramHandle is string
+                && request.resource.data.onboardingAnswers.instagramHandle.matches('^[a-zA-Z0-9_.]{0,30}$')
+              )
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['primaryGoal'])
+              || (
+                request.resource.data.onboardingAnswers.primaryGoal is list
+                && request.resource.data.onboardingAnswers.primaryGoal.size() <= 3
+              )
+            )
+            && (
+              !request.resource.data.onboardingAnswers.keys().hasAny(['audienceSize'])
+              || request.resource.data.onboardingAnswers.audienceSize is string
+            )
           )
         )
         && (
@@ -227,6 +307,9 @@ service cloud.firestore {
         'lessonCount',
         'priceAmountMinor',
         'currency',
+        'paymentType',
+        'installmentsEnabled',
+        'installmentsMax',
         'platformFeeBps',
         'dripStrategy',
         'dripIntervalDays',
@@ -311,6 +394,41 @@ service cloud.firestore {
           ]
         )
         && (
+          !request.resource.data.keys().hasAny(['paymentType'])
+          || request.resource.data.paymentType in [
+            'one_time',
+            'subscription_monthly',
+            'subscription_yearly',
+            'free'
+          ]
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsEnabled'])
+          || request.resource.data.installmentsEnabled is bool
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsMax'])
+          || request.resource.data.installmentsMax == null
+          || (
+            request.resource.data.installmentsMax is int
+            && request.resource.data.installmentsMax >= 1
+            && request.resource.data.installmentsMax <= 36
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['paymentType'])
+          || request.resource.data.paymentType != 'free'
+          || request.resource.data.priceAmountMinor == 0
+        )
+        && (
+          !request.resource.data.keys().hasAny(['installmentsEnabled'])
+          || request.resource.data.installmentsEnabled == false
+          || (
+            request.resource.data.keys().hasAny(['paymentType'])
+            && request.resource.data.paymentType == 'one_time'
+          )
+        )
+        && (
           !request.resource.data.keys().hasAny(['platformFeeBps'])
           || (
             request.resource.data.platformFeeBps is int
@@ -383,6 +501,9 @@ service cloud.firestore {
           'lessonCount',
           'priceAmountMinor',
           'currency',
+          'paymentType',
+          'installmentsEnabled',
+          'installmentsMax',
           'platformFeeBps',
           'dripStrategy',
           'dripIntervalDays',

@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarClock, CreditCard, ExternalLink, Gift, Repeat } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import {
+  PlanSelectorCards,
+  type PlanSelectorOption,
+} from "@/components/shared/plan-selector-cards";
+import { InlineHelp } from "@/components/shared/inline-help";
+import { StatusChip } from "@/components/shared/status-chip";
 import { CourseAssetUploader } from "@/components/teacher/course-asset-uploader";
 import type { DripStrategy } from "@/domain/drip-policy";
 import type {
@@ -12,9 +19,11 @@ import type {
   TeacherCourse,
   TeacherLesson,
   TeacherCourseModule,
+  TeacherCoursePaymentType,
 } from "@/domain/teacher-course";
 import {
   countCourseLessons,
+  normalizeInstallmentsMax,
   teacherCanEditCourse,
   teacherCanSubmitCourse,
 } from "@/domain/teacher-course";
@@ -81,13 +90,40 @@ const dripStrategies: { value: DripStrategy; label: string; detail: string }[] =
   },
 ];
 
-const statusLabels: Record<TeacherCourse["status"], string> = {
-  draft: "Draft",
-  in_review: "In review",
-  needs_changes: "Needs changes",
-  published: "Published",
-  inactive: "Inactive",
-};
+const paymentModelOptions: PlanSelectorOption<TeacherCoursePaymentType>[] = [
+  {
+    value: "one_time",
+    title: "One-time payment",
+    description: "Student pays once and gets lifetime access.",
+    features: ["Best for complete courses", "Supports optional installments"],
+    icon: CreditCard,
+  },
+  {
+    value: "free",
+    title: "Free",
+    description: "No payment required. Useful for lead-gen or trial cohorts.",
+    features: ["Opens enrollment without checkout", "Useful for previews or pilots"],
+    icon: Gift,
+  },
+  {
+    value: "subscription_monthly",
+    title: "Monthly subscription",
+    description: "Recurring monthly billing.",
+    features: ["Recurring access", "Cancellation controls"],
+    icon: Repeat,
+    disabled: true,
+    badge: "Coming soon",
+  },
+  {
+    value: "subscription_yearly",
+    title: "Yearly subscription",
+    description: "Recurring yearly billing.",
+    features: ["Annual access", "Renewal reminders"],
+    icon: CalendarClock,
+    disabled: true,
+    badge: "Coming soon",
+  },
+];
 
 function createLocalId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -115,6 +151,22 @@ function parsePriceAmountMinor(value: string): number | null {
 
 function hasInvalidPriceAmount(value: string): boolean {
   return value.trim().length > 0 && parsePriceAmountMinor(value) === null;
+}
+
+function parseInstallmentsMax(value: string): number | null {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const parsedValue = Number(trimmedValue);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 1) {
+    return null;
+  }
+
+  return normalizeInstallmentsMax(parsedValue);
 }
 
 function normalizeDurationMinutes(value: string): number | null {
@@ -207,6 +259,10 @@ export function CourseBuilderStudio() {
   const [modules, setModules] = useState<TeacherCourseModule[]>([]);
   const [priceAmount, setPriceAmount] = useState("");
   const [currency, setCurrency] = useState(defaultSkillsetCurrency);
+  const [paymentType, setPaymentType] =
+    useState<TeacherCoursePaymentType>("one_time");
+  const [installmentsEnabled, setInstallmentsEnabled] = useState(false);
+  const [installmentsMax, setInstallmentsMax] = useState("12");
   const [dripStrategy, setDripStrategy] = useState<DripStrategy>("instant");
   const [dripIntervalDays, setDripIntervalDays] = useState("1");
   const [freePreviewLessonId, setFreePreviewLessonId] = useState("");
@@ -253,6 +309,12 @@ export function CourseBuilderStudio() {
             : "",
         );
         setCurrency(nextCourse.currency ?? defaultSkillsetCurrency);
+        setPaymentType(
+          nextCourse.paymentType ??
+            (nextCourse.priceAmountMinor === 0 ? "free" : "one_time"),
+        );
+        setInstallmentsEnabled(Boolean(nextCourse.installmentsEnabled));
+        setInstallmentsMax(String(nextCourse.installmentsMax ?? 12));
         setDripStrategy(nextCourse.dripStrategy ?? "instant");
         setDripIntervalDays(String(nextCourse.dripIntervalDays ?? 1));
         setFreePreviewLessonId(nextCourse.freePreviewLessonId ?? "");
@@ -278,6 +340,12 @@ export function CourseBuilderStudio() {
       moduleTitle: module.title,
     })),
   );
+  const priceFieldIsValid =
+    paymentType === "free" || !hasInvalidPriceAmount(priceAmount);
+  const installmentsAreValid =
+    paymentType !== "one_time" ||
+    !installmentsEnabled ||
+    parseInstallmentsMax(installmentsMax) !== null;
   const readinessItems = [
     {
       label: title.trim() ? "Course title is set." : "Add a course title.",
@@ -300,12 +368,38 @@ export function CourseBuilderStudio() {
     },
     {
       label:
-        !hasInvalidPriceAmount(priceAmount)
+        priceFieldIsValid
           ? "Pricing field is valid."
           : "Fix the pricing field.",
-      ready: !hasInvalidPriceAmount(priceAmount),
+      ready: priceFieldIsValid,
+    },
+    {
+      label:
+        installmentsAreValid
+          ? "Payment model is ready."
+          : "Set a valid installment limit.",
+      ready: installmentsAreValid,
     },
   ];
+
+  function handlePaymentTypeChange(nextPaymentType: TeacherCoursePaymentType) {
+    if (!isEditable) {
+      return;
+    }
+
+    setPaymentType(nextPaymentType);
+
+    if (nextPaymentType === "free") {
+      setPriceAmount("0");
+      setInstallmentsEnabled(false);
+    }
+
+    if (nextPaymentType !== "one_time") {
+      setInstallmentsEnabled(false);
+    }
+
+    setSuccess("");
+  }
 
   function handleAddModule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -525,7 +619,13 @@ export function CourseBuilderStudio() {
     setError("");
     setSuccess("");
     setIsSaving(true);
-    const nextPriceAmountMinor = parsePriceAmountMinor(priceAmount);
+    const nextPriceAmountMinor =
+      paymentType === "free" ? 0 : parsePriceAmountMinor(priceAmount);
+    const nextInstallmentsEnabled =
+      paymentType === "one_time" && installmentsEnabled;
+    const nextInstallmentsMax = nextInstallmentsEnabled
+      ? parseInstallmentsMax(installmentsMax)
+      : null;
     const nextDripIntervalDays = Math.max(
       1,
       normalizeDripDelayDays(dripIntervalDays) ?? 1,
@@ -533,8 +633,14 @@ export function CourseBuilderStudio() {
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
 
-    if (hasInvalidPriceAmount(priceAmount)) {
+    if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
+      setIsSaving(false);
+      return;
+    }
+
+    if (!installmentsAreValid) {
+      setError("Set a valid installment limit before saving.");
       setIsSaving(false);
       return;
     }
@@ -553,6 +659,9 @@ export function CourseBuilderStudio() {
         modules: nextModules,
         priceAmountMinor: nextPriceAmountMinor,
         currency,
+        paymentType,
+        installmentsEnabled: nextInstallmentsEnabled,
+        installmentsMax: nextInstallmentsMax,
         platformFeeBps: course?.platformFeeBps ?? 1500,
         dripStrategy,
         dripIntervalDays: nextDripIntervalDays,
@@ -574,7 +683,13 @@ export function CourseBuilderStudio() {
     setError("");
     setSuccess("");
     setIsSubmitting(true);
-    const nextPriceAmountMinor = parsePriceAmountMinor(priceAmount);
+    const nextPriceAmountMinor =
+      paymentType === "free" ? 0 : parsePriceAmountMinor(priceAmount);
+    const nextInstallmentsEnabled =
+      paymentType === "one_time" && installmentsEnabled;
+    const nextInstallmentsMax = nextInstallmentsEnabled
+      ? parseInstallmentsMax(installmentsMax)
+      : null;
     const nextDripIntervalDays = Math.max(
       1,
       normalizeDripDelayDays(dripIntervalDays) ?? 1,
@@ -582,8 +697,14 @@ export function CourseBuilderStudio() {
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
 
-    if (hasInvalidPriceAmount(priceAmount)) {
+    if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!installmentsAreValid) {
+      setError("Set a valid installment limit before submitting.");
       setIsSubmitting(false);
       return;
     }
@@ -602,6 +723,9 @@ export function CourseBuilderStudio() {
         modules: nextModules,
         priceAmountMinor: nextPriceAmountMinor,
         currency,
+        paymentType,
+        installmentsEnabled: nextInstallmentsEnabled,
+        installmentsMax: nextInstallmentsMax,
         platformFeeBps: course?.platformFeeBps ?? 1500,
         dripStrategy,
         dripIntervalDays: nextDripIntervalDays,
@@ -662,9 +786,19 @@ export function CourseBuilderStudio() {
               Shape the learner path
             </h3>
           </div>
-          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-            {course ? statusLabels[course.status] : "Draft"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {courseId ? (
+              <Link
+                href={`/teach/builder/${courseId}/preview`}
+                target="_blank"
+                className="button-outline px-4 py-2 text-xs"
+              >
+                <ExternalLink aria-hidden="true" size={14} strokeWidth={1.8} />
+                Preview
+              </Link>
+            ) : null}
+            <StatusChip status={course?.status ?? "draft"} />
+          </div>
         </div>
 
         {course?.status === "in_review" ? (
@@ -752,15 +886,26 @@ export function CourseBuilderStudio() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Marketplace setup
             </p>
+            <div className="mt-4">
+              <PlanSelectorCards
+                label="Payment model"
+                options={paymentModelOptions}
+                value={paymentType}
+                onChange={handlePaymentTypeChange}
+                disabled={!isEditable}
+              />
+            </div>
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_140px]">
               <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 Price
                 <input
                   value={priceAmount}
                   onChange={(event) => setPriceAmount(event.target.value)}
-                  disabled={!isEditable}
+                  disabled={!isEditable || paymentType === "free"}
                   inputMode="decimal"
-                  placeholder="Example: 149"
+                  placeholder={
+                    paymentType === "free" ? "Free course" : "Example: 149"
+                  }
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
                 />
               </label>
@@ -789,6 +934,41 @@ export function CourseBuilderStudio() {
                 </select>
               </label>
             </div>
+            {paymentType === "one_time" ? (
+              <div className="mt-4 rounded-[12px] border border-[var(--color-line)] bg-white p-4">
+                <label className="flex items-start gap-3 text-sm font-semibold text-[var(--color-ink)]">
+                  <input
+                    type="checkbox"
+                    checked={installmentsEnabled}
+                    onChange={(event) =>
+                      setInstallmentsEnabled(event.target.checked)
+                    }
+                    disabled={!isEditable}
+                    className="mt-1 size-4 accent-[var(--color-accent)]"
+                  />
+                  <span>
+                    Allow installments
+                    <span className="mt-1 block text-xs font-normal leading-5 text-[var(--color-ink-soft)]">
+                      Useful for higher-priced courses in markets where installment
+                      payments are common.
+                    </span>
+                  </span>
+                </label>
+                {installmentsEnabled ? (
+                  <label className="mt-4 grid max-w-[220px] gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                    Max installments
+                    <input
+                      value={installmentsMax}
+                      onChange={(event) => setInstallmentsMax(event.target.value)}
+                      disabled={!isEditable}
+                      inputMode="numeric"
+                      placeholder="12"
+                      className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_180px]">
               <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 Content release
@@ -849,6 +1029,14 @@ export function CourseBuilderStudio() {
               These fields prepare the public listing. Paid access still requires
               Stripe checkout before enrollment opens.
             </p>
+            <InlineHelp
+              topic="course pricing"
+              href="/help#course-pricing"
+              className="mt-4"
+            >
+              Set the public payment model before review so checkout, free access,
+              and creator payouts can be checked consistently.
+            </InlineHelp>
           </div>
         ) : null}
 
@@ -880,6 +1068,14 @@ export function CourseBuilderStudio() {
             <h4 className="text-sm font-semibold text-[var(--color-ink)]">
               Add lesson
             </h4>
+            <InlineHelp
+              topic="drip-released content"
+              href="/help#drip-release"
+              className="mt-3"
+            >
+              Use lesson delays and preview selection to protect the course while
+              still giving learners enough context before enrollment.
+            </InlineHelp>
             <form className="mt-3 grid gap-3" onSubmit={handleAddLesson}>
               <div className="grid gap-3 md:grid-cols-2">
                 <select
@@ -1242,6 +1438,14 @@ export function CourseBuilderStudio() {
               Review stays lightweight: Skillset checks structure, basic quality,
               trust, pricing readiness, and whether the public listing should go live.
             </p>
+            <InlineHelp
+              topic="course review"
+              href="/help#course-review"
+              className="mt-4"
+            >
+              Submit only when the core promise, course structure, pricing, and
+              preview lesson are ready for Skillset review.
+            </InlineHelp>
           </div>
         ) : null}
       </section>

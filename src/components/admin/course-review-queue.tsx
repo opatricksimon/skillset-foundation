@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { ExportTableButton } from "@/components/shared/export-table-button";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import {
   subscribeToCoursesInReview,
@@ -68,6 +69,20 @@ export function CourseReviewQueue() {
       },
     );
   }, []);
+  const exportRows = useMemo(
+    () =>
+      courses.map((course) => ({
+        id: course.id,
+        title: course.title,
+        category: course.category,
+        status: course.status,
+        modules: course.modules?.length ?? 0,
+        lessons: course.lessonCount ?? 0,
+        price: formatTeacherCoursePrice(course),
+        ownerId: course.ownerId,
+      })),
+    [courses],
+  );
 
   async function handleReview(courseId: string, action: ReviewAction) {
     const note = reviewNotes[courseId]?.trim() ?? "";
@@ -116,9 +131,12 @@ export function CourseReviewQueue() {
             return it for changes, or keep it inactive.
           </p>
         </div>
-        <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-          {courses.length} pending
-        </span>
+        <div className="flex items-center gap-2">
+          <ExportTableButton filename="skillset-course-review" rows={exportRows} />
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+            {courses.length} pending
+          </span>
+        </div>
       </div>
 
       {error ? (

@@ -16,10 +16,18 @@ vi.mock("@/components/auth/auth-provider", () => ({
       uid: "test-user",
       email: "test@example.com",
       displayName: "Test User",
+      emailVerified: true,
       photoURL: null,
       roles: mockAuthState.roles,
     },
     signOut: vi.fn(),
+  }),
+}));
+
+vi.mock("@/lib/data/user-profiles", () => ({
+  subscribeToUserProfile: vi.fn((_uid, onNext) => {
+    onNext(null);
+    return vi.fn();
   }),
 }));
 
@@ -41,6 +49,15 @@ vi.mock("@/components/teacher/teacher-event-studio", () => ({
 
 vi.mock("@/components/teacher/teacher-wallet-panel", () => ({
   TeacherWalletPanel: () => <div>Teacher wallet panel</div>,
+}));
+
+vi.mock("@/components/teacher/teacher-studio-dashboard", () => ({
+  TeacherStudioDashboard: () => (
+    <div>
+      <h3>Publishing flow</h3>
+      <p>Educator support</p>
+    </div>
+  ),
 }));
 
 vi.mock("@/components/learn/learn-dashboard", () => ({

@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { InlineHelp } from "@/components/shared/inline-help";
+import { StatusChip } from "@/components/shared/status-chip";
 import type { Order } from "@/domain/order";
 import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import type { UserProfile } from "@/domain/user-profile";
@@ -166,6 +169,10 @@ export function TeacherWalletPanel() {
         Skillset Checkout; Stripe can route the teacher share to the connected
         account while Skillset keeps the platform fee.
       </p>
+      <InlineHelp topic="D+30 payouts" href="/help#payouts" className="mt-4">
+        Payouts stay in release until the refund window closes, which keeps
+        learner protection and creator reporting aligned.
+      </InlineHelp>
 
       <div className="mt-5 grid gap-3 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm">
         <div className="flex items-center justify-between gap-4">
@@ -244,6 +251,52 @@ export function TeacherWalletPanel() {
             </p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-6 border-t border-[var(--color-line)] pt-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+              Recent sales
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+              Click a sale to inspect payment and order details.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3">
+          {orders.length === 0 ? (
+            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              No sales yet. Paid orders will appear here after checkout succeeds.
+            </p>
+          ) : (
+            orders.slice(0, 5).map((order) => (
+              <Link
+                key={order.id}
+                href={`/teach/sales/${order.id}`}
+                className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 transition duration-[180ms] hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <StatusChip status={order.status} />
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                      {order.courseTitle}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                      Order {order.id}
+                    </p>
+                  </div>
+                  <span className="rounded-[8px] bg-white px-3 py-1 text-sm font-bold text-[var(--color-primary)]">
+                    {new Intl.NumberFormat("en", {
+                      style: "currency",
+                      currency: order.currency,
+                    }).format(order.amountMinor / 100)}
+                  </span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
       </div>
     </section>
   );

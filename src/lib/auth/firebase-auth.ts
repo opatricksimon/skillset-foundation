@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   reload,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -11,6 +13,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  updatePassword,
   verifyBeforeUpdateEmail,
   type User,
 } from "firebase/auth";
@@ -34,7 +37,7 @@ export function mapFirebaseUser(
     email: user.email,
     emailVerified: user.emailVerified,
     displayName: profile?.displayName ?? user.displayName,
-    photoURL: user.photoURL,
+    photoURL: profile?.photoURL ?? user.photoURL,
     roles: profile?.roles ?? ["student"],
   };
 }
@@ -162,6 +165,21 @@ export async function requestSkillsetEmailChange(newEmail: string) {
   }
 
   await verifyBeforeUpdateEmail(user, normalizedEmail);
+}
+
+export async function changeSkillsetPassword(
+  currentPassword: string,
+  nextPassword: string,
+) {
+  const user = getFirebaseAuth().currentUser;
+
+  if (!user?.email) {
+    throw new Error("Email/password authentication is required.");
+  }
+
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, nextPassword);
 }
 
 export async function signOutOfSkillset() {

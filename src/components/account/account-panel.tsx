@@ -7,6 +7,7 @@ const accountLinks = [
   ["Security", "/account/security"],
   ["Payments", "/account/payments"],
   ["Billing", "/account/billing"],
+  ["Notifications", "/account/notifications"],
 ] as const;
 
 export function AccountPanel({
@@ -25,7 +26,12 @@ export function AccountPanel({
         <nav className="mt-3 grid gap-1" aria-label="Account settings">
           {accountLinks.map(([label, href]) => {
             const isActive = label === active;
-            const short = label === "Payments" ? "Pa" : label.slice(0, 2);
+            const short =
+              label === "Payments"
+                ? "Pa"
+                : label === "Notifications"
+                  ? "No"
+                  : label.slice(0, 2);
 
             return (
               <Link

@@ -12,6 +12,7 @@ import {
 
 import type {
   UpsertUserProfileInput,
+  UpdateOnboardingAnswersInput,
   UserIdentityInput,
   UserProfile,
 } from "@/domain/user-profile";
@@ -138,6 +139,10 @@ function buildIdentityPatch(input: UserIdentityInput) {
     patch.bio = input.bio?.trim() || null;
   }
 
+  if (input.phoneNumber !== undefined) {
+    patch.phoneNumber = input.phoneNumber?.trim() || null;
+  }
+
   if (input.timezone !== undefined) {
     patch.timezone = input.timezone?.trim() || null;
   }
@@ -154,6 +159,29 @@ export async function updateUserIdentity(uid: string, input: UserIdentityInput) 
     doc(getFirestoreDb(), usersCollection, uid),
     {
       ...buildIdentityPatch(input),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function updateOnboardingAnswers({
+  uid,
+  answers,
+  path,
+  completed = false,
+}: UpdateOnboardingAnswersInput) {
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      onboardingAnswers: answers,
+      ...(path ? { onboardingPath: path } : {}),
+      ...(completed
+        ? {
+            onboardingCompleted: true,
+            onboardingCompletedAt: serverTimestamp(),
+          }
+        : {}),
       updatedAt: serverTimestamp(),
     },
     { merge: true },

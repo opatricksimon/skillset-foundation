@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countCourseLessons,
+  normalizeInstallmentsMax,
   teacherCanEditCourse,
   teacherCanSubmitCourse,
   type TeacherCourseModule,
@@ -40,5 +41,12 @@ describe("teacher course domain", () => {
     expect(teacherCanSubmitCourse("needs_changes")).toBe(true);
     expect(teacherCanSubmitCourse("inactive")).toBe(true);
     expect(teacherCanSubmitCourse("published")).toBe(false);
+  });
+
+  it("normalizes installment limits for one-time courses", () => {
+    expect(normalizeInstallmentsMax(12)).toBe(12);
+    expect(normalizeInstallmentsMax(40)).toBe(36);
+    expect(normalizeInstallmentsMax(0)).toBe(1);
+    expect(normalizeInstallmentsMax(null)).toBeNull();
   });
 });

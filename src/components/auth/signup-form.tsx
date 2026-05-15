@@ -7,6 +7,10 @@ import { useMemo, useState, type FormEvent } from "react";
 import { AppleMark } from "@/components/auth/apple-mark";
 import { GoogleMark } from "@/components/auth/google-mark";
 import {
+  isStrongPassword,
+  PasswordStrengthChecklist,
+} from "@/components/auth/password-strength-checklist";
+import {
   getAuthErrorMessage,
   signInWithGoogle,
   signUpWithEmail,
@@ -18,6 +22,7 @@ import {
 } from "@/lib/auth/profile-validation";
 import {
   getAuthPathIntentFromSearchParams,
+  getAuthPathQuery,
   getLoadingRoute,
 } from "@/lib/auth/routing";
 import {
@@ -49,6 +54,7 @@ export function SignupForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const legalAccepted = termsAccepted && privacyAccepted;
+  const passwordReady = isStrongPassword(password);
 
   async function handleEmailSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,6 +73,11 @@ export function SignupForm() {
       return;
     }
 
+    if (!passwordReady) {
+      setError("Use a password that meets every requirement.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -80,7 +91,7 @@ export function SignupForm() {
         displayName,
         username: normalizedUsername,
       });
-      router.push(getLoadingRoute("welcome", pathIntent));
+      router.push(`/welcome${getAuthPathQuery(pathIntent)}`);
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -122,7 +133,7 @@ export function SignupForm() {
       router.push(
         profile?.onboardingCompleted
           ? getLoadingRoute("route", pathIntent)
-          : getLoadingRoute("welcome", pathIntent),
+          : `/welcome${getAuthPathQuery(pathIntent)}`,
       );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
@@ -200,6 +211,7 @@ export function SignupForm() {
           required
           className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
         />
+        {password ? <PasswordStrengthChecklist password={password} /> : null}
       </label>
       <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
         Profile photo <span className="font-normal text-[var(--color-ink-soft)]">(optional)</span>
@@ -210,7 +222,7 @@ export function SignupForm() {
             const file = event.target.files?.[0] ?? null;
             if (file && !isAllowedAvatarFile(file)) {
               setAvatarFile(null);
-              setError("Use a profile image under 5 MB.");
+              setError("Use a JPG or PNG profile image under 2 MB.");
               return;
             }
             setError("");
@@ -268,7 +280,7 @@ export function SignupForm() {
           {error}
         </p>
       ) : null}
-      <button type="submit" disabled={isLoading || !legalAccepted} className="button-solid mt-2 px-5 py-3 text-sm disabled:opacity-60">
+      <button type="submit" disabled={isLoading || !legalAccepted || !passwordReady} className="button-solid mt-2 px-5 py-3 text-sm disabled:opacity-60">
         {isLoading ? "Creating account..." : "Create account"}
       </button>
       <button

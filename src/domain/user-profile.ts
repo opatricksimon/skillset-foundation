@@ -11,17 +11,33 @@ export const userGoalOptions = [
 
 export type UserGoal = (typeof userGoalOptions)[number];
 
+export type OnboardingPath = "student" | "teacher" | "both";
+
+export type OnboardingAnswers = {
+  path?: OnboardingPath;
+  sourceOfDiscovery?: string;
+  alreadySold?: "yes" | "no";
+  monthlyRevenue?: string;
+  primaryGoal?: string[];
+  instagramHandle?: string;
+  audienceSize?: string;
+};
+
 export type UserProfile = {
   uid: string;
   email: string | null;
   displayName: string | null;
   username?: string | null;
   bio?: string | null;
+  phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
   photoURL: string | null;
   roles: Role[];
   onboardingCompleted: boolean;
+  onboardingAnswers?: OnboardingAnswers;
+  onboardingPath?: OnboardingPath;
+  onboardingCompletedAt?: unknown;
   termsAcceptedAt?: string;
   termsVersion?: string;
   privacyAcceptedAt?: unknown;
@@ -50,6 +66,14 @@ export type UserIdentityInput = {
   displayName?: string | null;
   username?: string | null;
   bio?: string | null;
+  phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
+};
+
+export type UpdateOnboardingAnswersInput = {
+  uid: string;
+  answers: OnboardingAnswers;
+  path?: OnboardingPath;
+  completed?: boolean;
 };
