@@ -71,9 +71,13 @@ function getAccountBanner(
 
   if (user.roles.includes("teacher") && !profile?.teacherTermsAcceptedAt) {
     return {
-      message: "Accept Teacher Terms to publish courses.",
-      ctaLabel: "Accept terms",
-      ctaHref: "/legal/teacher-terms",
+      // Route to the activation flow that actually records acceptance
+      // (sets teacherTermsAcceptedAt and clears this banner). The
+      // /legal/teacher-terms page is read-only text with no accept
+      // action, so it could never clear the banner.
+      message: "Activate teaching: verify your email and accept the Teacher Terms.",
+      ctaLabel: "Activate now",
+      ctaHref: "/onboarding?path=teacher",
     };
   }
 

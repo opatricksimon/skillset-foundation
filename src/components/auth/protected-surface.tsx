@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { SkillsetSpinner } from "@/components/shared/skillset-spinner";
 import { hasAnyPermission, type Permission } from "@/lib/permissions";
 
 type ProtectedSurfaceProps = {
@@ -16,9 +17,8 @@ export function ProtectedSurface({ permissions, children }: ProtectedSurfaceProp
 
   if (status === "loading") {
     return (
-      <AccessPanel
-        eyebrow="Checking access"
-        title="Preparing your workspace."
+      <SkillsetSpinner
+        title="Preparing your workspace"
         description="Skillset is checking your account session before opening this area."
       />
     );

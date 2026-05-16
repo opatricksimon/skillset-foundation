@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { OnboardingChoice } from "@/components/auth/onboarding-choice";
+import { SkillsetSpinner } from "@/components/shared/skillset-spinner";
 
 export default function OnboardingPage() {
   return (
@@ -27,18 +28,18 @@ export default function OnboardingPage() {
         <h2 className="display-title mt-3 text-4xl text-[var(--color-primary)]">
           Complete your profile
         </h2>
-        <Suspense fallback={<OnboardingFallback />}>
+        <Suspense
+          fallback={
+            <SkillsetSpinner
+              fullscreen={false}
+              title="Preparing onboarding"
+              description="One moment. Skillset is getting things ready."
+            />
+          }
+        >
           <OnboardingChoice />
         </Suspense>
       </div>
     </AuthShell>
-  );
-}
-
-function OnboardingFallback() {
-  return (
-    <div className="mt-6 rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm font-semibold text-[var(--color-ink-soft)]">
-      Preparing onboarding...
-    </div>
   );
 }

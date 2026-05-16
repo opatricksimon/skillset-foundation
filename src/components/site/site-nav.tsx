@@ -11,12 +11,15 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
+// No caret affordance: these are direct links, not dropdown menus.
+// A caret implies a sub-menu that does not exist (misleading). Labels
+// are deduped — "Programs" already points to /courses.
 const navItems = [
-  { href: "/courses", label: "Programs", hasCaret: true },
-  { href: "/instructors", label: "Faculty", hasCaret: true },
+  { href: "/courses", label: "Courses" },
+  { href: "/instructors", label: "Instructors" },
+  { href: "/for-creators", label: "For creators" },
   { href: "/pricing", label: "Pricing" },
   { href: "/promise", label: "Promise" },
-  { href: "/courses", label: "Browse a course" },
   { href: "/help", label: "Help" },
 ];
 
@@ -64,9 +67,6 @@ export function SiteNav() {
           {navItems.map((item) => (
             <Link key={`${item.href}-${item.label}`} href={item.href} className="site-header__link">
               {item.label}
-              {item.hasCaret ? (
-                <ChevronDown aria-hidden="true" size={12} strokeWidth={1.8} opacity={0.55} />
-              ) : null}
             </Link>
           ))}
         </nav>
