@@ -14,7 +14,7 @@ Gerado pela sessão executora autônoma 2026-05-15. Base: tudo verificado no có
 ## P1 — Antes de uso público sério (precisa de browser/QA real)
 
 1. **QA de browser interativo** (não automatizável estaticamente): Lighthouse mobile nas páginas públicas, console-clean em DevTools, contraste do dark mode, fluxos reais Firebase (signup→onboarding→avatar upload→enrollment) e Stripe Connect em test mode com conta real.
-2. **Rotas órfãs** `/onboarding` e `/platform`: manter `/onboarding` (agora é o gate de ativação teacher streamlined — NÃO deletar). `/platform` pode virar redirect para `/learn` (autenticado) ou `/` — precisa redirect testado.
+2. **Rotas `/onboarding` e `/platform`: NÃO mexer (verificado 2026-05-15).** `/onboarding` agora é o gate de ativação teacher streamlined. `/platform` foi VERIFICADO como o "Home" autenticado ativo — referenciado em sidebar nav (`data/site.ts`), mobile drawer, path "Use both sides" do onboarding, `not-found.tsx` e teste. NÃO é órfão; redirect/deleção quebraria navegação. Recomendação anterior de redirect CANCELADA.
 3. **Seed de conteúdo real**: marketplace sem cursos reais. Founder precisa criar 2-3 cursos seed (não automatizável por código). Bloqueia validação do loop teacher→student.
 
 ## P2 — Qualidade de mercado
