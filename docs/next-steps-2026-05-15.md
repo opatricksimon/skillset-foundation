@@ -32,3 +32,27 @@ Gerado pela sessão executora autônoma 2026-05-15. Base: tudo verificado no có
 ## Loop autônomo — ordem de continuação
 
 A cada iteração: pegar o próximo item code-only/zero-regressão de P1→P3, executar, verificar (lint/test/build), commit, redeploy, registrar em changelog. Itens que exigem browser/founder ficam marcados como bloqueados e a sessão informa explicitamente.
+
+## Verificação de surfaces Cakto-modelados (2026-05-15, executor)
+
+Revisão estática profunda dos surfaces autenticados (nunca testados por browser, per completion report):
+- `status-banner.tsx`: CORRETO. `user.emailVerified` existe em SkillsetUser e mapFirebaseUser seta. Banners (email/teacher-terms/stripe) funcionam.
+- `platform-shell.tsx`: CORRETO. Sidebar colapsável + hover-expand + StatusBanner + MobileDrawer + HelpBubble + ThemeProvider corretamente wired.
+- Componentes Cakto verificados existir e estar mergeados em main (e84701e) e deployados hoje.
+- Conclusão: implementação Fase 6 é de boa qualidade. Não há defeitos de código-only de alto valor restantes. Loop autônomo de código atingiu término legítimo.
+
+## PLANO DE AÇÃO — o que falta para o aprimoramento (precisa do founder, não de mais código)
+
+**P0 — Validação (só você ou browser interativo):**
+1. Entrar LOGADO em https://skillsetusaofficial.web.app, ir a /teach e /learn. Ver a sidebar colapsável, status banner, notification bell, revenue milestone, dashboard — telas Cakto-modeladas que suas screenshots de 13-14 mai NÃO mostravam (pré-deploy).
+2. QA de browser: clicar tudo, colapsar sidebar, dark mode toggle, criar curso via modal, fluxo onboarding wizard. Anotar defeitos REAIS.
+3. Mandar screenshots SÓ dessas telas autenticadas pós-deploy se houver problema.
+
+**P1 — Conteúdo (só você):**
+4. Criar 2-3 cursos seed reais (Teacher Studio). Sem isso dashboard/marketplace ficam vazios mesmo bem modelados. Valida loop teacher→student.
+
+**P2 — Go-live (após P0/P1):**
+5. Cutover Stripe LIVE via docs/stripe-go-live-runbook.md (5 min, runbook pronto).
+6. QA de pagamento real ($1 test).
+
+**Como o loop retoma:** você desbloqueia um item (ex: "fiz QA, /teach tem bug X" ou "criei os cursos seed") e eu sigo a cadeia de polish a partir de defeito REAL observado — não de suposição.
