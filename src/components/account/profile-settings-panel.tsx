@@ -15,6 +15,8 @@ import {
 } from "@/lib/auth/profile-validation";
 import { getUserProfile, updateUserIdentity } from "@/lib/data/user-profiles";
 import {
+  allowedAvatarTypes,
+  avatarRequirementLabel,
   isAllowedAvatarFile,
   uploadUserAvatar,
   type UploadAvatarProgress,
@@ -158,7 +160,7 @@ export function ProfileSettingsPanel() {
     }
 
     if (!isAllowedAvatarFile(file)) {
-      setError("Use a JPG or PNG profile image under 2 MB.");
+      setError(`Use a ${avatarRequirementLabel} profile image.`);
       return;
     }
 
@@ -216,12 +218,12 @@ export function ProfileSettingsPanel() {
               Profile photo
             </p>
             <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-              Use a clear square image. If you skip it, Skillset shows a neutral
-              person icon instead of a letter badge.
+              Use a clear square image ({avatarRequirementLabel}). If you skip
+              it, Skillset shows a neutral person icon instead of a letter badge.
             </p>
             <input
               type="file"
-              accept="image/*"
+              accept={allowedAvatarTypes.join(",")}
               disabled={isUploadingAvatar}
               onChange={(event) => void handleAvatarChange(event.target.files?.[0] ?? null)}
               className="mt-3 w-full rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white disabled:opacity-60"

@@ -14,7 +14,17 @@ import {
 
 import { getFirebaseAuth, getFirebaseStorage, getFirestoreDb } from "@/lib/firebase/client";
 
-const maxAvatarBytes = 2 * 1024 * 1024;
+export const maxAvatarBytes = 5 * 1024 * 1024;
+
+/** Formats every browser can render in an <img>. HEIC is intentionally
+ *  excluded because browsers cannot display it without conversion. */
+export const allowedAvatarTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export const avatarRequirementLabel = "JPG, PNG, or WebP under 5 MB";
 
 export type UploadAvatarProgress = {
   bytesTransferred: number;
@@ -35,7 +45,7 @@ function sanitizeFileName(fileName: string) {
 export function isAllowedAvatarFile(file: File) {
   return file.size > 0
     && file.size <= maxAvatarBytes
-    && ["image/jpeg", "image/png"].includes(file.type);
+    && (allowedAvatarTypes as readonly string[]).includes(file.type);
 }
 
 export async function uploadUserAvatar(
@@ -44,7 +54,7 @@ export async function uploadUserAvatar(
   onProgress?: (progress: UploadAvatarProgress) => void,
 ) {
   if (!isAllowedAvatarFile(file)) {
-    throw new Error("Use an image file under 5 MB.");
+    throw new Error(`Use a ${avatarRequirementLabel} image.`);
   }
 
   const safeFileName = sanitizeFileName(file.name);
