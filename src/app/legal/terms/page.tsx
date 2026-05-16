@@ -1,4 +1,12 @@
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Terms of Service",
+  description:
+    "The terms that govern use of the Skillset platform.",
+  path: "/legal/terms",
+});
 
 export default function TermsPage() {
   return (

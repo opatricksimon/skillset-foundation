@@ -1,4 +1,12 @@
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How Skillset collects, uses, and protects your data.",
+  path: "/legal/privacy",
+});
 
 export default function PrivacyPage() {
   return (

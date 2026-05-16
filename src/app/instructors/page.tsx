@@ -3,6 +3,14 @@ import Link from "next/link";
 
 import { SiteNav } from "@/components/site/site-nav";
 import { instructors } from "@/data/instructors";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Instructors",
+  description:
+    "Meet the independent experts publishing reviewed professional courses on Skillset.",
+  path: "/instructors",
+});
 
 export default function InstructorsPage() {
   return (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PublicPage } from "@/components/site/public-page";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 const creatorTools = [
   "Course builder with modules, lessons, previews, pricing, and drip release.",
@@ -10,6 +11,13 @@ const creatorTools = [
   "Skillset review before marketplace publication.",
   "Shareable course links for simple launch campaigns.",
 ];
+
+export const metadata = buildPageMetadata({
+  title: "Teach on Skillset",
+  description:
+    "Publish professional courses to a global audience. 15% fee paid only on sales, D+30 payouts, course community and certificates included.",
+  path: "/for-creators",
+});
 
 export default function ForCreatorsPage() {
   return (

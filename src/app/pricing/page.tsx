@@ -1,10 +1,18 @@
 import { PublicPage } from "@/components/site/public-page";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 const examples = [
   ["Course price", "$200.00"],
   ["Skillset platform fee", "$30.00"],
   ["Estimated creator net", "$170.00"],
 ];
+
+export const metadata = buildPageMetadata({
+  title: "Pricing",
+  description:
+    "Transparent pricing for Skillset creators: a flat 15% platform fee, paid only when you sell. No subscription, no hidden costs.",
+  path: "/pricing",
+});
 
 export default function PricingPage() {
   return (

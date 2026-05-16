@@ -1,5 +1,13 @@
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "About",
+  description:
+    "Skillset is an international platform for serious online courses, built around reviewed quality, creator income, and verifiable learning.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

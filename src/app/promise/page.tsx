@@ -1,6 +1,7 @@
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import Link from "next/link";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 const promises = [
   {
@@ -46,6 +47,13 @@ const promises = [
       "Money issues do not belong behind a bot maze.",
   },
 ];
+
+export const metadata = buildPageMetadata({
+  title: "The Skillset Promise",
+  description:
+    "Skillset commitments to creators and learners: reviewed quality, fair payouts, refund protection, and verifiable credentials.",
+  path: "/promise",
+});
 
 export default function PromisePage() {
   return (

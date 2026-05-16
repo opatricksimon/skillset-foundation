@@ -1,6 +1,14 @@
 import { CourseMarketplace } from "@/components/courses/course-marketplace";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Browse courses",
+  description:
+    "Browse professional courses on Skillset. Every program is reviewed before it goes live, with course communities, live sessions, and verifiable certificates.",
+  path: "/courses",
+});
 
 export default function CoursesPage() {
   return (

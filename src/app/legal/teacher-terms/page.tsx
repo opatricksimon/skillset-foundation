@@ -1,4 +1,12 @@
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Teacher Terms",
+  description:
+    "The terms that govern teaching and payouts on Skillset.",
+  path: "/legal/teacher-terms",
+});
 
 export default function TeacherTermsPage() {
   return (

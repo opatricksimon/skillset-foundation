@@ -1,5 +1,13 @@
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Contact",
+  description:
+    "Reach the Skillset team for support, partnerships, or press.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

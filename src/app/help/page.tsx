@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PublicPage } from "@/components/site/public-page";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 const faqs = [
   ["How do students access a course?", "After enrollment is confirmed, the course appears in the student learning portal."],
@@ -9,6 +10,13 @@ const faqs = [
   ["How are creator payouts handled?", "Creator earnings are tracked in a payout ledger and scheduled for release after the hold period."],
   ["Does Skillset support live classes?", "The current model supports external live links and recording upload workflows."],
 ];
+
+export const metadata = buildPageMetadata({
+  title: "Help center",
+  description:
+    "Answers about courses, payments, payouts, refunds, and getting started on Skillset.",
+  path: "/help",
+});
 
 export default function HelpPage() {
   return (
