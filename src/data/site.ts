@@ -22,11 +22,16 @@ export type Surface = {
   summary: string;
 };
 
+export type PlatformNavContext = "learner" | "teacher" | "ops";
+
 export type PlatformNavItem = {
   href: string;
   label: string;
   shortLabel: string;
-  section: "Discover" | "Learn" | "Teach" | "Account" | "Ops";
+  /** Which workspace context(s) this item belongs to. */
+  contexts: readonly PlatformNavContext[];
+  /** Items sharing a group render together; a divider is drawn between groups. */
+  group: number;
   permission?: Permission;
 };
 
@@ -43,105 +48,119 @@ export const marketplaceHighlights = [
   "Designed for international learners and educators",
 ];
 
+// One compact list per workspace context. The learner <-> teacher switch
+// lives in the top-right account menu, so the sidebar never stacks both at
+// once. Groups draw a subtle divider between them; account/help links are
+// intentionally omitted here because they live in the account menu.
 export const platformNav: PlatformNavItem[] = [
-  { href: "/platform", label: "Home", shortLabel: "H", section: "Discover" },
-  { href: "/courses", label: "Marketplace", shortLabel: "M", section: "Discover" },
+  {
+    href: "/platform",
+    label: "Home",
+    shortLabel: "H",
+    contexts: ["learner", "ops"],
+    group: 0,
+  },
+  {
+    href: "/courses",
+    label: "Marketplace",
+    shortLabel: "M",
+    contexts: ["learner", "teacher", "ops"],
+    group: 0,
+  },
+  {
+    href: "/teach",
+    label: "Teacher Studio",
+    shortLabel: "T",
+    contexts: ["teacher"],
+    group: 0,
+    permission: "teacherStudio.access",
+  },
   {
     href: "/learn",
     label: "Classroom",
     shortLabel: "C",
-    section: "Learn",
+    contexts: ["learner"],
+    group: 1,
     permission: "courses.viewLearning",
   },
   {
     href: "/learn/community",
     label: "Community",
     shortLabel: "Co",
-    section: "Learn",
+    contexts: ["learner"],
+    group: 1,
     permission: "community.read",
   },
   {
     href: "/learn/events",
     label: "Calendar",
     shortLabel: "Ca",
-    section: "Learn",
+    contexts: ["learner"],
+    group: 1,
     permission: "courses.viewLearning",
   },
   {
     href: "/learn/credentials",
     label: "Credentials",
     shortLabel: "Cr",
-    section: "Learn",
+    contexts: ["learner"],
+    group: 1,
     permission: "certificates.view",
-  },
-  {
-    href: "/teach",
-    label: "Teacher Studio",
-    shortLabel: "T",
-    section: "Teach",
-    permission: "teacherStudio.access",
   },
   {
     href: "/teach/builder",
     label: "Course Builder",
     shortLabel: "B",
-    section: "Teach",
+    contexts: ["teacher"],
+    group: 1,
     permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/media",
     label: "Media Library",
     shortLabel: "Me",
-    section: "Teach",
+    contexts: ["teacher"],
+    group: 1,
+    permission: "teacherStudio.manageCourses",
+  },
+  {
+    href: "/teach/coupons",
+    label: "Coupons",
+    shortLabel: "Cu",
+    contexts: ["teacher"],
+    group: 1,
     permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/integrations",
     label: "Integrations",
     shortLabel: "In",
-    section: "Teach",
+    contexts: ["teacher"],
+    group: 2,
     permission: "teacherStudio.access",
   },
   {
     href: "/teach/refunds",
     label: "Refunds",
     shortLabel: "R",
-    section: "Teach",
+    contexts: ["teacher"],
+    group: 2,
     permission: "teacherStudio.access",
-  },
-  {
-    href: "/teach/coupons",
-    label: "Coupons",
-    shortLabel: "Cu",
-    section: "Teach",
-    permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/team",
     label: "Team",
     shortLabel: "Te",
-    section: "Teach",
+    contexts: ["teacher"],
+    group: 2,
     permission: "teacherStudio.access",
-  },
-  {
-    href: "/account/profile",
-    label: "Profile",
-    shortLabel: "P",
-    section: "Account",
-    permission: "auth.signOut",
-  },
-  {
-    href: "/support",
-    label: "Support",
-    shortLabel: "Su",
-    section: "Account",
-    permission: "auth.signOut",
   },
   {
     href: "/ops",
     label: "Operations",
     shortLabel: "O",
-    section: "Ops",
+    contexts: ["ops"],
+    group: 1,
     permission: "platform.accessAdmin",
   },
 ];

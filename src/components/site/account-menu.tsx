@@ -20,6 +20,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { UserAvatar } from "@/components/shared/user-avatar";
 import type { SkillsetUser } from "@/domain/auth";
+import { hasPermission } from "@/lib/permissions";
 
 type AccountMenuProps = {
   user: SkillsetUser;
@@ -91,7 +92,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const workspaceHref = getPrimaryWorkspaceHref(user);
-  const hasTeacherContext = user.roles.includes("teacher");
+  const canTeach = hasPermission({ roles: user.roles }, "teacherStudio.access");
   const activeContext = pathname.startsWith("/teach") ? "teacher" : "learner";
 
   useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
@@ -148,7 +149,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
             </div>
           </div>
 
-          {hasTeacherContext ? (
+          {canTeach ? (
             <div className="border-b border-[var(--color-line)] px-1 py-3">
               <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
                 Switch view
