@@ -26,7 +26,49 @@ export default function ForCreatorsPage() {
       title="Teach with a real course operating system."
       description="Skillset is designed for experts who want to publish structured learning products, manage students, build community, and get paid without stitching together disconnected tools."
     >
-      <section className="mt-10 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
+      <section className="mt-8 rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-6 shadow-[var(--shadow-soft)]">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid grid-cols-2 gap-5 sm:flex sm:gap-8">
+            <div>
+              <p className="display-title text-3xl text-[var(--color-primary)]">
+                15%
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+                Flat platform fee
+              </p>
+            </div>
+            <div>
+              <p className="display-title text-3xl text-[var(--color-primary)]">
+                $0
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+                Subscription
+              </p>
+            </div>
+            <div>
+              <p className="display-title text-3xl text-[var(--color-primary)]">
+                D+30
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+                Payout schedule
+              </p>
+            </div>
+          </div>
+          <div className="sm:text-right">
+            <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
+              Paid only when you sell. No subscription, no hidden costs.
+            </p>
+            <Link
+              href="/pricing"
+              className="mt-2 inline-flex text-sm font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
+            >
+              See full pricing
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <div className="grid gap-3">
           {creatorTools.map((tool) => (
             <div
