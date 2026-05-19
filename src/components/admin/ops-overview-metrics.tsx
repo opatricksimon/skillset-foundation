@@ -24,10 +24,14 @@ export function OpsOverviewMetrics() {
         },
         () => setIsLoading(false),
       );
-    } catch {
+    } catch (error) {
       // Data layer unavailable (e.g. Firebase not initialized): degrade to an
       // empty state instead of crashing the whole ops surface. Deliberate
       // one-shot recovery reset.
+      console.warn(
+        "OpsOverviewMetrics: courses-in-review subscription unavailable",
+        error,
+      );
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
@@ -36,16 +40,26 @@ export function OpsOverviewMetrics() {
   useEffect(() => {
     try {
       return subscribeToAdminSupportTickets(setTickets, () => {});
-    } catch {
-      // Non-blocking metric: ignore if the data layer is unavailable.
+    } catch (error) {
+      // Non-blocking metric: degrade silently in the UI but keep the failure
+      // visible in logs.
+      console.warn(
+        "OpsOverviewMetrics: support tickets subscription unavailable",
+        error,
+      );
     }
   }, []);
 
   useEffect(() => {
     try {
       return subscribeToCommunityReports(setReports, () => {});
-    } catch {
-      // Non-blocking metric: ignore if the data layer is unavailable.
+    } catch (error) {
+      // Non-blocking metric: degrade silently in the UI but keep the failure
+      // visible in logs.
+      console.warn(
+        "OpsOverviewMetrics: community reports subscription unavailable",
+        error,
+      );
     }
   }, []);
 

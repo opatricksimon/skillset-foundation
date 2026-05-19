@@ -33,10 +33,14 @@ export function TeacherOverviewMetrics() {
         },
         () => setIsLoading(false),
       );
-    } catch {
+    } catch (error) {
       // Data layer unavailable (e.g. Firebase not initialized): degrade to an
       // empty state instead of crashing the teacher studio. Deliberate
       // one-shot recovery reset.
+      console.warn(
+        "TeacherOverviewMetrics: courses subscription unavailable",
+        error,
+      );
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
@@ -49,8 +53,13 @@ export function TeacherOverviewMetrics() {
 
     try {
       return subscribeToTeacherOrders(user.uid, setOrders, () => {});
-    } catch {
-      // Non-blocking metric: ignore if the data layer is unavailable.
+    } catch (error) {
+      // Non-blocking metric: degrade silently in the UI but keep the failure
+      // visible in logs.
+      console.warn(
+        "TeacherOverviewMetrics: orders subscription unavailable",
+        error,
+      );
     }
   }, [user]);
 

@@ -35,10 +35,14 @@ export function LearnerOverviewMetrics() {
         },
         () => setIsLoading(false),
       );
-    } catch {
+    } catch (error) {
       // Data layer unavailable (e.g. Firebase not initialized): degrade to an
       // empty state instead of crashing the learner dashboard. Deliberate
       // one-shot recovery reset.
+      console.warn(
+        "LearnerOverviewMetrics: enrollments subscription unavailable",
+        error,
+      );
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
@@ -51,8 +55,13 @@ export function LearnerOverviewMetrics() {
 
     try {
       return subscribeToUserCertificates(user.uid, setCertificates, () => {});
-    } catch {
-      // Non-blocking metric: ignore if the data layer is unavailable.
+    } catch (error) {
+      // Non-blocking metric: degrade silently in the UI but keep the failure
+      // visible in logs.
+      console.warn(
+        "LearnerOverviewMetrics: certificates subscription unavailable",
+        error,
+      );
     }
   }, [user]);
 
@@ -79,8 +88,13 @@ export function LearnerOverviewMetrics() {
       );
 
       return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-    } catch {
-      // Non-blocking metric: ignore if the data layer is unavailable.
+    } catch (error) {
+      // Non-blocking metric: degrade silently in the UI but keep the failure
+      // visible in logs.
+      console.warn(
+        "LearnerOverviewMetrics: course events subscription unavailable",
+        error,
+      );
     }
   }, [enrollments]);
 
