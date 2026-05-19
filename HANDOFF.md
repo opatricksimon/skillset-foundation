@@ -29,14 +29,22 @@ Split conferido: $100 USD → professor $81.80, plataforma $15.00, Stripe $3.20.
 Validado: lint 0 · 42/42 testes · build OK. Zero regressão fora da home
 (prop opcional; demais páginas não passam `landingNav`).
 
-## ⏳ Não iniciado (próxima sessão, spec pronta)
+## ✅ Concluído (3ª leva — "pode avançar")
 
-P3 (onboarding 4–5 passos), P5 (dashboard professor), P6 (dashboard aluno).
-**Decisão consciente (D6):** não comecei superficialmente — são fluxos
-grandes e seu próprio complemento diz "Qualidade > velocidade, sem gambiarra".
-Contrato acionável pronto em `docs/ai-handoff/INSPIRATION_SPEC.md`. P5/P6
-estendem `platform-shell`/`platform-nav` já reformados; P3 estende o
-`signup-form` já reformado. Cada um é uma sessão focada.
+| P | Item | Estado | Commit |
+|---|---|---|---|
+| P3 | Onboarding: wizard real (`OnboardingWizard`) reduzido — até 7→ **2 (aluno) / 3 (professor)** perguntas; progress indicator corrigido p/ total real; perguntas removidas mantidas no código (reativáveis em 1 linha) | feito | `f95f310` |
+| P5+P6 | Contrato da sidebar: já era colapsável (reforma); faltava ficar **fixa sem cortar** — `align-self:start` + `max-height`/`overflow` na shell compartilhada → atende professor E aluno | feito | (este commit) |
+
+Validado a cada passo: lint 0 · 42/42 testes · build OK. Sem deletar nada
+referenciado (`OnboardingChoice` /onboarding preservado — regra #1).
+
+## ⏳ Trabalho futuro opcional (não bloqueante)
+
+Polimento de conteúdo específico dos dashboards (cards extras das telas
+Cakto além dos `*-overview-metrics` já existentes). Casca + contrato de
+layout + métricas reais já entregues. Spec: `docs/ai-handoff/INSPIRATION_SPEC.md`.
+Decisões D6/D9/D10 explicam o que foi reduzido/estendido vs reconstruído.
 
 ## ⛔ Bloqueado (precisa de você) — passo exato
 
