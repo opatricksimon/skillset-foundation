@@ -87,7 +87,7 @@ export function useAuth() {
 
 function LegalAcceptanceGate() {
   const { status, user } = useAuth();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [needsAcceptance, setNeedsAcceptance] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);

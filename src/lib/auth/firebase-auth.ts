@@ -36,8 +36,11 @@ export function mapFirebaseUser(
     uid: user.uid,
     email: user.email,
     emailVerified: user.emailVerified,
-    displayName: profile?.displayName ?? user.displayName,
-    photoURL: profile?.photoURL ?? user.photoURL,
+    // Prefer the Firestore profile, but treat empty strings as "unset" so a
+    // blank profile value still falls back to the Firebase Auth record
+    // instead of rendering as a missing name/photo.
+    displayName: profile?.displayName || user.displayName || null,
+    photoURL: profile?.photoURL || user.photoURL || null,
     roles: profile?.roles ?? ["student"],
   };
 }

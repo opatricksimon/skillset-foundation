@@ -178,8 +178,17 @@ export function ProfileSettingsPanel() {
       setPhotoURL(uploadedPhotoURL);
       await refreshUser();
       setSuccess("Profile photo updated.");
-    } catch {
-      setError("We could not upload your profile photo. Try a smaller image.");
+    } catch (error) {
+      console.error(
+        "Profile avatar upload failed",
+        { uid: user.uid },
+        error,
+      );
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "We could not upload your profile photo. Please try again.";
+      setError(message);
     } finally {
       setIsUploadingAvatar(false);
       setAvatarProgress(null);

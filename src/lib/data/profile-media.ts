@@ -96,7 +96,19 @@ export async function uploadUserAvatar(
   const currentUser = getFirebaseAuth().currentUser;
 
   if (currentUser?.uid === uid) {
-    await updateProfile(currentUser, { photoURL }).catch(() => undefined);
+    try {
+      await updateProfile(currentUser, { photoURL });
+    } catch (error) {
+      // Non-fatal: Firestore is the source of truth for the rendered avatar
+      // (see mapFirebaseUser). The Auth photoURL is only a secondary mirror,
+      // so a failure here must not lose the already-persisted upload — but it
+      // must be visible, never swallowed.
+      console.error(
+        "uploadUserAvatar: failed to mirror photoURL to Firebase Auth",
+        { uid },
+        error,
+      );
+    }
   }
 
   return photoURL;
