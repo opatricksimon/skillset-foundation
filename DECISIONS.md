@@ -50,4 +50,22 @@ antes de pular" e "Qualidade > velocidade. Sempre." UI meia-feita a partir de
 imagens sem revisão seria a gambiarra que você proibiu. P2–P6 ficam
 especificados e prontos para execução na próxima sessão.
 
+## D7 — P2 home: âncoras só nas seções que existem; Pricing = rota real
+**Decisão:** o header da home vira scroll-âncora para as seções que JÁ existem
+(How it works, Capabilities, Promise, For creators). "Pricing" continua link
+de rota real (`/pricing`) — exceção permitida pela spec.
+**Alternativa descartada:** criar uma seção de preços na home.
+**Por quê:** não existe seção de preço na home e a reforma anterior removeu
+explicitamente conteúdo fabricado (princípio anti-fake, padrão #4). Criar uma
+seria inventar conteúdo. `/pricing` já é página real com conteúdo real.
+**Implementação:** `SiteNav` ganhou prop opcional tipada `landingNav` (união
+discriminada âncora|rota). Só a home passa → demais páginas inalteradas (zero
+regressão). Scroll suave nativo via CSS já guardado por prefers-reduced-motion.
+
+## D8 — P4 e-mail: já existia; só removi o silenciamento
+**Decisão:** não reconstruí P4 — `signUpWithEmail` já enviava verificação e
+há UI de status/reenvio em `security-settings-panel` e `onboarding-choice`.
+Só corrigi o `.catch(()=>undefined)` (padrão #3).
+**Por quê:** regra #2b — reusar o que já funciona, não recriar.
+
 <!-- novas decisões anexadas conforme a sessão avança -->

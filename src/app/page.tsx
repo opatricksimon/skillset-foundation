@@ -14,15 +14,33 @@ export const metadata = buildPageMetadata({
   path: "/",
 });
 
+// Single-page landing: header items scroll to these sections. "Pricing"
+// stays a real route (no fabricated pricing section — DECISIONS D7).
+const landingNav = [
+  { label: "How it works", anchorId: "how-it-works" },
+  { label: "Capabilities", anchorId: "capabilities" },
+  { label: "For creators", anchorId: "for-creators" },
+  { label: "The promise", anchorId: "promise" },
+  { label: "Pricing", href: "/pricing" },
+] as const;
+
 export default function Home() {
   return (
     <div className="page-shell">
-      <SiteNav />
+      <SiteNav landingNav={landingNav} />
       <MarketingHero />
-      <HowItWorksStrip />
-      <CapabilitiesGrid />
-      <PromisePreviewBand />
-      <ForCreatorsBand />
+      <section id="how-it-works" className="scroll-mt-28">
+        <HowItWorksStrip />
+      </section>
+      <section id="capabilities" className="scroll-mt-28">
+        <CapabilitiesGrid />
+      </section>
+      <section id="promise" className="scroll-mt-28">
+        <PromisePreviewBand />
+      </section>
+      <section id="for-creators" className="scroll-mt-28">
+        <ForCreatorsBand />
+      </section>
       <SiteFooter />
     </div>
   );

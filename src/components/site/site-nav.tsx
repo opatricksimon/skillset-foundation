@@ -26,6 +26,53 @@ const navItems = [
   { href: "/help", label: "Help" },
 ];
 
+// On the single-page landing the header scrolls to in-page sections instead
+// of navigating away. Other pages don't pass `landingNav` and keep the route
+// links above (zero behavior change off the homepage).
+type LandingNavItem =
+  | { label: string; anchorId: string }
+  | { label: string; href: string };
+
+type SiteNavProps = {
+  landingNav?: readonly LandingNavItem[];
+};
+
+type ResolvedNavItem = {
+  key: string;
+  label: string;
+  target: string;
+  isAnchor: boolean;
+};
+
+function resolveNavItems(
+  landingNav?: readonly LandingNavItem[],
+): ResolvedNavItem[] {
+  if (landingNav) {
+    return landingNav.map((item) =>
+      "anchorId" in item
+        ? {
+            key: item.anchorId,
+            label: item.label,
+            target: `#${item.anchorId}`,
+            isAnchor: true,
+          }
+        : {
+            key: item.href,
+            label: item.label,
+            target: item.href,
+            isAnchor: false,
+          },
+    );
+  }
+
+  return navItems.map((item) => ({
+    key: item.href,
+    label: item.label,
+    target: item.href,
+    isAnchor: false,
+  }));
+}
+
 const signInOptions = [
   {
     href: "/auth?mode=signin&path=student&role=student",
@@ -45,11 +92,12 @@ function isActiveNav(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SiteNav() {
+export function SiteNav({ landingNav }: SiteNavProps = {}) {
   const { status, user, signOut } = useAuth();
   const pathname = usePathname() ?? "";
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const resolvedNav = resolveNavItems(landingNav);
   const isAuthenticated = status === "authenticated" && user;
 
   useEffect(() => {
@@ -98,13 +146,25 @@ export function SiteNav() {
           aria-label="Primary navigation"
           className="site-header__links"
         >
-          {navItems.map((item) => {
-            const active = isActiveNav(pathname, item.href);
+          {resolvedNav.map((item) => {
+            if (item.isAnchor) {
+              return (
+                <a
+                  key={item.key}
+                  href={item.target}
+                  className="site-header__link"
+                >
+                  {item.label}
+                </a>
+              );
+            }
+
+            const active = isActiveNav(pathname, item.target);
 
             return (
               <Link
-                key={`${item.href}-${item.label}`}
-                href={item.href}
+                key={item.key}
+                href={item.target}
                 aria-current={active ? "page" : undefined}
                 className={`site-header__link ${active ? "bg-[var(--color-surface-soft)] text-[var(--color-primary)]" : ""}`}
               >
@@ -153,15 +213,32 @@ export function SiteNav() {
               className="absolute inset-x-0 top-[calc(100%+8px)] z-[46] rounded-[16px] border border-[rgba(26,54,93,0.1)] bg-white p-3 shadow-[0_24px_48px_rgba(15,39,68,0.16)] min-[941px]:hidden"
             >
               <nav aria-label="Mobile navigation" className="grid gap-1">
-                {navItems.map((item) => {
-                  const active = isActiveNav(pathname, item.href);
+                {resolvedNav.map((item) => {
+                  const baseClass =
+                    "rounded-[10px] px-3 py-2.5 text-sm font-semibold transition-colors";
+
+                  if (item.isAnchor) {
+                    return (
+                      <a
+                        key={`mobile-${item.key}`}
+                        href={item.target}
+                        onClick={() => setMobileOpen(false)}
+                        className={`${baseClass} text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]`}
+                      >
+                        {item.label}
+                      </a>
+                    );
+                  }
+
+                  const active = isActiveNav(pathname, item.target);
 
                   return (
                     <Link
-                      key={`mobile-${item.href}-${item.label}`}
-                      href={item.href}
+                      key={`mobile-${item.key}`}
+                      href={item.target}
+                      onClick={() => setMobileOpen(false)}
                       aria-current={active ? "page" : undefined}
-                      className={`rounded-[10px] px-3 py-2.5 text-sm font-semibold transition-colors ${
+                      className={`${baseClass} ${
                         active
                           ? "bg-[var(--color-surface-soft)] text-[var(--color-primary)]"
                           : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"

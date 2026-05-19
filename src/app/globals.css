@@ -72,6 +72,12 @@
   box-sizing: border-box;
 }
 
+/* Single-page landing anchor scrolling. The reduced-motion media query
+   below overrides this to `auto` for accessibility. */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-manrope), sans-serif;
   background: var(--color-base);
