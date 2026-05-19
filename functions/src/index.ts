@@ -106,6 +106,7 @@ type PayoutLedgerRecord = {
   paymentId: string;
   grossAmountMinor: number;
   skillsetFeeMinor: number;
+  stripeFeeMinor?: number;
   netAmountMinor: number;
   currency: SkillsetCurrency;
   status: string;
@@ -130,7 +131,10 @@ type CertificateVerificationResult =
       };
     };
 
-const payoutReleaseDelayDays = 30;
+// Payout is held until the refund window closes, then released. Kept equal to
+// the automatic refund window so a teacher is paid right after a sale can no
+// longer be auto-refunded (aligned with infoproduct standard, e.g. Hotmart 7d).
+const payoutReleaseDelayDays = 7;
 const automaticRefundWindowDays = 7;
 const automaticRefundProgressCap = 50;
 
@@ -203,6 +207,23 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
     currency: normalizeSkillsetCurrency(course.currency).toLowerCase(),
     platformFeeBps: course.platformFeeBps ?? 1500,
   };
+}
+
+// Stripe processing fee passed through to the teacher so the platform keeps
+// its full commission. USD card pricing: 2.9% + $0.30. Non-USD treated as
+// international: 3.9% + $0.30 (fixed minor unit). This is an estimate applied
+// at ledger time; the exact fee Stripe charges settles on the platform balance.
+// NOTE: charge model is "separate_charges_and_transfers", so there is no
+// application_fee_amount (that is a destination-charge concept) — the fee is
+// reflected by reducing the teacher transfer (netAmountMinor) instead.
+function stripeProcessingFeeMinor(
+  grossMinor: number,
+  currency?: string | null,
+) {
+  const isUsd = (currency || "").toUpperCase() === "USD";
+  const percentBps = isUsd ? 290 : 390;
+  const fixedMinor = 30;
+  return Math.round((grossMinor * percentBps) / 10000) + fixedMinor;
 }
 
 async function enforceRateLimit(
@@ -1143,7 +1164,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const grossAmountMinor = Number(order.amountMinor || 0);
     const platformFeeBps = Number(order.platformFeeBps || 1500);
     const skillsetFeeMinor = Math.floor((grossAmountMinor * platformFeeBps) / 10000);
-    const netAmountMinor = Math.max(0, grossAmountMinor - skillsetFeeMinor);
+    const stripeFeeMinor = stripeProcessingFeeMinor(
+      grossAmountMinor,
+      order.currency,
+    );
+    const netAmountMinor = Math.max(
+      0,
+      grossAmountMinor - skillsetFeeMinor - stripeFeeMinor,
+    );
 
     transaction.set(
       paymentRef,
@@ -1183,6 +1211,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         paymentId: paymentIntentId,
         grossAmountMinor,
         skillsetFeeMinor,
+        stripeFeeMinor,
         netAmountMinor,
         currency: order.currency,
         platformFeeBps,

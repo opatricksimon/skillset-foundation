@@ -15,6 +15,7 @@ export type PayoutLedgerEntry = {
   paymentId: string;
   grossAmountMinor: number;
   skillsetFeeMinor: number;
+  stripeFeeMinor?: number;
   netAmountMinor: number;
   currency: string;
   platformFeeBps?: number;
