@@ -71,23 +71,21 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// P3 80/20 reduction (DECISIONS D9): the wizard now asks only the
+// highest-value questions to cut signup friction — routing (path), the
+// personalization/analytics signal (primaryGoal), and, for teachers, their
+// monetization intent (alreadySold). The other question definitions
+// (sourceOfDiscovery, monthlyRevenue, instagramHandle, audienceSize) are
+// intentionally kept in the codebase (types/renderer) so re-enabling any of
+// them is a one-line change here, not a rebuild.
 function getVisibleQuestions(answers: OnboardingAnswers): QuestionDefinition[] {
   const isTeacher = answers.path === "teacher";
-  const alreadySold = answers.alreadySold === "yes";
 
   return [
     { id: "path", number: 1, required: true },
-    { id: "sourceOfDiscovery", number: 2, required: true },
+    { id: "primaryGoal", number: 2, required: true },
     ...(isTeacher
       ? [{ id: "alreadySold", number: 3, required: true } as const]
-      : []),
-    ...(isTeacher && alreadySold
-      ? [{ id: "monthlyRevenue", number: 4, required: true } as const]
-      : []),
-    { id: "primaryGoal", number: 5, required: true },
-    { id: "instagramHandle", number: 6, required: false },
-    ...(isTeacher
-      ? [{ id: "audienceSize", number: 7, required: false } as const]
       : []),
   ];
 }
@@ -393,7 +391,10 @@ export function OnboardingWizard() {
     <main className="onboarding-page flex min-h-screen flex-col">
       <header className="flex items-center justify-between gap-5 px-6 py-5 sm:px-8">
         <LogoWordmark nav />
-        <OnboardingProgress activeQuestion={activeQuestion?.number ?? 1} />
+        <OnboardingProgress
+          activeQuestion={activeQuestion?.number ?? 1}
+          totalQuestions={questions.length}
+        />
       </header>
 
       <div className="grid flex-1 place-items-center px-5 py-8">

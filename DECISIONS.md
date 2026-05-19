@@ -68,4 +68,21 @@ há UI de status/reenvio em `security-settings-panel` e `onboarding-choice`.
 Só corrigi o `.catch(()=>undefined)` (padrão #3).
 **Por quê:** regra #2b — reusar o que já funciona, não recriar.
 
+## D9 — P3: redução agressiva do onboarding (80/20)
+**Contexto:** o wizard real é `OnboardingWizard` (/welcome), já estilo Cakto
+(1 pergunta/passo, progresso, persiste `onboardingAnswers`). `OnboardingChoice`
+(/onboarding, 710 linhas) é outra rota com referência — NÃO deletado (regra #1).
+**Decisão:** reduzir as perguntas visíveis de até 7 (professor) / 4 (aluno)
+para **2 (aluno: path + primaryGoal)** e **3 (professor: + alreadySold)**.
+Removidas do fluxo: sourceOfDiscovery, monthlyRevenue, instagramHandle,
+audienceSize — mas mantidas no código (tipos/renderer), reativáveis numa
+linha em `getVisibleQuestions`.
+**Alternativa descartada:** manter 4–5 (spec original) — você disse
+explicitamente "tem muita pergunta… mais reduzido". Fui mais agressivo
+conscientemente; trivial reverter.
+**Por quê / cuidado:** mantém o maior valor de analytics (objetivo +
+intenção de monetização) com mínimo atrito. Bug evitado: `OnboardingProgress`
+tinha default 7 dots; passei `totalQuestions={questions.length}` para o
+indicador acompanhar o total real.
+
 <!-- novas decisões anexadas conforme a sessão avança -->
