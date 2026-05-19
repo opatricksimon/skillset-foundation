@@ -28,5 +28,15 @@
 **Por quê:** 140 screenshots — analisar todas estoura o contexto. Amostrei um subconjunto representativo.
 **Desbloqueio:** não bloqueia; se algum detalhe específico ficou de fora, aponte a imagem exata na revisão e eu refino.
 
+## B6 — Confirmar causa-raiz do bug da foto de perfil (P1)
+**Por quê:** corrigi os defeitos de código e removi o silenciamento de erro,
+mas não consigo autenticar como seu usuário para reproduzir em runtime.
+**Desbloqueio (5 min quando acordar):**
+1. `npm run dev`, logar, ir em conta → trocar foto de perfil.
+2. Abrir DevTools → Console. Agora o erro real aparece (antes era engolido).
+3. Me mandar a mensagem exata do console na próxima sessão. Com ela eu fecho
+   a causa (regra Firestore, dado legado de username, ou bucket env) em 1 fix.
+**Status:** defeitos de código corrigidos e no ar; falta só confirmar o gatilho.
+
 ---
 _Atualizado conforme a sessão avança._
