@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, type KeyboardEvent } from "react";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import { NotificationBell } from "@/components/platform/notification-bell";
+import { AccountMenu } from "@/components/site/account-menu";
 import { platformNav } from "@/data/site";
 
 const surfaceCopy = {
@@ -37,6 +39,7 @@ const surfaceCopy = {
 export function PlatformHeader() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const { status, user, signOut } = useAuth();
   const surface = getSurface(pathname);
   const copy = surfaceCopy[surface];
   const pageLabel = getPageLabel(pathname);
@@ -104,6 +107,9 @@ export function PlatformHeader() {
           >
             {copy.cta.label}
           </Link>
+          {status === "authenticated" && user ? (
+            <AccountMenu user={user} onSignOut={signOut} />
+          ) : null}
         </div>
       </div>
     </header>

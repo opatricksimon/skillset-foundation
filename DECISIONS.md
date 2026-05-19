@@ -100,4 +100,27 @@ arriscar regressão sem revisão sua.
 cada dashboard (cards extras das telas Cakto) fica como trabalho futuro
 opcional — a casca e o contrato de layout estão corretos.
 
+## D11 — Perfil no topo-direito do dashboard = reusar AccountMenu
+**Contexto:** `PlatformHeader` não renderizava perfil nenhum (só sino + CTA);
+avatar só vivia na sidebar. Queixa exata do founder.
+**Decisão:** renderizar o `AccountMenu` JÁ existente (usado no site público)
+no header do dashboard, ao lado do CTA. Não reescrevi o menu.
+**Alternativa descartada:** criar um novo dropdown do zero.
+**Por quê:** regra #2b (reusar antes de criar); zero regressão no `SiteNav`.
+
+## D12 — Stripe Connect é "just-in-time", não no signup (resposta à pesquisa)
+**Decisão/achado:** o código já NÃO força Connect no signup/login — só
+bloqueia no momento em que um aluno tenta comprar de um professor sem
+payout configurado (`createCheckoutSession`). O atrito hoje é só de
+*mensagem* (how-it-works diz "connect Stripe Express"). Recomendação:
+manter Connect adiado e só pedir quando o professor for publicar curso
+pago/sacar. Padrão Stripe recomendado (deferred onboarding).
+**Planos (Free/Starter/Pro/Plus):** são Stripe **Billing** (assinatura),
+SUBSYSTEM SEPARADO de Connect. Modelo recomendado: Checkout
+`mode:'subscription'` + Customer Portal p/ upgrade/downgrade; o tier
+define o `platformFeeBps` (já existe em `payment-split.ts`: 8/4/1/0%).
+Connect (receber) e Billing (pagar o plano) coexistem independentes.
+Implementação plena depende de Price IDs do painel Stripe + confirmação
+do mapeamento tier→fee (ver BLOCKERS B7).
+
 <!-- novas decisões anexadas conforme a sessão avança -->

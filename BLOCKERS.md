@@ -38,5 +38,19 @@ mas não consigo autenticar como seu usuário para reproduzir em runtime.
    a causa (regra Firestore, dado legado de username, ou bucket env) em 1 fix.
 **Status:** defeitos de código corrigidos e no ar; falta só confirmar o gatilho.
 
+## B7 — Sistema de planos/assinatura (Free/Starter/Pro/Plus)
+**Por quê:** é um subsistema novo (Stripe Billing), não código solto.
+Depende de você: (1) criar os **Products/Prices** no painel Stripe para
+cada tier (recorrente mensal/anual) e me passar os Price IDs; (2) confirmar
+o mapeamento tier→comissão (mencionou Free 8% / Starter 4% / Pro 1% /
+Plus 0%) — isso liga no `platformFeeBps` que já existe.
+**Desbloqueio:** Stripe Dashboard → Product catalog → criar 4 produtos com
+preço recorrente → me dar os `price_...` IDs + confirmar os %.
+**Quando desbloquear:** implemento Checkout `mode:subscription` + Customer
+Portal + página "Planos e taxas" + badge "Upgrade" no menu de perfil +
+seção de planos na home. Spec resumida em DECISIONS D12.
+**Status:** menu de perfil já está no topo-direito (feito); a entrada
+"Planos e taxas"/upgrade entra quando os Price IDs existirem.
+
 ---
 _Atualizado conforme a sessão avança._
