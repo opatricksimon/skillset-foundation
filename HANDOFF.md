@@ -19,6 +19,25 @@ Tudo validado e no GitHub. **Nada foi deployado** (deploy/LIVE = sua decisão).
 Validação final: **lint 0 · 42/42 testes · next build OK · functions tsc OK.**
 Split conferido: $100 USD → professor $81.80, plataforma $15.00, Stripe $3.20.
 
+## ✅ Concluído (continuação — "pode fazer o que falta")
+
+| P | Item | Estado | Commit |
+|---|---|---|---|
+| P4 | E-mail de verificação: já existia (envio + UI de reenvio); removido o `.catch(()=>undefined)` que escondia falha | feito (reuso, não recriado) | `df48d33` |
+| P2 | Homepage single-page: header com scroll-âncora; `SiteNav` com prop tipada opcional; 4 seções com `id`+`scroll-mt`; smooth-scroll guardado por reduced-motion | feito + verificado ao vivo (home 200, âncoras no HTML) | `ba3fc5c` |
+
+Validado: lint 0 · 42/42 testes · build OK. Zero regressão fora da home
+(prop opcional; demais páginas não passam `landingNav`).
+
+## ⏳ Não iniciado (próxima sessão, spec pronta)
+
+P3 (onboarding 4–5 passos), P5 (dashboard professor), P6 (dashboard aluno).
+**Decisão consciente (D6):** não comecei superficialmente — são fluxos
+grandes e seu próprio complemento diz "Qualidade > velocidade, sem gambiarra".
+Contrato acionável pronto em `docs/ai-handoff/INSPIRATION_SPEC.md`. P5/P6
+estendem `platform-shell`/`platform-nav` já reformados; P3 estende o
+`signup-form` já reformado. Cada um é uma sessão focada.
+
 ## ⛔ Bloqueado (precisa de você) — passo exato
 
 Tudo detalhado em **`BLOCKERS.md`**. Resumo:
