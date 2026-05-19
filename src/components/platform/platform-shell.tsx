@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 
 import { MobileSidebarDrawer } from "@/components/platform/mobile-sidebar-drawer";
 import { HelpBubble } from "@/components/platform/help-bubble";
@@ -109,13 +108,7 @@ export function PlatformShell({
 }
 
 function LinkLogo() {
-  return (
-    <Link
-      href="/"
-      aria-label="Skillset"
-      className="mx-auto grid size-10 place-items-center rounded-[10px] bg-white text-lg font-bold text-[var(--color-primary)] shadow-[var(--shadow-soft)]"
-    >
-      S
-    </Link>
-  );
+  // Collapsed sidebar: show the round emblem (theme-agnostic) instead of a
+  // plain "S". LogoWordmark already provides the link wrapper.
+  return <LogoWordmark variant="mark" className="mx-auto" />;
 }

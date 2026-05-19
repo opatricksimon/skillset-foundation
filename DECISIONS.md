@@ -123,4 +123,16 @@ Connect (receber) e Billing (pagar o plano) coexistem independentes.
 Implementação plena depende de Price IDs do painel Stripe + confirmação
 do mapeamento tier→fee (ver BLOCKERS B7).
 
+## D13 — Logo: troca por tema via CSS, variante "mark", tamanho maior
+**Decisão:** 3 assets em `public/brand/` (mark agnóstico, full-light navy,
+full-dark branco). `LogoWordmark` renderiza ambas as full e mostra a certa
+por `[data-theme="dark"]` em CSS puro (sem JS → sem flash/hydration). Nova
+prop `variant="mark"` para a bola; sidebar colapsada usa a bola (não o "S").
+Altura nav 20→32px (compact 40, default 48) — você disse "muito pequeno".
+**Alternativa descartada:** trocar logo por hook de tema em JS (flash no
+SSR) / um único arquivo (não cobre dark/light).
+**Por quê:** CSS theme-swap é o padrão SSR-safe; reusa `LogoWordmark`
+(regra #2b); `LinkLogo` mantido (sem deletar referência — regra #1), só
+passou a renderizar a bola. Removido só o import `Link` que EU orfanei.
+
 <!-- novas decisões anexadas conforme a sessão avança -->
