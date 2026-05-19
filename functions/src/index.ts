@@ -209,6 +209,8 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
   };
 }
 
+// Canonical spec + unit tests: src/domain/payment-split.ts (kept in sync;
+// this is the Firebase Functions package mirror used by the Stripe webhook).
 // Stripe processing fee passed through to the teacher so the platform keeps
 // its full commission. USD card pricing: 2.9% + $0.30. Non-USD treated as
 // international: 3.9% + $0.30 (fixed minor unit). This is an estimate applied
