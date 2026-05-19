@@ -85,4 +85,19 @@ intenção de monetização) com mínimo atrito. Bug evitado: `OnboardingProgres
 tinha default 7 dots; passei `totalQuestions={questions.length}` para o
 indicador acompanhar o total real.
 
+## D10 — P5/P6: corrigir o contrato da sidebar (não reconstruir dashboards)
+**Contexto:** a reforma anterior já entregou sidebar colapsável
+(`useSidebarState`, `SidebarToggle`, `PlatformNav collapsed`) e os painéis
+têm `*-overview-metrics`. `.platform-sidebar` já era `position: sticky`.
+**Decisão:** P5/P6 = corrigir o **gap real** do contrato "sidebar fixa, só
+o conteúdo rola": faltava `align-self:start` (a linha do grid esticava) e
+limite de altura — em telas baixas/menu longo a sidebar era cortada. Uma
+mudança de CSS na shell compartilhada atende P5 **e** P6 de uma vez.
+**Alternativa descartada:** reescrever os dashboards de professor/aluno a
+partir das imagens. Seria recriar o que a reforma já fez (regra #2b) e
+arriscar regressão sem revisão sua.
+**Por quê:** maior valor / menor risco. Polimento de conteúdo específico de
+cada dashboard (cards extras das telas Cakto) fica como trabalho futuro
+opcional — a casca e o contrato de layout estão corretos.
+
 <!-- novas decisões anexadas conforme a sessão avança -->

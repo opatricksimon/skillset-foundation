@@ -739,6 +739,13 @@ select {
 .platform-sidebar {
   position: sticky;
   top: 1rem;
+  /* Keep the sidebar pinned while only the content column scrolls (P5/P6
+     contract). align-self:start stops the grid row from stretching it;
+     the max-height/overflow only kicks in if the nav is taller than the
+     viewport (short screens), so it is never clipped out of reach. */
+  align-self: start;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
 }
 
 .platform-sidebar-panel {
