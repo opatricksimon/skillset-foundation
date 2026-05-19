@@ -107,7 +107,17 @@ export async function signUpWithEmail({
     displayName: displayName.trim() || credential.user.displayName,
     photoURL: credential.user.photoURL,
   });
-  await sendEmailVerification(credential.user).catch(() => undefined);
+  try {
+    await sendEmailVerification(credential.user);
+  } catch (error) {
+    // Non-fatal: the account exists and the user can re-trigger verification
+    // from the security/onboarding screens. Must stay visible, never swallowed.
+    console.error(
+      "signUpWithEmail: failed to send verification email",
+      { uid: credential.user.uid },
+      error,
+    );
+  }
 
   return mapFirebaseUser(credential.user);
 }
