@@ -19,7 +19,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { UserAvatar } from "@/components/shared/user-avatar";
-import type { SkillsetUser } from "@/domain/auth";
+import { formatPrimaryRole, type SkillsetUser } from "@/domain/auth";
 import { hasPermission } from "@/lib/permissions";
 
 type AccountMenuProps = {
@@ -37,22 +37,6 @@ export function getPrimaryWorkspaceHref(user: SkillsetUser) {
   }
 
   return "/learn";
-}
-
-export function getPrimaryRoleLabel(user: SkillsetUser) {
-  if (user.roles.includes("admin")) {
-    return "Admin";
-  }
-
-  if (user.roles.includes("support")) {
-    return "Support";
-  }
-
-  if (user.roles.includes("teacher")) {
-    return "Producer";
-  }
-
-  return "Learner";
 }
 
 function useDismissableLayer(
@@ -88,7 +72,7 @@ function useDismissableLayer(
 }
 
 export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const workspaceHref = getPrimaryWorkspaceHref(user);
@@ -101,8 +85,8 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
     <div ref={wrapperRef} className="relative">
       <button
         type="button"
-        aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-controls="account-menu-panel"
         aria-label="Open account menu"
         className="flex cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-left transition hover:bg-[var(--color-surface-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
         onClick={() => setIsOpen((current) => !current)}
@@ -117,7 +101,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
             {user.displayName || user.email || "Skillset member"}
           </span>
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-            {getPrimaryRoleLabel(user)}
+            {formatPrimaryRole(user.roles)}
           </span>
         </span>
         <ChevronDown
@@ -129,7 +113,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
       </button>
 
       {isOpen ? (
-        <div role="menu" className="account-menu-panel">
+        <div id="account-menu-panel" className="account-menu-panel">
           <div className="flex items-center gap-3 border-b border-[var(--color-line)] px-2 py-3">
             <UserAvatar
               name={user.displayName || user.email}
@@ -144,7 +128,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
                 {user.email}
               </p>
               <span className="mt-2 inline-flex rounded-[8px] border border-[rgba(178,34,52,0.18)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-                {getPrimaryRoleLabel(user)}
+                {formatPrimaryRole(user.roles)}
               </span>
             </div>
           </div>
@@ -186,7 +170,6 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
             <MenuLink href="/help" icon={CircleHelp} label="Help" />
             <button
               type="button"
-              role="menuitem"
               onClick={() => {
                 void onSignOut();
               }}
@@ -218,7 +201,6 @@ function ContextSwitch({
   return (
     <Link
       href={href}
-      role="menuitem"
       className="mt-2 flex items-center gap-3 rounded-[10px] px-3 py-3 transition hover:bg-[var(--color-surface-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
     >
       <span className="grid size-9 place-items-center rounded-[10px] bg-[var(--color-surface-strong)] text-[var(--color-primary)]">
@@ -251,7 +233,7 @@ function MenuLink({
   label: string;
 }) {
   return (
-    <Link href={href} role="menuitem" className="account-menu-item">
+    <Link href={href} className="account-menu-item">
       <Icon aria-hidden="true" size={16} strokeWidth={1.8} />
       {label}
     </Link>

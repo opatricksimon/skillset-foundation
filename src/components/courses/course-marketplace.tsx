@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
 
 import type { CourseCard } from "@/lib/data/catalog";
 import {
@@ -18,14 +19,47 @@ type CourseMarketplaceProps = {
 const allCategoriesLabel = "All courses";
 
 export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
-  const [activeCategory, setActiveCategory] = useState(allCategoriesLabel);
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const [activeCategory, setActiveCategory] = useState(
+    () => searchParams.get("cat") ?? allCategoriesLabel,
+  );
+  // Seed from the platform header search (`/courses?q=...`) so the term is
+  // honored and the input is pre-filled; the user can refine from there.
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [publishedCourses, setPublishedCourses] = useState<CourseCard[]>([]);
   const [publishedCoursesError, setPublishedCoursesError] = useState("");
   const [isLoadingPublishedCourses, setIsLoadingPublishedCourses] = useState(
     Boolean(getFirebaseClientConfig()),
   );
   const deferredQuery = useDeferredValue(query.toLowerCase().trim());
+
+  // Keep category + search in the URL so a filtered view is shareable and
+  // survives refresh / back-forward — consistent with the rest of the app.
+  useEffect(() => {
+    const desiredCat =
+      activeCategory !== allCategoriesLabel ? activeCategory : null;
+    const desiredQuery = query.trim() || null;
+
+    if (
+      desiredCat === searchParams.get("cat") &&
+      desiredQuery === searchParams.get("q")
+    ) {
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (desiredCat) params.set("cat", desiredCat);
+    if (desiredQuery) params.set("q", desiredQuery);
+    const next = params.toString();
+
+    startTransition(() => {
+      router.replace(next ? `${pathname}?${next}` : pathname, {
+        scroll: false,
+      });
+    });
+  }, [activeCategory, query, pathname, router, searchParams]);
   const marketplaceCourses = [...courses, ...publishedCourses];
   const categories = [
     allCategoriesLabel,
@@ -62,6 +96,10 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
     return matchesCategory && matchesQuery;
   });
 
+  const hasAnyCourses = marketplaceCourses.length > 0;
+  const isFiltering =
+    activeCategory !== allCategoriesLabel || deferredQuery.length > 0;
+
   return (
     <section>
       <div className="mb-8 grid gap-3 lg:grid-cols-[1fr_280px] lg:items-center">
@@ -73,6 +111,7 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
               <button
                 key={filter}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveCategory(filter)}
                 className={
                   isActive
@@ -103,33 +142,67 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
       ) : null}
 
       {isLoadingPublishedCourses ? (
-        <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-          <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
-            Loading published creator courses...
-          </p>
+        <div className="grid gap-5 lg:grid-cols-3" aria-hidden="true">
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className="surface-card animate-pulse overflow-hidden rounded-[18px]"
+            >
+              <div className="aspect-[4/3] bg-[var(--color-surface-strong)]" />
+              <div className="space-y-3 p-5">
+                <div className="h-3 w-24 rounded bg-[var(--color-surface-strong)]" />
+                <div className="h-6 w-3/4 rounded bg-[var(--color-surface-strong)]" />
+                <div className="h-16 rounded bg-[var(--color-surface-soft)]" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : visibleCourses.length === 0 ? (
-        <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
-            Creator catalog opening
-          </p>
-          <h2 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
-            Published courses will appear here after Skillset review.
-          </h2>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-            The marketplace is connected to the teacher publishing workflow. As
-            creators submit and Skillset approves courses, this page becomes the
-            public storefront for enrollment, previews, and course discovery.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/for-creators" className="button-solid px-5 py-3 text-sm">
-              For creators
-            </Link>
-            <Link href="/teach" className="button-outline px-5 py-3 text-sm">
-              Open Creator Studio
-            </Link>
+        hasAnyCourses && isFiltering ? (
+          <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
+              No matches
+            </p>
+            <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+              No courses match your search.
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[var(--color-ink-soft)]">
+              Try a different category or keyword.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory(allCategoriesLabel);
+                setQuery("");
+              }}
+              className="button-outline mt-5 px-5 py-2.5 text-sm"
+            >
+              Clear filters
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
+              Creator catalog opening
+            </p>
+            <h2 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
+              Published courses will appear here after Skillset review.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              The marketplace is connected to the teacher publishing workflow. As
+              creators submit and Skillset approves courses, this page becomes the
+              public storefront for enrollment, previews, and course discovery.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/for-creators" className="button-solid px-5 py-3 text-sm">
+                For creators
+              </Link>
+              <Link href="/teach" className="button-outline px-5 py-3 text-sm">
+                Open Creator Studio
+              </Link>
+            </div>
+          </div>
+        )
       ) : (
         <div className="grid gap-5 lg:grid-cols-3">
           {visibleCourses.map((track) => {

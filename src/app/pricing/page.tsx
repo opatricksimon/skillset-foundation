@@ -1,10 +1,15 @@
+import Link from "next/link";
+
 import { PublicPage } from "@/components/site/public-page";
+import { formatUsd, platformFeePercent } from "@/data/platform";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
+const sampleCoursePrice = 200;
+const sampleFee = (sampleCoursePrice * platformFeePercent) / 100;
 const examples = [
-  ["Course price", "$200.00"],
-  ["Skillset platform fee", "$30.00"],
-  ["Estimated creator net", "$170.00"],
+  ["Course price", formatUsd(sampleCoursePrice)],
+  [`Skillset platform fee (${platformFeePercent}%)`, formatUsd(sampleFee)],
+  ["Estimated creator net", formatUsd(sampleCoursePrice - sampleFee)],
 ];
 
 export const metadata = buildPageMetadata({
@@ -30,7 +35,7 @@ export default function PricingPage() {
             Skillset earns when creators sell.
           </h2>
           <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-            The default platform fee is 15% per paid sale. Creators keep control
+            The default platform fee is {platformFeePercent}% per paid sale. Creators keep control
             of course price, content, and learning experience while Skillset
             provides checkout, access control, review, community, and payout
             infrastructure.
@@ -50,6 +55,25 @@ export default function PricingPage() {
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-6">
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-ink)]">
+            Ready to publish on Skillset?
+          </p>
+          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+            No subscription. The platform fee applies only when you sell.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/for-creators" className="button-outline px-5 py-3 text-sm">
+            Creator overview
+          </Link>
+          <Link href="/auth?mode=signup" className="button-solid px-5 py-3 text-sm">
+            Get started free
+          </Link>
         </div>
       </section>
     </PublicPage>

@@ -1,7 +1,11 @@
 import { PublicPage } from "@/components/site/public-page";
+import { platformFeePercent } from "@/data/platform";
 
 const policies = [
-  ["Platform fee", "Default 15% Skillset fee on successful paid enrollments."],
+  [
+    "Platform fee",
+    `Default ${platformFeePercent}% Skillset fee on successful paid enrollments.`,
+  ],
   ["Refund window", "7-day automatic refund window, subject to course progress and certificate status."],
   ["Release schedule", "Creator net revenue is held in release and scheduled for transfer after 30 days."],
   ["Payout account", "Creators connect Stripe before selling paid courses."],

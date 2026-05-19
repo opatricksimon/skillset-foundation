@@ -127,12 +127,14 @@ export function TeacherEventStudio() {
   return (
     <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
       <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Live sessions
-        </p>
-        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-          Schedule a class or mentorship.
-        </h3>
+        <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+          <h3 className="text-base font-bold text-[var(--color-ink)]">
+            Schedule a class or mentorship
+          </h3>
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+            Live sessions
+          </span>
+        </div>
         <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
           Use external links first. After the session, recordings can be added
           through the course media flow and connected to the lesson structure.
@@ -228,23 +230,32 @@ export function TeacherEventStudio() {
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={isSaving || !selectedCourse}
-            className="button-solid px-5 py-3 text-sm disabled:opacity-60"
-          >
-            {isSaving ? "Scheduling..." : "Schedule session"}
-          </button>
+          <div>
+            <button
+              type="submit"
+              disabled={isSaving || !selectedCourse}
+              className="button-solid px-5 py-3 text-sm disabled:opacity-60"
+            >
+              {isSaving ? "Scheduling..." : "Schedule session"}
+            </button>
+            {!selectedCourse && !isLoading ? (
+              <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+                Create a course draft first — sessions are linked to a specific course.
+              </p>
+            ) : null}
+          </div>
         </form>
       </div>
 
       <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Agenda
-        </p>
-        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-          Scheduled sessions
-        </h3>
+        <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+          <h3 className="text-base font-bold text-[var(--color-ink)]">
+            Scheduled sessions
+          </h3>
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+            Agenda
+          </span>
+        </div>
         <div className="mt-6 grid gap-3">
           {events.length === 0 ? (
             <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">

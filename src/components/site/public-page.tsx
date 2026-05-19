@@ -20,7 +20,7 @@ export function PublicPage({
     <div className="page-shell">
       <SiteNav />
       <main className="mx-auto w-full max-w-7xl px-6 py-12 sm:px-8 sm:py-16">
-        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
               {eyebrow}

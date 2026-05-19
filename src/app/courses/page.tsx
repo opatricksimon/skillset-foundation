@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { CourseMarketplace } from "@/components/courses/course-marketplace";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
@@ -31,7 +33,17 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        <CourseMarketplace />
+        <Suspense
+          fallback={
+            <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+              <p className="text-sm text-[var(--color-ink-soft)]">
+                Loading courses...
+              </p>
+            </section>
+          }
+        >
+          <CourseMarketplace />
+        </Suspense>
       </main>
       <SiteFooter />
     </div>

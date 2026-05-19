@@ -8,9 +8,10 @@ import { HelpBubble } from "@/components/platform/help-bubble";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
-import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { SessionCard } from "@/components/platform/session-card";
+import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { StatusBanner } from "@/components/platform/status-banner";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
@@ -39,6 +40,7 @@ export function PlatformShell({
     <ThemeProvider>
       <main className="page-shell min-h-screen">
       <StatusBanner />
+      <PlatformHeader />
       <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
         <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
           <aside
@@ -59,9 +61,9 @@ export function PlatformShell({
                   <LogoWordmark nav href="/" />
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="platform-sidebar-label">
-                      <h1 className="text-sm font-bold text-[var(--color-primary)]">
+                      <p className="text-sm font-bold text-[var(--color-primary)]">
                         Skillset
-                      </h1>
+                      </p>
                       <p className="mt-0.5 text-xs text-[var(--color-ink-soft)]">
                         Professional learning network
                       </p>
@@ -74,17 +76,23 @@ export function PlatformShell({
               )}
             </div>
             <PlatformNav collapsed={isCollapsed} />
+            <div
+              className={`mt-3 flex items-center border-t border-[var(--color-line)] pt-3 ${
+                isCollapsed ? "justify-center" : "justify-end"
+              }`}
+            >
+              <ThemeToggle />
+            </div>
             <SessionCard collapsed={isCollapsed} />
           </aside>
           <section className="platform-content space-y-6">
-            <PlatformHeader />
             <div className="rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
                 {eyebrow}
               </p>
-              <h2 className="display-title mt-3 max-w-4xl text-4xl leading-none text-[var(--color-primary)] sm:text-5xl">
+              <h1 className="display-title mt-3 max-w-4xl text-4xl leading-none text-[var(--color-primary)] sm:text-5xl">
                 {title}
-              </h2>
+              </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)]">
                 {description}
               </p>

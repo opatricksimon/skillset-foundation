@@ -7,6 +7,7 @@ import { AccountActionRequestsPanel } from "@/components/admin/account-action-re
 import { AdminEnrollmentPanel } from "@/components/admin/admin-enrollment-panel";
 import { CommunityModerationQueue } from "@/components/admin/community-moderation-queue";
 import { CourseReviewQueue } from "@/components/admin/course-review-queue";
+import { OpsOverviewMetrics } from "@/components/admin/ops-overview-metrics";
 import { PaymentOperationsPanel } from "@/components/admin/payment-operations-panel";
 import { SupportTicketQueue } from "@/components/admin/support-ticket-queue";
 import { UserLookupPanel } from "@/components/admin/user-lookup-panel";
@@ -76,6 +77,8 @@ export function OpsDashboard() {
           <DashboardFilters filters={filters} onChange={updateParam} />
         </div>
       </section>
+
+      <OpsOverviewMetrics />
 
       {activeTab === "payments" ? (
         <>

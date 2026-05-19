@@ -8,6 +8,7 @@ import { HorizontalTabs } from "@/components/shared/horizontal-tabs";
 import { StatusChip } from "@/components/shared/status-chip";
 import { RevenueMilestoneStrip } from "@/components/teacher/revenue-milestone-strip";
 import { TeacherCourseStudio } from "@/components/teacher/teacher-course-studio";
+import { TeacherOverviewMetrics } from "@/components/teacher/teacher-overview-metrics";
 import { TeacherEventStudio } from "@/components/teacher/teacher-event-studio";
 import { TeacherWalletPanel } from "@/components/teacher/teacher-wallet-panel";
 
@@ -106,15 +107,18 @@ export function TeacherStudioDashboard() {
         />
       ) : (
         <>
+          <TeacherOverviewMetrics />
           <RevenueMilestoneStrip />
           <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-                Publishing checklist
-              </p>
-              <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-                Publishing flow
-              </h3>
+              <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+                <h3 className="text-base font-bold text-[var(--color-ink)]">
+                  Publishing flow
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+                  Publishing checklist
+                </span>
+              </div>
               <div className="mt-6 grid gap-3">
                 {checklist.map((item, index) => (
                   <div
@@ -133,12 +137,14 @@ export function TeacherStudioDashboard() {
             </div>
             <div className="grid gap-5">
               <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-                <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-                  Teacher support
-                </p>
-                <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-                  Educator support
-                </h3>
+                <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+                  <h3 className="text-base font-bold text-[var(--color-ink)]">
+                    Educator support
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+                    Teacher support
+                  </span>
+                </div>
                 <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
                   Publishing guidance, quality standards, and account help stay
                   close to the teaching workflow.

@@ -158,12 +158,10 @@ export function TeacherWalletPanel() {
 
   return (
     <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-      <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-        Teacher wallet
-      </p>
-      <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-        Connect payouts before selling.
-      </h3>
+      <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+        <h3 className="text-base font-bold text-[var(--color-ink)]">Connect payouts before selling.</h3>
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Teacher wallet</span>
+      </div>
       <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
         Skillset uses Stripe Connect for teacher payouts. Students pay through
         Skillset Checkout; Stripe can route the teacher share to the connected

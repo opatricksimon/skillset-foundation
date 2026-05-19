@@ -1,91 +1,109 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useRef, type KeyboardEvent } from "react";
 
-import { useAuth } from "@/components/auth/auth-provider";
 import { NotificationBell } from "@/components/platform/notification-bell";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { AccountMenu } from "@/components/site/account-menu";
+import { platformNav } from "@/data/site";
 
 const surfaceCopy = {
   learn: {
-    label: "Classroom",
-    search: "Search courses, lessons, community posts...",
-    actions: [
-      { href: "/courses", label: "Browse courses" },
-      { href: "/learn/community", label: "Community" },
-    ],
+    crumb: "Learner",
+    search: "Search courses, lessons...",
+    searchHref: "/courses",
+    cta: { label: "Browse programs", href: "/courses" },
   },
   teach: {
-    label: "Teacher workspace",
-    search: "Search courses, students, media...",
-    actions: [
-      { href: "/teach/builder", label: "Open builder" },
-      { href: "/teach/media", label: "Media library" },
-    ],
+    crumb: "Educator",
+    search: "Search courses, students...",
+    searchHref: "/courses",
+    cta: { label: "New course", href: "/teach/builder" },
   },
   ops: {
-    label: "Operations workspace",
-    search: "Search users, courses, tickets...",
-    actions: [
-      { href: "/ops", label: "Review queue" },
-      { href: "/support", label: "Support intake" },
-    ],
+    crumb: "Operations",
+    search: "Search users, courses...",
+    searchHref: "/courses",
+    cta: { label: "Review queue", href: "/ops" },
   },
   platform: {
-    label: "Skillset home",
+    crumb: "Skillset",
     search: "Search Skillset...",
-    actions: [
-      { href: "/learn", label: "Classroom" },
-      { href: "/teach", label: "Teacher Studio" },
-    ],
+    searchHref: "/courses",
+    cta: { label: "Explore courses", href: "/courses" },
   },
 };
 
 export function PlatformHeader() {
-  const pathname = usePathname();
-  const { signOut, user } = useAuth();
+  const pathname = usePathname() ?? "";
+  const router = useRouter();
   const surface = getSurface(pathname);
   const copy = surfaceCopy[surface];
+  const pageLabel = getPageLabel(pathname);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  function handleSearchKey(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    const q = searchRef.current?.value.trim();
+    if (q) {
+      router.push(`${copy.searchHref}?q=${encodeURIComponent(q)}`);
+    }
+  }
 
   return (
-    <header className="rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-soft)]">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-            {copy.label}
-          </p>
-          <p className="mt-1 truncate text-sm leading-6 text-[var(--color-ink-soft)]">
-            Courses, community, events, and creator tools in one workspace.
-          </p>
-        </div>
+    <header className="border-b border-[var(--color-line)] bg-white">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-2.5 sm:px-6">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex min-w-0 items-center gap-1.5 text-sm"
+        >
+          <Link
+            href="/"
+            className="hidden text-[var(--color-ink-soft)] transition-colors hover:text-[var(--color-primary)] sm:inline"
+          >
+            Skillset
+          </Link>
+          <span
+            aria-hidden="true"
+            className="hidden text-[var(--color-ink-muted)] sm:inline"
+          >
+            /
+          </span>
+          <span className="hidden shrink-0 text-[var(--color-ink-soft)] sm:inline">
+            {copy.crumb}
+          </span>
+          <span
+            aria-hidden="true"
+            className="hidden text-[var(--color-ink-muted)] sm:inline"
+          >
+            /
+          </span>
+          <span className="truncate font-semibold text-[var(--color-ink)]">
+            {pageLabel}
+          </span>
+        </nav>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label className="min-w-0 sm:w-80">
-            <span className="sr-only">Workspace search</span>
-            <input
-              type="search"
-              placeholder={copy.search}
-              disabled
-              className="w-full rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-2.5 text-sm text-[var(--color-ink-soft)] outline-none"
-            />
-          </label>
+        <label className="ml-auto min-w-0 max-w-[240px] flex-1 sm:max-w-xs">
+          <span className="sr-only">
+            Workspace search — press Enter to search
+          </span>
+          <input
+            ref={searchRef}
+            type="search"
+            placeholder={copy.search}
+            onKeyDown={handleSearchKey}
+            className="w-full rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-2 text-sm text-[var(--color-ink)] outline-none transition-colors placeholder:text-[var(--color-ink-muted)] focus:border-[var(--color-primary-light)] focus:bg-white"
+          />
+        </label>
 
-          <div className="flex flex-wrap gap-2">
-            {copy.actions.map((action) => (
-              <Link
-                key={action.href + action.label}
-                href={action.href}
-                className="button-outline px-3 py-2 text-xs"
-              >
-                {action.label}
-              </Link>
-            ))}
-            <ThemeToggle />
-            <NotificationBell />
-            {user ? <AccountMenu user={user} onSignOut={signOut} /> : null}
-          </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <NotificationBell />
+          <Link
+            href={copy.cta.href}
+            className="button-solid hidden px-4 py-2 text-sm sm:inline-flex"
+          >
+            {copy.cta.label}
+          </Link>
         </div>
       </div>
     </header>
@@ -106,4 +124,22 @@ function getSurface(pathname: string): keyof typeof surfaceCopy {
   }
 
   return "platform";
+}
+
+function getPageLabel(pathname: string): string {
+  const matches = platformNav
+    .filter(
+      (item) =>
+        pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .sort((a, b) => b.href.length - a.href.length);
+
+  if (matches[0]) {
+    return matches[0].label;
+  }
+
+  const segment = pathname.split("/").filter(Boolean).pop() ?? "Home";
+  return segment
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }

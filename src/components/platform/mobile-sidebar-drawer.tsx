@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { PlatformNav } from "@/components/platform/platform-nav";
@@ -20,7 +20,7 @@ import { LogoWordmark } from "@/components/shared/logo-wordmark";
 
 export function MobileSidebarDrawer() {
   const { user } = useAuth();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const workspaceItem = useMemo(() => {
@@ -40,6 +40,24 @@ export function MobileSidebarDrawer() {
   function closeDrawer() {
     setOpen(false);
   }
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   return (
     <>

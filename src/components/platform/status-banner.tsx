@@ -75,15 +75,15 @@ function getAccountBanner(
       // (sets teacherTermsAcceptedAt and clears this banner). The
       // /legal/teacher-terms page is read-only text with no accept
       // action, so it could never clear the banner.
-      message: "Activate teaching: verify your email and accept the Teacher Terms.",
-      ctaLabel: "Activate now",
+      message: "Finish your creator setup to start selling.",
+      ctaLabel: "Complete setup",
       ctaHref: "/onboarding?path=teacher",
     };
   }
 
   if (user.roles.includes("teacher") && !profile?.stripeConnectChargesEnabled) {
     return {
-      message: "Complete Stripe setup to accept payments.",
+      message: "Connect payouts to make your first sale.",
       ctaLabel: "Complete setup",
       ctaHref: "/account/payments",
     };

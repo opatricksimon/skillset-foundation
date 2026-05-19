@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { formatPrimaryRole } from "@/domain/auth";
 
 export function SessionCard({ collapsed = false }: { collapsed?: boolean }) {
   const router = useRouter();
@@ -59,7 +60,7 @@ export function SessionCard({ collapsed = false }: { collapsed?: boolean }) {
             {user.displayName || user.email || "Skillset user"}
           </p>
           <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-            {user.roles.join(", ")}
+            {formatPrimaryRole(user.roles)}
           </p>
         </div>
       </div>

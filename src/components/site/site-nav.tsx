@@ -6,9 +6,12 @@ import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import {
   ChevronDown,
   GraduationCap,
+  Menu,
   Presentation,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 // No caret affordance: these are direct links, not dropdown menus.
@@ -38,9 +41,15 @@ const signInOptions = [
   },
 ];
 
+function isActiveNav(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteNav() {
   const { status, user, signOut } = useAuth();
+  const pathname = usePathname() ?? "";
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const isAuthenticated = status === "authenticated" && user;
 
   useEffect(() => {
@@ -56,32 +65,132 @@ export function SiteNav() {
     };
   }, []);
 
+  useEffect(() => {
+    // Sync with an external system (the router): collapse the mobile menu
+    // whenever the route changes. This is a deliberate, safe one-shot reset.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileOpen]);
+
   return (
     <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
-      <div className="site-header__inner">
+      <div className="site-header__inner relative">
         <LogoWordmark nav />
         <nav
           aria-label="Primary navigation"
           className="site-header__links"
         >
-          {navItems.map((item) => (
-            <Link key={`${item.href}-${item.label}`} href={item.href} className="site-header__link">
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const active = isActiveNav(pathname, item.href);
+
+            return (
+              <Link
+                key={`${item.href}-${item.label}`}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`site-header__link ${active ? "bg-[var(--color-surface-soft)] text-[var(--color-primary)]" : ""}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="site-header__actions">
           {isAuthenticated ? (
             <AccountMenu user={user} onSignOut={signOut} />
           ) : (
-            <>
+            <div className="hidden items-center gap-2 min-[941px]:flex">
               <SignInDropdown />
               <Link href="/auth?mode=signup" className="btn-cta-hero">
                 Get started free
               </Link>
-            </>
+            </div>
           )}
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="site-mobile-menu"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="grid size-10 shrink-0 place-items-center rounded-[10px] border border-[rgba(26,54,93,0.12)] bg-white text-[var(--color-primary)] transition-colors hover:bg-[var(--color-surface-soft)] min-[941px]:hidden"
+          >
+            {mobileOpen ? (
+              <X aria-hidden="true" size={18} strokeWidth={1.8} />
+            ) : (
+              <Menu aria-hidden="true" size={18} strokeWidth={1.8} />
+            )}
+          </button>
         </div>
+
+        {mobileOpen ? (
+          <>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-[44] bg-[rgba(15,39,68,0.4)] min-[941px]:hidden"
+            />
+            <div
+              id="site-mobile-menu"
+              className="absolute inset-x-0 top-[calc(100%+8px)] z-[46] rounded-[16px] border border-[rgba(26,54,93,0.1)] bg-white p-3 shadow-[0_24px_48px_rgba(15,39,68,0.16)] min-[941px]:hidden"
+            >
+              <nav aria-label="Mobile navigation" className="grid gap-1">
+                {navItems.map((item) => {
+                  const active = isActiveNav(pathname, item.href);
+
+                  return (
+                    <Link
+                      key={`mobile-${item.href}-${item.label}`}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`rounded-[10px] px-3 py-2.5 text-sm font-semibold transition-colors ${
+                        active
+                          ? "bg-[var(--color-surface-soft)] text-[var(--color-primary)]"
+                          : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              {!isAuthenticated ? (
+                <div className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3">
+                  <Link
+                    href="/auth?mode=signin"
+                    className="button-outline w-full px-4 py-2.5 text-sm"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth?mode=signup"
+                    className="button-solid w-full px-4 py-2.5 text-sm"
+                  >
+                    Get started free
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          </>
+        ) : null}
       </div>
     </header>
   );
@@ -129,8 +238,8 @@ function SignInDropdown() {
     <div ref={wrapperRef} className="relative">
       <button
         type="button"
-        aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-controls="signin-menu"
         className={`btn-signin ${isOpen ? "open" : ""}`}
         onClick={() => setIsOpen((current) => !current)}
       >
@@ -143,7 +252,7 @@ function SignInDropdown() {
         />
       </button>
       {isOpen ? (
-        <div role="menu" className="signin-dropdown">
+        <div id="signin-menu" className="signin-dropdown">
           {signInOptions.map((option) => {
             const Icon = option.icon;
 
@@ -151,7 +260,6 @@ function SignInDropdown() {
               <Link
                 key={option.href}
                 href={option.href}
-                role="menuitem"
                 className="signin-dropdown__item"
               >
                 <span className="signin-dropdown__icon">

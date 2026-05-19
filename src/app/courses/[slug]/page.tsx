@@ -56,7 +56,7 @@ export default function CourseDetailPage({
                 src={course.image}
                 alt={course.title}
                 fill
-                sizes="100vw"
+                sizes="(min-width: 1024px) 60vw, 100vw"
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[rgba(15,39,68,0.8)] via-transparent to-transparent" />
@@ -89,7 +89,7 @@ export default function CourseDetailPage({
                   Free preview
                 </p>
                 <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-                  Try the course before enrolling.
+                  Preview what&apos;s inside.
                 </h2>
                 <div className="mt-4 grid gap-3">
                   {previewLessons.length > 0 ? (
@@ -126,9 +126,9 @@ export default function CourseDetailPage({
               <div className="mt-5 grid gap-4">
                 {course.modules.map((module) => (
                   <div key={module.id} className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
-                    <h2 className="text-sm font-semibold text-[var(--color-ink)]">
+                    <h3 className="text-sm font-semibold text-[var(--color-ink)]">
                       {module.title}
-                    </h2>
+                    </h3>
                     <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
                       {module.summary}
                     </p>
@@ -142,7 +142,7 @@ export default function CourseDetailPage({
                             {lesson.title}
                           </span>
                           <span className="shrink-0 uppercase tracking-[0.16em]">
-                            {lesson.isPreview ? "Preview" : "Enrolled"} -{" "}
+                            {lesson.isPreview ? "Preview" : "Locked"} -{" "}
                             {lesson.type.replace("_", " ")} - {lesson.duration}
                           </span>
                         </div>
@@ -154,7 +154,7 @@ export default function CourseDetailPage({
               </div>
             </section>
           </section>
-          <aside className="h-fit rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <aside className="h-fit self-start rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] lg:sticky lg:top-24">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
               At a glance
             </p>
@@ -179,7 +179,7 @@ export default function CourseDetailPage({
             </dl>
             <CourseEnrollmentCta course={course} />
             <Link href="#free-preview" className="button-outline mt-3 w-full px-5 py-3 text-sm">
-              Watch free preview
+              See free preview lessons
             </Link>
             <Link
               href="/courses"

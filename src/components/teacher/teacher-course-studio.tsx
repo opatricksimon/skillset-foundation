@@ -78,12 +78,10 @@ export function TeacherCourseStudio() {
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Course submissions
-        </p>
-        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-          Start a course submission
-        </h3>
+        <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
+          <h3 className="text-base font-bold text-[var(--color-ink)]">Start a course submission</h3>
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Course submissions</span>
+        </div>
         <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
           Create a draft, shape the learner path in Course Builder, and submit
           when the structure is ready for Skillset review.
@@ -118,14 +116,12 @@ export function TeacherCourseStudio() {
       </section>
 
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-              Your submissions
-            </p>
-            <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-              Courses in progress
-            </h3>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-base font-bold text-[var(--color-ink)]">Courses in progress</h3>
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Your submissions</span>
+            </div>
             <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
               Drafts stay private. Approved courses can keep receiving new
               lessons and materials while Skillset controls marketplace

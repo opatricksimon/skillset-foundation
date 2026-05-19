@@ -27,11 +27,12 @@ export type PlatformNavContext = "learner" | "teacher" | "ops";
 export type PlatformNavItem = {
   href: string;
   label: string;
-  shortLabel: string;
+  /** Lucide icon key — resolved to a component in platform-nav.tsx. */
+  icon: string;
   /** Which workspace context(s) this item belongs to. */
   contexts: readonly PlatformNavContext[];
-  /** Items sharing a group render together; a divider is drawn between groups. */
-  group: number;
+  /** Section label; an uppercase header is drawn when the section changes. */
+  section: string;
   permission?: Permission;
 };
 
@@ -53,114 +54,133 @@ export const marketplaceHighlights = [
 // once. Groups draw a subtle divider between them; account/help links are
 // intentionally omitted here because they live in the account menu.
 export const platformNav: PlatformNavItem[] = [
-  {
-    href: "/platform",
-    label: "Home",
-    shortLabel: "H",
-    contexts: ["learner", "ops"],
-    group: 0,
-  },
-  {
-    href: "/courses",
-    label: "Marketplace",
-    shortLabel: "M",
-    contexts: ["learner", "teacher", "ops"],
-    group: 0,
-  },
-  {
-    href: "/teach",
-    label: "Teacher Studio",
-    shortLabel: "T",
-    contexts: ["teacher"],
-    group: 0,
-    permission: "teacherStudio.access",
-  },
+  // --- Learner workspace ---
   {
     href: "/learn",
     label: "Classroom",
-    shortLabel: "C",
+    icon: "BookOpen",
     contexts: ["learner"],
-    group: 1,
+    section: "Learn",
     permission: "courses.viewLearning",
   },
   {
     href: "/learn/community",
     label: "Community",
-    shortLabel: "Co",
+    icon: "Users",
     contexts: ["learner"],
-    group: 1,
+    section: "Learn",
     permission: "community.read",
   },
   {
     href: "/learn/events",
     label: "Calendar",
-    shortLabel: "Ca",
+    icon: "Calendar",
     contexts: ["learner"],
-    group: 1,
+    section: "Learn",
     permission: "courses.viewLearning",
   },
   {
     href: "/learn/credentials",
     label: "Credentials",
-    shortLabel: "Cr",
+    icon: "Award",
     contexts: ["learner"],
-    group: 1,
+    section: "Learn",
     permission: "certificates.view",
+  },
+  // --- Teacher workspace ---
+  {
+    href: "/teach",
+    label: "Dashboard",
+    icon: "LayoutDashboard",
+    contexts: ["teacher"],
+    section: "Studio",
+    permission: "teacherStudio.access",
   },
   {
     href: "/teach/builder",
-    label: "Course Builder",
-    shortLabel: "B",
+    label: "Courses",
+    icon: "BookOpen",
     contexts: ["teacher"],
-    group: 1,
+    section: "Studio",
     permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/media",
     label: "Media Library",
-    shortLabel: "Me",
+    icon: "Image",
     contexts: ["teacher"],
-    group: 1,
+    section: "Studio",
     permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/coupons",
     label: "Coupons",
-    shortLabel: "Cu",
+    icon: "Tag",
     contexts: ["teacher"],
-    group: 1,
+    section: "Studio",
     permission: "teacherStudio.manageCourses",
   },
   {
-    href: "/teach/integrations",
-    label: "Integrations",
-    shortLabel: "In",
+    href: "/teach/co-productions",
+    label: "Co-productions",
+    icon: "Users",
     contexts: ["teacher"],
-    group: 2,
+    section: "Growth",
     permission: "teacherStudio.access",
   },
   {
     href: "/teach/refunds",
     label: "Refunds",
-    shortLabel: "R",
+    icon: "RefreshCw",
     contexts: ["teacher"],
-    group: 2,
+    section: "Growth",
     permission: "teacherStudio.access",
   },
   {
     href: "/teach/team",
     label: "Team",
-    shortLabel: "Te",
+    icon: "UserCheck",
     contexts: ["teacher"],
-    group: 2,
+    section: "Setup",
     permission: "teacherStudio.access",
   },
   {
+    href: "/teach/integrations",
+    label: "Integrations",
+    icon: "Plug",
+    contexts: ["teacher"],
+    section: "Setup",
+    permission: "teacherStudio.access",
+  },
+  // --- Operations workspace ---
+  {
     href: "/ops",
     label: "Operations",
-    shortLabel: "O",
+    icon: "Settings",
     contexts: ["ops"],
-    group: 1,
+    section: "Operations",
     permission: "platform.accessAdmin",
+  },
+  // --- Shared across every workspace ---
+  {
+    href: "/courses",
+    label: "Marketplace",
+    icon: "ShoppingBag",
+    contexts: ["learner", "teacher", "ops"],
+    section: "Discover",
+  },
+  {
+    href: "/account",
+    label: "Settings",
+    icon: "Settings",
+    contexts: ["learner", "teacher", "ops"],
+    section: "Account",
+  },
+  {
+    href: "/account/billing",
+    label: "Billing",
+    icon: "CreditCard",
+    contexts: ["learner", "teacher", "ops"],
+    section: "Account",
   },
 ];

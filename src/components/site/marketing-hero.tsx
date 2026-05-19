@@ -19,7 +19,7 @@ export function MarketingHero() {
           <div className="mt-10 space-y-5 sm:mt-16 lg:mt-20">
             <h1 className="display-title text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98] text-white">
               The marketplace for serious online courses.
-              <span className="block text-[var(--color-accent-soft)]">
+              <span className="block text-white/58">
                 Reviewed before they go live.
               </span>
             </h1>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { LearnerOverviewMetrics } from "@/components/learn/learner-overview-metrics";
 import { RefundButton } from "@/components/learn/refund-button";
 import { ListingSearchBar } from "@/components/shared/listing-search-bar";
 import { StatusChip } from "@/components/shared/status-chip";
@@ -94,29 +95,9 @@ export function LearnDashboard() {
     );
   }
 
-  const openEnrollments = enrollments.filter((enrollment) =>
-    canOpenEnrollment(enrollment.status),
-  );
-  const inactiveEnrollments = enrollments.length - openEnrollments.length;
-
   return (
     <div className="grid gap-5">
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          `${openEnrollments.length} active course${openEnrollments.length === 1 ? "" : "s"}`,
-          "Private course workspaces",
-          inactiveEnrollments
-            ? `${inactiveEnrollments} inactive enrollment${inactiveEnrollments === 1 ? "" : "s"}`
-            : "Enrollment data connected",
-        ].map((item) => (
-          <div
-            key={item}
-            className="rounded-[14px] border fine-rule bg-white p-4 shadow-[var(--shadow-soft)]"
-          >
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{item}</p>
-          </div>
-        ))}
-      </section>
+      <LearnerOverviewMetrics />
 
       <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
