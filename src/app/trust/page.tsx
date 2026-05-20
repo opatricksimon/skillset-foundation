@@ -1,12 +1,52 @@
+import {
+  Award,
+  FileSearch,
+  Flag,
+  Receipt,
+  RefreshCcw,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
+
 import { PublicPage } from "@/components/site/public-page";
 
-const trustLayers = [
-  ["Course review", "Courses pass through Skillset review before marketplace publication."],
-  ["Protected access", "Private learning workspaces open through enrollment, not public links."],
-  ["Refund controls", "Automatic refunds are limited by time, progress, and certificate status."],
-  ["Moderation", "Course communities include reporting and operations review workflows."],
-  ["Verified credentials", "Skillset Verified certificates can be issued and checked through the platform."],
-  ["Audit-ready payments", "Orders, payments, refunds, payout ledger entries, and transfers are tracked separately."],
+type TrustLayer = {
+  title: string;
+  detail: string;
+  Icon: LucideIcon;
+};
+
+const trustLayers: ReadonlyArray<TrustLayer> = [
+  {
+    title: "Course review",
+    detail: "Every course passes through Skillset review before it can be published in the marketplace.",
+    Icon: FileSearch,
+  },
+  {
+    title: "Protected access",
+    detail: "Learning workspaces open only after enrollment — no public links bypass paid access.",
+    Icon: ShieldCheck,
+  },
+  {
+    title: "Refund controls",
+    detail: "7-day refund window plus progress + certificate checks. Predictable rules for both sides.",
+    Icon: RefreshCcw,
+  },
+  {
+    title: "Community moderation",
+    detail: "Course communities ship with reporting, moderation queue, and admin escalation.",
+    Icon: Flag,
+  },
+  {
+    title: "Verifiable credentials",
+    detail: "Skillset Verified certificates carry a public verification URL employers can check.",
+    Icon: Award,
+  },
+  {
+    title: "Audit-ready payments",
+    detail: "Orders, payments, refunds, payout ledger, and Stripe transfers are tracked as distinct records.",
+    Icon: Receipt,
+  },
 ];
 
 export default function TrustPage() {
@@ -17,19 +57,28 @@ export default function TrustPage() {
       description="Skillset is built around controlled course publication, protected student access, transparent payments, moderation, and verifiable learning outcomes."
     >
       <section className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {trustLayers.map(([title, detail]) => (
-          <article
-            key={title}
-            className="rounded-[16px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)]"
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              {title}
-            </p>
-            <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
-              {detail}
-            </p>
-          </article>
-        ))}
+        {trustLayers.map((layer) => {
+          const { Icon } = layer;
+          return (
+            <article
+              key={layer.title}
+              className="group rounded-[16px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)] transition duration-[180ms] ease-out hover:-translate-y-0.5 hover:border-[rgba(26,54,93,0.18)] hover:shadow-[0_18px_36px_rgba(15,39,68,0.10)]"
+            >
+              <span
+                className="grid size-11 place-items-center rounded-[10px] bg-[var(--color-surface-soft)] text-[var(--color-primary)] transition-colors group-hover:bg-[var(--color-primary)] group-hover:text-white"
+                aria-hidden="true"
+              >
+                <Icon size={20} strokeWidth={1.7} />
+              </span>
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                {layer.title}
+              </p>
+              <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+                {layer.detail}
+              </p>
+            </article>
+          );
+        })}
       </section>
     </PublicPage>
   );
