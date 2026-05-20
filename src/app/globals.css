@@ -805,6 +805,24 @@ select {
   border: 1px solid var(--color-line);
   border-radius: 4px;
   box-shadow: 0 1px 0 rgba(15, 39, 68, 0.04);
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease;
+}
+/* Only metric / interactive dash-cards (anything inside an <a>, <button>,
+   or with the .dash-card--interactive helper) get the hover lift.
+   Plain content cards stay still so they don't twitch on cursor passes. */
+a > .dash-card,
+button > .dash-card,
+.dash-card--interactive,
+.dash-card.dash-card--interactive:hover {
+  cursor: pointer;
+}
+a:hover > .dash-card,
+button:hover > .dash-card,
+.dash-card--interactive:hover {
+  border-color: rgba(26, 54, 93, 0.22);
+  box-shadow: 0 8px 18px rgba(15, 39, 68, 0.08);
 }
 .dash-card--strong {
   background: var(--color-surface-strong);

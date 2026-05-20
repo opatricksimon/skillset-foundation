@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, HelpCircle } from "lucide-react";
 
 import { PublicPage } from "@/components/site/public-page";
+import { Tooltip } from "@/components/shared/tooltip";
 import { formatUsd } from "@/data/platform";
 import { plans, refundWindowDays } from "@/data/plans";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
@@ -154,8 +155,8 @@ export default function PricingPage() {
           goes to you.
         </p>
 
-        <div className="mt-6 overflow-hidden rounded-[12px] border fine-rule">
-          <table className="w-full text-left text-sm">
+        <div className="mt-6 overflow-x-auto rounded-[12px] border fine-rule">
+          <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="bg-[var(--color-surface-soft)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
               <tr>
                 <th scope="col" className="px-4 py-3 font-bold">
@@ -168,7 +169,17 @@ export default function PricingPage() {
                   Platform fee
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-bold">
-                  Stripe fee
+                  <span className="inline-flex items-center gap-1">
+                    Stripe fee
+                    <Tooltip content="Stripe's processing fee on each successful charge (2.9% + $0.30 for USD cards, 3.9% + $0.30 international). Passed through to the creator on every plan.">
+                      <HelpCircle
+                        aria-hidden="true"
+                        size={12}
+                        strokeWidth={2}
+                        className="cursor-help text-[var(--color-ink-muted)]"
+                      />
+                    </Tooltip>
+                  </span>
                 </th>
                 <th
                   scope="col"
