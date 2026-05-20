@@ -7,7 +7,6 @@ import { HelpBubble } from "@/components/platform/help-bubble";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
-import { SessionCard } from "@/components/platform/session-card";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { StatusBanner } from "@/components/platform/status-banner";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -75,6 +74,8 @@ export function PlatformShell({
               </div>
             )}
             <PlatformNav collapsed={isCollapsed} />
+            {/* Profile + sign-out live in the top-right AccountMenu; the
+                sidebar footer is intentionally just the theme toggle. */}
             <div
               className={`mt-2 flex items-center border-t border-[var(--color-line)] pt-2 ${
                 isCollapsed ? "justify-center" : "justify-end"
@@ -82,7 +83,6 @@ export function PlatformShell({
             >
               <ThemeToggle />
             </div>
-            <SessionCard collapsed={isCollapsed} />
           </aside>
           <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
             <div
