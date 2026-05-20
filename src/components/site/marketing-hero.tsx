@@ -48,7 +48,10 @@ export function MarketingHero() {
               </Link>
             </div>
           </div>
-          <dl className="mt-12 hidden w-full max-w-2xl grid-cols-3 gap-4 border-t border-white/20 pt-5 sm:grid">
+          {/* Trust strip — visible on mobile too (single column). Was
+              previously 'hidden sm:grid' which hid the only social-proof
+              above the fold for phone users. */}
+          <dl className="mt-10 grid w-full max-w-2xl gap-4 border-t border-white/20 pt-5 text-left sm:mt-12 sm:grid-cols-3">
             {[
               ["Reviewed", "Every program goes through Skillset review before publishing."],
               ["Global", "Multi-currency checkout in 30+ currencies via Stripe."],
