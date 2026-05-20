@@ -156,10 +156,14 @@ function PlatformNavLink({
             : "border-[var(--color-line)] bg-white group-hover:border-[rgba(26,54,93,0.18)]"
         }`}
       >
+        {/* Inline color (not Tailwind class) so the cascade from
+            .platform-nav-active * { color: base !important } can't override it
+            — Lucide draws via stroke="currentColor", so the color set HERE
+            is what the icon renders as on the white badge. */}
         <Icon
           size={13}
           strokeWidth={2.2}
-          className="text-[var(--color-primary)]"
+          style={{ color: "var(--color-primary)" }}
         />
       </span>
       <span

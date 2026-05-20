@@ -37,18 +37,22 @@ export function AccountPanel({
               <Link
                 key={href}
                 href={href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-3 rounded-[10px] px-2 py-2 text-sm font-semibold transition ${
                   isActive
-                    ? "bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
+                    ? "platform-nav-active bg-[var(--color-primary)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
                     : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
                 }`}
               >
                 <span
                   className={`grid size-7 place-items-center rounded-[8px] text-[11px] font-bold ${
                     isActive
-                      ? "bg-white/12 text-white"
+                      ? "bg-[var(--color-base)]"
                       : "bg-[var(--color-surface-soft)] text-[var(--color-primary)]"
                   }`}
+                  style={
+                    isActive ? { color: "var(--color-primary)" } : undefined
+                  }
                 >
                   {short}
                 </span>
