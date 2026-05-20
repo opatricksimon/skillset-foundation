@@ -6,11 +6,7 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 export default function AccountProfilePage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
-      <PlatformShell
-        eyebrow="Account"
-        title="Profile settings."
-        description="Manage the identity Skillset uses across learning, teaching, communities, and support."
-      >
+      <PlatformShell title="Profile settings" compact>
         <AccountPanel active="Profile">
           <ProfileSettingsPanel />
         </AccountPanel>

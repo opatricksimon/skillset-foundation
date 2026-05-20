@@ -6,11 +6,7 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 export default function AccountBillingPage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
-      <PlatformShell
-        eyebrow="Account"
-        title="Billing history."
-        description="Purchase receipts and billing records for courses bought through Skillset will appear here."
-      >
+      <PlatformShell title="Billing history" compact>
         <AccountPanel active="Billing">
           <BillingTabs />
         </AccountPanel>

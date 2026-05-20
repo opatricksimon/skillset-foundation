@@ -5,11 +5,7 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 export default function AccountNotificationsPage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
-      <PlatformShell
-        eyebrow="Account"
-        title="Notifications."
-        description="Review alerts, account updates, and workspace messages from Skillset."
-      >
+      <PlatformShell title="Notifications" compact>
         <AccountPanel active="Notifications">
           <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 text-center shadow-[var(--shadow-soft)]">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">

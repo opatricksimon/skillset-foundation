@@ -6,11 +6,7 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 export default function AccountEmailPage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
-      <PlatformShell
-        eyebrow="Account"
-        title="Email settings."
-        description="Review your current email, resend verification, or request a verified email change."
-      >
+      <PlatformShell title="Email settings" compact>
         <AccountPanel active="Email">
           <SecuritySettingsPanel />
         </AccountPanel>

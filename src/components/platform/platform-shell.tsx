@@ -15,9 +15,18 @@ import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
 type PlatformShellProps = {
-  eyebrow: string;
+  /** Title is always required — it's the page identity in the sidebar grid. */
   title: string;
-  description: string;
+  /** Small uppercase label above the title. Optional. */
+  eyebrow?: string;
+  /** One-paragraph context line below the title. Optional. */
+  description?: string;
+  /**
+   * Compact variant: smaller title, tighter padding. Use for inner pages
+   * where a tab/breadcrumb already gives context (e.g. /account/billing).
+   * Default = false (full hero, fine for workspace landings like /teach).
+   */
+  compact?: boolean;
   children: ReactNode;
 };
 
@@ -25,6 +34,7 @@ export function PlatformShell({
   eyebrow,
   title,
   description,
+  compact = false,
   children,
 }: PlatformShellProps) {
   const {
@@ -74,17 +84,31 @@ export function PlatformShell({
             </div>
             <SessionCard collapsed={isCollapsed} />
           </aside>
-          <section className="platform-content space-y-6">
-            <div className="rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                {eyebrow}
-              </p>
-              <h1 className="display-title mt-3 max-w-4xl text-4xl leading-none text-[var(--color-primary)] sm:text-5xl">
+          <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
+            <div
+              className={`rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-soft)] ${compact ? "px-5 py-4" : "p-5"}`}
+            >
+              {eyebrow ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                  {eyebrow}
+                </p>
+              ) : null}
+              <h1
+                className={
+                  compact
+                    ? "display-title max-w-4xl text-2xl leading-tight text-[var(--color-primary)] sm:text-3xl"
+                    : `display-title ${eyebrow ? "mt-3" : ""} max-w-4xl text-4xl leading-none text-[var(--color-primary)] sm:text-5xl`
+                }
+              >
                 {title}
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)]">
-                {description}
-              </p>
+              {description ? (
+                <p
+                  className={`max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)] ${compact ? "mt-2" : "mt-3"}`}
+                >
+                  {description}
+                </p>
+              ) : null}
             </div>
             {children}
           </section>

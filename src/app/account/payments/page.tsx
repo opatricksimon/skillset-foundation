@@ -6,11 +6,7 @@ import { TeacherWalletPanel } from "@/components/teacher/teacher-wallet-panel";
 export default function AccountPaymentsPage() {
   return (
     <ProtectedSurface permissions={["teacherStudio.access"]}>
-      <PlatformShell
-        eyebrow="Account"
-        title="Payments and payouts."
-        description="Connect Stripe, review payout readiness, and monitor teacher wallet activity."
-      >
+      <PlatformShell title="Payments and payouts" compact>
         <AccountPanel active="Payments">
           <TeacherWalletPanel />
         </AccountPanel>
