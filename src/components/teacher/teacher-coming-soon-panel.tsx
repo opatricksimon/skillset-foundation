@@ -12,7 +12,7 @@ export function TeacherComingSoonPanel({
   description,
 }: TeacherComingSoonPanelProps) {
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
         {eyebrow}
       </p>

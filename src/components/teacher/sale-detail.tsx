@@ -130,7 +130,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
 
   if (isLoading) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--color-ink-soft)]">Loading sale...</p>
       </section>
     );
@@ -138,7 +138,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
 
   if (error || !order) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error || "Sale not found."}
         </p>
@@ -157,7 +157,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
 
   if (!canView) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           You do not have access to this sale.
         </p>
@@ -168,7 +168,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
       <div className="grid gap-5">
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -186,11 +186,11 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Customer
           </p>
-          <div className="mt-4 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div className="mt-4 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
             <p className="text-sm font-semibold text-[var(--color-ink)]">
               Learner account
             </p>
@@ -200,7 +200,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Payment
           </p>
@@ -212,7 +212,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
               >
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
                   {label}
@@ -223,7 +223,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
               </div>
             ))}
           </div>
-          <div className="mt-5 grid gap-3 rounded-[12px] border fine-rule bg-white p-4 text-xs text-[var(--color-ink-soft)]">
+          <div className="mt-5 grid gap-3 rounded-[3px] border fine-rule bg-white p-4 text-xs text-[var(--color-ink-soft)]">
             <p>
               Provider <strong className="text-[var(--color-ink)]">{order.provider}</strong>
             </p>
@@ -238,7 +238,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Timeline
           </p>
@@ -262,7 +262,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Actions
           </p>
@@ -294,7 +294,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
       </div>
 
       <aside className="space-y-5">
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Course
           </p>
@@ -314,7 +314,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           </Link>
         </section>
 
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Related sales
           </p>

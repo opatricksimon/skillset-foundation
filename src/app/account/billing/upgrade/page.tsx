@@ -40,7 +40,7 @@ export default async function BillingUpgradePage({
           {planId ? (
             <Suspense
               fallback={
-                <div className="rounded-[16px] border fine-rule bg-white p-8 text-sm text-[var(--color-ink-soft)] shadow-[var(--shadow-soft)]">
+                <div className="rounded-[4px] border fine-rule bg-white p-8 text-sm text-[var(--color-ink-soft)] shadow-[var(--shadow-soft)]">
                   Preparing secure checkout…
                 </div>
               }
@@ -58,7 +58,7 @@ export default async function BillingUpgradePage({
 
 function MissingPlanState() {
   return (
-    <div className="rounded-[18px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-8 text-center">
+    <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-8 text-center">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
         Pick a plan first
       </p>

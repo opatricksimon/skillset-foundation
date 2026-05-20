@@ -102,7 +102,7 @@ export function SecuritySettingsPanel() {
   }
 
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
         Security
       </p>
@@ -116,7 +116,7 @@ export function SecuritySettingsPanel() {
       </p>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-[var(--color-ink)]">
@@ -156,7 +156,7 @@ export function SecuritySettingsPanel() {
           </div>
         </div>
 
-        <div className="rounded-[14px] border border-[var(--color-line)] bg-white p-4">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4">
           <p className="font-semibold text-[var(--color-ink)]">
             Change email
           </p>
@@ -183,7 +183,7 @@ export function SecuritySettingsPanel() {
           </div>
         </div>
 
-        <div className="rounded-[14px] border border-[var(--color-line)] bg-white p-4">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4">
           <p className="font-semibold text-[var(--color-ink)]">
             Change password
           </p>
@@ -220,7 +220,7 @@ export function SecuritySettingsPanel() {
           </div>
         </div>
 
-        <div className="rounded-[14px] border border-[var(--color-line)] bg-white p-4">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-[var(--color-ink)]">

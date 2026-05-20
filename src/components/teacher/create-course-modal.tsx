@@ -71,7 +71,7 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
         >
           <form
             onSubmit={handleSubmit}
-            className="relative w-[min(480px,92vw)] rounded-[18px] border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-strong)]"
+            className="relative w-[min(480px,92vw)] rounded-[4px] border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-strong)]"
           >
             <button
               type="button"

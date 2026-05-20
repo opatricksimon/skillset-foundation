@@ -77,7 +77,7 @@ export function TeacherCourseStudio() {
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">Start a course submission</h3>
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Course submissions</span>
@@ -97,7 +97,7 @@ export function TeacherCourseStudio() {
           ].map((item, index) => (
             <div
               key={item}
-              className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+              className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand)]">
                 Step {index + 1}
@@ -115,7 +115,7 @@ export function TeacherCourseStudio() {
           ) : null}
       </section>
 
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-4">
           <div>
             <div className="flex items-baseline gap-2">
@@ -143,19 +143,19 @@ export function TeacherCourseStudio() {
           {isLoadingCourses ? (
             <p className="text-sm text-[var(--color-ink-soft)]">Loading your courses...</p>
           ) : courses.length === 0 ? (
-            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
               No courses yet. Start a course when you are ready to prepare a
               submission for Skillset review.
             </p>
           ) : statusFilteredCourses.length === 0 ? (
-            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
               No courses match these filters.
             </p>
           ) : (
             statusFilteredCourses.map((course) => (
               <article
                 key={course.id}
-                className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>

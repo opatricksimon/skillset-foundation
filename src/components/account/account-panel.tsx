@@ -18,8 +18,8 @@ export function AccountPanel({
   children: ReactNode;
 }) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
-      <aside className="h-fit rounded-[14px] border border-[var(--color-line)] bg-white p-3 shadow-[var(--shadow-soft)]">
+    <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+      <aside className="dash-card dash-card--strong h-fit p-3">
         <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
           Account
         </p>
@@ -38,14 +38,14 @@ export function AccountPanel({
                 key={href}
                 href={href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-[10px] px-2 py-2 text-sm font-semibold transition ${
+                className={`flex items-center gap-3 rounded-[3px] px-2 py-2 text-sm font-semibold transition ${
                   isActive
-                    ? "platform-nav-active bg-[var(--color-primary)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
-                    : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
+                    ? "platform-nav-active bg-[var(--color-primary)]"
+                    : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-ink)]"
                 }`}
               >
                 <span
-                  className={`grid size-7 place-items-center rounded-[8px] text-[11px] font-bold ${
+                  className={`grid size-7 place-items-center rounded-[2px] text-[11px] font-bold ${
                     isActive
                       ? "bg-[var(--color-base)]"
                       : "bg-[var(--color-surface-soft)] text-[var(--color-primary)]"

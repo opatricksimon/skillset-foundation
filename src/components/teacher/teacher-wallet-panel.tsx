@@ -129,7 +129,7 @@ export function TeacherWalletPanel() {
   });
 
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="dash-card p-6">
       <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
         <h3 className="text-base font-bold text-[var(--color-ink)]">Connect payouts before selling.</h3>
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Teacher wallet</span>
@@ -145,7 +145,7 @@ export function TeacherWalletPanel() {
         clawed back.
       </InlineHelp>
 
-      <div className="mt-5 grid gap-3 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm">
+      <div className="mt-5 grid gap-3 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm">
         <div className="flex items-center justify-between gap-4">
           <span className="font-semibold text-[var(--color-ink)]">
             Payout status
@@ -188,7 +188,7 @@ export function TeacherWalletPanel() {
         ].map(([label, value]) => (
           <div
             key={label}
-            className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+            className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
               {label}
@@ -208,7 +208,7 @@ export function TeacherWalletPanel() {
         ].map(([label, value]) => (
           <div
             key={label}
-            className="rounded-[12px] border fine-rule bg-white p-4"
+            className="dash-card p-4"
           >
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
               {label}
@@ -233,7 +233,7 @@ export function TeacherWalletPanel() {
         </div>
         <div className="mt-4 grid gap-3">
           {orders.length === 0 ? (
-            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+            <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
               No sales yet. Paid orders will appear here after checkout succeeds.
             </p>
           ) : (
@@ -241,7 +241,7 @@ export function TeacherWalletPanel() {
               <Link
                 key={order.id}
                 href={`/teach/sales/${order.id}`}
-                className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 transition duration-[180ms] hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]"
+                className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 transition duration-[180ms] hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>

@@ -98,7 +98,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
   if (!enrollment) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Access required
         </p>
@@ -147,7 +147,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           {space.name}
         </p>
@@ -157,7 +157,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
         <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
           {space.description}
         </p>
-        <div className="mt-5 flex flex-wrap gap-2 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-2">
+        <div className="mt-5 flex flex-wrap gap-2 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-2">
           {communityTabs.map((tab) => (
             <button
               key={tab}
@@ -177,7 +177,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
       {activeTab === "posts" ? (
         <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
-          <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
               New post
             </p>
@@ -215,7 +215,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
             </form>
           </section>
 
-          <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
               Feed
             </p>
@@ -223,7 +223,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
               {!postsState.ready || postsState.key !== space.courseSlug ? (
                 <p className="text-sm text-[var(--color-ink-soft)]">Loading community feed...</p>
               ) : postsState.posts.length === 0 ? (
-                <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+                <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
                   No posts yet. The first discussion can set the tone for this course space.
                 </p>
               ) : (
@@ -287,7 +287,7 @@ function CommunityInfoPanel({
   cta?: { href: string; label: string };
 }) {
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
         Course community
       </p>
@@ -298,7 +298,7 @@ function CommunityInfoPanel({
         {items.map(([label, value]) => (
           <div
             key={label}
-            className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+            className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
               {label}
@@ -388,7 +388,7 @@ function CommunityPostCard({
   }
 
   return (
-    <article className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+    <article className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-semibold text-[var(--color-ink)]">
           {post.authorName}
@@ -427,7 +427,7 @@ function CommunityPostCard({
             commentsState.comments.map((comment) => (
               <div
                 key={comment.id}
-                className="rounded-[12px] border border-[var(--color-line)] bg-white p-3"
+                className="rounded-[3px] border border-[var(--color-line)] bg-white p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-[var(--color-ink)]">
@@ -551,7 +551,7 @@ function ReportControl({
       ) : null}
       {isOpen ? (
         <form
-          className="mt-3 grid gap-2 rounded-[12px] border border-[var(--color-line)] bg-white p-3"
+          className="mt-3 grid gap-2 rounded-[3px] border border-[var(--color-line)] bg-white p-3"
           onSubmit={handleReportSubmit}
         >
           <select

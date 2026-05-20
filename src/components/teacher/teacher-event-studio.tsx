@@ -126,7 +126,7 @@ export function TeacherEventStudio() {
 
   return (
     <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-      <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
             Schedule a class or mentorship
@@ -247,7 +247,7 @@ export function TeacherEventStudio() {
         </form>
       </div>
 
-      <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
             Scheduled sessions
@@ -258,7 +258,7 @@ export function TeacherEventStudio() {
         </div>
         <div className="mt-6 grid gap-3">
           {events.length === 0 ? (
-            <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+            <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
               No live sessions scheduled yet. Create one when the course has a
               class, mentorship, webinar, or deadline to share.
             </p>
@@ -266,7 +266,7 @@ export function TeacherEventStudio() {
             events.map((event) => (
               <article
                 key={event.id}
-                className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -331,7 +331,7 @@ function TeacherEventRsvpSummary({ eventId }: { eventId: string }) {
   const notAttendingCount = rsvps.filter((rsvp) => rsvp.status === "not_attending").length;
 
   return (
-    <div className="mt-4 rounded-[12px] border border-[var(--color-line)] bg-white p-3">
+    <div className="mt-4 rounded-[3px] border border-[var(--color-line)] bg-white p-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
         RSVP
       </p>

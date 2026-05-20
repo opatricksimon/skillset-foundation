@@ -81,7 +81,7 @@ export function TeacherStudioDashboard() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
         <HorizontalTabs
           tabs={tabs}
           activeValue={activeTab}
@@ -110,7 +110,7 @@ export function TeacherStudioDashboard() {
           <TeacherOverviewMetrics />
           <RevenueMilestoneStrip />
           <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
               <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
                 <h3 className="text-base font-bold text-[var(--color-ink)]">
                   Publishing flow
@@ -123,7 +123,7 @@ export function TeacherStudioDashboard() {
                 {checklist.map((item, index) => (
                   <div
                     key={item}
-                    className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                    className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand)]">
                       Step {index + 1}
@@ -136,7 +136,7 @@ export function TeacherStudioDashboard() {
               </div>
             </div>
             <div className="grid gap-5">
-              <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
                   <h3 className="text-base font-bold text-[var(--color-ink)]">
                     Educator support
@@ -171,7 +171,7 @@ function ComingSoonPanel({
   description: string;
 }) {
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
         {eyebrow}
       </p>

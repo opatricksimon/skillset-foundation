@@ -47,7 +47,7 @@ export function LearnCommunityHub() {
 
   if (isLoading) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--color-ink-soft)]">Loading community spaces...</p>
       </section>
     );
@@ -55,7 +55,7 @@ export function LearnCommunityHub() {
 
   if (error) {
     return (
-      <section className="rounded-[18px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
@@ -107,7 +107,7 @@ export function LearnCommunityHub() {
 
   if (communityCards.length === 0) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Course communities
         </p>
@@ -129,7 +129,7 @@ export function LearnCommunityHub() {
 
   return (
     <section className="space-y-5">
-      <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
+      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
         <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
           <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
             Search enrolled communities
@@ -162,7 +162,7 @@ export function LearnCommunityHub() {
       </div>
 
       {filteredCards.length === 0 ? (
-        <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <h3 className="display-title text-3xl text-[var(--color-ink)]">
             No communities match this filter.
           </h3>
@@ -176,7 +176,7 @@ export function LearnCommunityHub() {
       {filteredCards.map((space) => (
         <article
           key={space.id}
-          className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]"
+          className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]"
         >
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             {space.categories}

@@ -20,14 +20,14 @@ export default function TeacherRefundsPage() {
         title="Refunds."
         description="Review refund requests and outcomes across your courses."
       >
-        <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
           <HorizontalTabs
             tabs={tabs}
             activeValue="all"
             onChange={() => undefined}
             ariaLabel="Refund filters"
           />
-          <div className="mt-6 overflow-hidden rounded-[14px] border border-[var(--color-line)]">
+          <div className="mt-6 overflow-hidden rounded-[4px] border border-[var(--color-line)]">
             <table className="w-full border-collapse text-left text-sm">
               <thead className="bg-[var(--color-surface-soft)] text-xs uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
                 <tr>

@@ -85,7 +85,7 @@ export function EmbeddedCheckoutPanel({
 
   if (!plan) {
     return (
-      <div className="rounded-[14px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm text-[var(--color-ink-soft)]">
+      <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm text-[var(--color-ink-soft)]">
         Unknown plan: {planId}.
       </div>
     );
@@ -93,7 +93,7 @@ export function EmbeddedCheckoutPanel({
 
   if (!publishableKey) {
     return (
-      <div className="rounded-[14px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-6 text-sm leading-7 text-[var(--color-ink)]">
+      <div className="rounded-[4px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-6 text-sm leading-7 text-[var(--color-ink)]">
         <p className="font-semibold text-[var(--color-accent)]">
           Stripe publishable key not configured.
         </p>
@@ -111,7 +111,7 @@ export function EmbeddedCheckoutPanel({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-      <div className="overflow-hidden rounded-[16px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
+      <div className="overflow-hidden rounded-[4px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
         {error ? (
           <div className="p-6 text-sm text-[var(--color-accent)]">
             <p className="font-semibold">Checkout could not start.</p>
@@ -132,7 +132,7 @@ export function EmbeddedCheckoutPanel({
         )}
       </div>
 
-      <aside className="h-fit rounded-[16px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)]">
+      <aside className="h-fit rounded-[4px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)]">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
           You&apos;re subscribing to
         </p>
@@ -142,7 +142,7 @@ export function EmbeddedCheckoutPanel({
         <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
           {plan.tagline}
         </p>
-        <div className="mt-4 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+        <div className="mt-4 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
             {cycle === "yearly" ? "Yearly billing" : "Monthly billing"}
           </p>

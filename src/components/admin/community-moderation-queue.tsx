@@ -63,7 +63,7 @@ export function CommunityModerationQueue() {
   const openReports = reports.filter((report) => report.status === "open");
 
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -89,7 +89,7 @@ export function CommunityModerationQueue() {
       ) : null}
 
       {!hasFirebaseConfig ? (
-        <p className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
+        <p className="mt-5 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
           Firebase configuration is required before community reports can load.
         </p>
       ) : !ready ? (
@@ -97,7 +97,7 @@ export function CommunityModerationQueue() {
           Loading community reports...
         </p>
       ) : reports.length === 0 ? (
-        <p className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
+        <p className="mt-5 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
           No community reports yet.
         </p>
       ) : (
@@ -105,7 +105,7 @@ export function CommunityModerationQueue() {
           {reports.slice(0, 12).map((report) => (
             <article
               key={report.id}
-              className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+              className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

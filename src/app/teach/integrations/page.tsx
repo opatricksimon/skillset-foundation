@@ -72,10 +72,10 @@ export default function TeacherIntegrationsPage() {
             return (
               <article
                 key={integration.name}
-                className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]"
+                className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="grid size-11 place-items-center rounded-[12px] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
+                  <div className="grid size-11 place-items-center rounded-[3px] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
                     <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
                   </div>
                   <StatusChip

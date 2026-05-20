@@ -51,7 +51,7 @@ export function PlatformShell({
       <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
         <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
           <aside
-            className={`platform-sidebar platform-sidebar-panel h-fit rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-strong)] p-2 shadow-[var(--shadow-soft)] ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}
+            className={`platform-sidebar platform-sidebar-panel h-fit rounded-[4px] border border-[var(--color-line-strong)] bg-[var(--color-surface-strong)] p-2 shadow-[0_1px_0_rgba(15,39,68,0.06)] ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
@@ -80,7 +80,7 @@ export function PlatformShell({
           </aside>
           <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
             <div
-              className={`rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-soft)] ${compact ? "px-5 py-4" : "p-5"}`}
+              className={`dash-card ${compact ? "px-5 py-4" : "p-5"}`}
             >
               {eyebrow ? (
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">

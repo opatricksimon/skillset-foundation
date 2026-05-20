@@ -159,7 +159,7 @@ export function EnrolledCourseWorkspace({
 
   if (isLoading) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--color-ink-soft)]">Loading course workspace...</p>
       </section>
     );
@@ -167,7 +167,7 @@ export function EnrolledCourseWorkspace({
 
   if (error) {
     return (
-      <section className="rounded-[18px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
@@ -177,7 +177,7 @@ export function EnrolledCourseWorkspace({
 
   if (!workspaceEnrollment) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Enrollment required
         </p>
@@ -299,7 +299,7 @@ export function EnrolledCourseWorkspace({
   return (
     <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
       {previewMode ? (
-        <section className="xl:col-span-2 rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 shadow-[var(--shadow-soft)]">
+        <section className="xl:col-span-2 rounded-[4px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 shadow-[var(--shadow-soft)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-[var(--color-primary)]">
               Preview mode - this is how students will see your course.
@@ -312,7 +312,7 @@ export function EnrolledCourseWorkspace({
           </div>
         </section>
       ) : null}
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Course workspace
         </p>
@@ -323,7 +323,7 @@ export function EnrolledCourseWorkspace({
           {course.summary}
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
               Progress
             </p>
@@ -331,7 +331,7 @@ export function EnrolledCourseWorkspace({
               {progressPercent}%
             </p>
           </div>
-          <div className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
               Status
             </p>
@@ -339,7 +339,7 @@ export function EnrolledCourseWorkspace({
               {progressPercent === 100 ? "completed" : workspaceEnrollment.status}
             </p>
           </div>
-          <div className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
               Next lesson
             </p>
@@ -385,7 +385,7 @@ export function EnrolledCourseWorkspace({
         ) : null}
       </section>
 
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Modules and lessons
         </p>
@@ -393,7 +393,7 @@ export function EnrolledCourseWorkspace({
           {course.modules.map((module, moduleIndex) => (
             <article
               key={module.id}
-              className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+              className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
                 Module {moduleIndex + 1}
@@ -547,7 +547,7 @@ function CourseAssetResourceList({
   isLoading: boolean;
 }) {
   return (
-    <div className="mt-5 rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+    <div className="mt-5 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
         Course resources
       </p>
@@ -567,7 +567,7 @@ function CourseAssetResourceList({
           {assets.map((asset) => (
             <div
               key={asset.id}
-              className="rounded-[12px] border border-[var(--color-line)] bg-white p-3"
+              className="rounded-[3px] border border-[var(--color-line)] bg-white p-3"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -614,7 +614,7 @@ function LessonContentPanel({
   const locked = Boolean(unlockState && !unlockState.unlocked);
 
   return (
-    <div className="mt-6 rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+    <div className="mt-6 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
@@ -629,7 +629,7 @@ function LessonContentPanel({
         </span>
       </div>
 
-      <div className="mt-5 rounded-[14px] border border-[var(--color-line)] bg-white p-5">
+      <div className="mt-5 rounded-[4px] border border-[var(--color-line)] bg-white p-5">
         <p className="text-sm font-semibold text-[var(--color-ink)]">
           Lesson content
         </p>
@@ -644,7 +644,7 @@ function LessonContentPanel({
           </p>
         ) : null}
         {!locked && lesson.contentText ? (
-          <div className="mt-4 whitespace-pre-line rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
+          <div className="mt-4 whitespace-pre-line rounded-[3px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
             {lesson.contentText}
           </div>
         ) : null}
@@ -719,7 +719,7 @@ function LessonAssetList({
       {assets.map((asset) => (
         <div
           key={asset.id}
-          className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3"
+          className="rounded-[3px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

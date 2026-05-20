@@ -100,11 +100,11 @@ export function TeacherOverviewMetrics() {
   ];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-3">
+    <section className="grid gap-3 sm:grid-cols-3">
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-[18px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]"
+          className="dash-card p-5"
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
             {card.label}

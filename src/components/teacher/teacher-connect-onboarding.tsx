@@ -93,7 +93,7 @@ export function TeacherConnectOnboarding({
 
   if (!publishableKey) {
     return (
-      <div className="rounded-[12px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-5 text-sm leading-6 text-[var(--color-ink)]">
+      <div className="rounded-[3px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-5 text-sm leading-6 text-[var(--color-ink)]">
         <p className="font-semibold text-[var(--color-accent)]">
           Stripe publishable key not configured.
         </p>
@@ -107,7 +107,7 @@ export function TeacherConnectOnboarding({
 
   if (error) {
     return (
-      <div className="rounded-[12px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+      <div className="rounded-[3px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
         {error}
       </div>
     );
@@ -116,7 +116,7 @@ export function TeacherConnectOnboarding({
   if (!connect) {
     return (
       <div
-        className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-5 text-sm text-[var(--color-ink-soft)]"
+        className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-5 text-sm text-[var(--color-ink-soft)]"
         aria-busy="true"
         aria-live="polite"
       >
@@ -126,7 +126,7 @@ export function TeacherConnectOnboarding({
   }
 
   return (
-    <div className="overflow-hidden rounded-[12px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
+    <div className="overflow-hidden rounded-[3px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
       <ConnectComponentsProvider connectInstance={connect}>
         <div className="border-b fine-rule px-4 py-3">
           <ConnectNotificationBanner />

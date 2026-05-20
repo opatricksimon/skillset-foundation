@@ -66,7 +66,7 @@ export function OpsDashboard() {
 
   return (
     <div className="grid gap-5">
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
         <HorizontalTabs
           tabs={opsTabs}
           activeValue={activeTab}
@@ -105,7 +105,7 @@ export function OpsDashboard() {
 
 function AuditLogPlaceholder() {
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-8 text-center shadow-[var(--shadow-soft)]">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
         Audit log
       </p>

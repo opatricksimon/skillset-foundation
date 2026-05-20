@@ -119,7 +119,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
   }
 
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
         Course assets
       </p>
@@ -148,7 +148,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
               setUploadProgress(null);
             }}
             disabled={!isEditable || isUploading}
-            className={`rounded-[12px] border p-4 text-left transition-colors disabled:opacity-60 ${
+            className={`rounded-[3px] border p-4 text-left transition-colors disabled:opacity-60 ${
               !requiresLessonTarget
                 ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)]"
                 : "border-[var(--color-line)] bg-[var(--color-surface-soft)]"
@@ -173,7 +173,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
               setUploadProgress(null);
             }}
             disabled={!isEditable || isUploading}
-            className={`rounded-[12px] border p-4 text-left transition-colors disabled:opacity-60 ${
+            className={`rounded-[3px] border p-4 text-left transition-colors disabled:opacity-60 ${
               requiresLessonTarget
                 ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)]"
                 : "border-[var(--color-line)] bg-[var(--color-surface-soft)]"
@@ -317,7 +317,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
 
       <div className="mt-6 grid gap-4">
         {assets.length === 0 ? (
-          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             No uploaded assets yet. Start with a course cover or first lesson
             material.
           </p>
@@ -355,7 +355,7 @@ function AssetGroup({
         {title}
       </p>
       {assets.length === 0 ? (
-        <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-3 text-xs leading-5 text-[var(--color-ink-soft)]">
+        <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-3 text-xs leading-5 text-[var(--color-ink-soft)]">
           Nothing uploaded here yet.
         </p>
       ) : (
@@ -367,7 +367,7 @@ function AssetGroup({
           return (
             <article
               key={asset.id}
-              className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+              className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

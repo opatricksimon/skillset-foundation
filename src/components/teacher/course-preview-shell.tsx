@@ -90,7 +90,7 @@ export function CoursePreviewShell({ courseId }: CoursePreviewShellProps) {
 
 function PreviewState({ title, detail }: { title: string; detail: string }) {
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
         Preview mode
       </p>

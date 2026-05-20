@@ -87,7 +87,7 @@ export function TeacherMediaLibrary() {
   }, [assets, kindFilter, search]);
 
   return (
-    <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -167,16 +167,16 @@ export function TeacherMediaLibrary() {
 
       <div className="mt-6 grid gap-3">
         {isLoadingCourses ? (
-          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             Loading media library...
           </p>
         ) : courses.length === 0 ? (
-          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             Create a course draft first. Media uploads stay attached to a course so
             every file has clear ownership and access rules.
           </p>
         ) : filteredAssets.length === 0 ? (
-          <p className="rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             No assets match this view. Upload a course cover, lesson material, or
             recording from the builder.
           </p>
@@ -184,7 +184,7 @@ export function TeacherMediaLibrary() {
           filteredAssets.map((asset) => (
             <article
               key={asset.id}
-              className="grid gap-4 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 md:grid-cols-[80px_1fr_auto]"
+              className="grid gap-4 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 md:grid-cols-[80px_1fr_auto]"
             >
               <div className="grid h-20 w-20 place-items-center rounded-[10px] border border-[var(--color-line)] bg-white text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
                 {asset.contentType.split("/")[0] || "file"}

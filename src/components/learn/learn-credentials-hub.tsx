@@ -72,7 +72,7 @@ export function LearnCredentialsHub() {
 
   if (isLoading || !certificatesReady) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--color-ink-soft)]">Loading credentials...</p>
       </section>
     );
@@ -80,7 +80,7 @@ export function LearnCredentialsHub() {
 
   if (error) {
     return (
-      <section className="rounded-[18px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
@@ -90,7 +90,7 @@ export function LearnCredentialsHub() {
 
   if (candidates.length === 0) {
     return (
-      <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Skillset Verified
         </p>
@@ -120,7 +120,7 @@ export function LearnCredentialsHub() {
         ].map((item) => (
           <div
             key={item}
-            className="rounded-[14px] border fine-rule bg-white p-4 shadow-[var(--shadow-soft)]"
+            className="rounded-[4px] border fine-rule bg-white p-4 shadow-[var(--shadow-soft)]"
           >
             <p className="text-sm font-semibold text-[var(--color-ink)]">{item}</p>
           </div>
@@ -141,7 +141,7 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
   const isIssued = candidate.status === "issued";
 
   return (
-    <article className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -162,7 +162,7 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
             ? "Your Skillset Verified certificate has been issued and is ready for verification."
           : "Continue the course to unlock credential review eligibility."}
       </p>
-      <div className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+      <div className="mt-5 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
         <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
           Progress
         </p>

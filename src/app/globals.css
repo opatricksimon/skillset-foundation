@@ -789,6 +789,58 @@ select {
   color: var(--color-primary) !important;
 }
 
+/* ── Dashboard design system ─────────────────────────────────────────────
+   Authenticated surfaces (/teach, /learn, /account, /ops) use SHARP corners
+   and tinted zones so the page reads as distinct work areas, not a single
+   white slab. Public marketing pages keep their soft rounded aesthetic
+   (those use Tailwind rounded-* classes directly). */
+
+.dash-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(15, 39, 68, 0.04);
+}
+.dash-card--strong {
+  background: var(--color-surface-strong);
+  border-color: var(--color-line-strong);
+}
+.dash-card--soft {
+  background: var(--color-surface-soft);
+  border-color: var(--color-line);
+}
+.dash-card--accent {
+  background: var(--color-primary);
+  color: var(--color-base);
+  border-color: var(--color-primary);
+}
+
+/* Inner chips, badges, tiny pills inside a dash-card */
+.dash-chip {
+  border-radius: 3px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Section divider between two work zones within a dash page */
+.dash-divider {
+  border-top: 1px solid var(--color-line-strong);
+  margin: 1.5rem 0;
+}
+
+/* Section label that sits ABOVE a zone */
+.dash-zone-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin-bottom: 8px;
+}
+
 .sidebar-collapsed .platform-sidebar-label {
   width: 0;
   opacity: 0;

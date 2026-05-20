@@ -17,7 +17,7 @@ export default function BillingReturnPage() {
     <ProtectedSurface permissions={["auth.signOut"]}>
       <PlatformShell title="Subscription confirmed" compact>
         <AccountPanel active="Billing">
-          <div className="rounded-[18px] border fine-rule bg-white p-10 text-center shadow-[var(--shadow-soft)]">
+          <div className="rounded-[4px] border fine-rule bg-white p-10 text-center shadow-[var(--shadow-soft)]">
             <div className="mx-auto grid size-12 place-items-center rounded-full bg-[var(--color-primary)] text-white">
               <Check aria-hidden="true" size={24} strokeWidth={2.4} />
             </div>

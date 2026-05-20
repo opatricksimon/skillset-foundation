@@ -23,7 +23,7 @@ export function RevenueMilestoneStrip({
   });
 
   return (
-    <section className="rounded-[12px] bg-[linear-gradient(90deg,var(--color-surface-soft)_0%,var(--color-surface-strong)_100%)] p-4">
+    <section className="rounded-[3px] bg-[linear-gradient(90deg,var(--color-surface-soft)_0%,var(--color-surface-strong)_100%)] p-4">
       <div className="flex flex-wrap items-center gap-4">
         <div className="grid size-10 place-items-center rounded-[10px] bg-white text-[var(--color-accent)] shadow-[var(--shadow-soft)]">
           <Target aria-hidden="true" size={20} strokeWidth={1.8} />
