@@ -1745,3 +1745,97 @@ async function markStripeEventProcessed(eventId: string): Promise<boolean> {
   }
 }
 
+/* ---------------------------------------------------------------------- *
+ *  Stripe Connect Embedded Components — creator onboarding stays in-app
+ *
+ *  Replaces createTeacherStripeAccountLink for the onboarding flow:
+ *  instead of returning a Stripe-hosted URL to redirect to, this
+ *  returns a Connect Account Session client_secret. The frontend mounts
+ *  <ConnectAccountOnboarding> with that secret and the entire KYC /
+ *  bank / identity flow renders inside Skillset — no redirect.
+ *
+ *  The old createTeacherStripeAccountLink stays exported as a fallback
+ *  for any code path still using it (e.g. existing scripts), but new
+ *  UI must call this one.
+ * ---------------------------------------------------------------------- */
+
+export const createConnectAccountSession = onCall(
+  { secrets: [stripeSecretKey] },
+  async (request: CallableRequest<Record<string, never>>) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in before connecting Stripe.");
+    }
+
+    const userId = request.auth.uid;
+    await enforceRateLimit(
+      `connect_session_${userId}`,
+      30,
+      60 * 60 * 1000,
+    );
+
+    const userRef = db.collection("users").doc(userId);
+    const userSnapshot = await userRef.get();
+
+    if (!userSnapshot.exists) {
+      throw new HttpsError("failed-precondition", "User profile not found.");
+    }
+
+    const user = userSnapshot.data() as UserProfileRecord;
+    if (!Array.isArray(user.roles) || !user.roles.includes("teacher")) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only teacher accounts can connect a payout account.",
+      );
+    }
+
+    const stripe = getStripeClient();
+    let accountId = user.stripeConnectedAccountId || null;
+
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        email: user.email || request.auth.token.email?.toString(),
+        business_type: "individual",
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        metadata: { skillsetUserId: userId },
+      });
+
+      accountId = account.id;
+
+      await userRef.set(
+        {
+          stripeConnectedAccountId: accountId,
+          stripeConnectStatus: "created",
+          stripeConnectChargesEnabled: Boolean(account.charges_enabled),
+          stripeConnectPayoutsEnabled: Boolean(account.payouts_enabled),
+          stripeConnectUpdatedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+
+    // Account Session client_secret powers the in-app embedded UI.
+    // Each component we enable here becomes mountable on the client.
+    // payouts + balances are included so the wallet page can later
+    // render a fully in-app payout schedule without leaving Skillset.
+    const accountSession = await stripe.accountSessions.create({
+      account: accountId,
+      components: {
+        account_onboarding: { enabled: true },
+        payouts: { enabled: true },
+        balances: { enabled: true },
+        notification_banner: { enabled: true },
+      },
+    });
+
+    return {
+      clientSecret: accountSession.client_secret,
+      accountId,
+    };
+  },
+);
+

@@ -38,3 +38,27 @@ export async function refreshTeacherStripeAccountStatus() {
 
   return result.data;
 }
+
+type ConnectAccountSessionResult = {
+  clientSecret: string;
+  accountId: string;
+};
+
+/**
+ * Mints a Stripe Connect Account Session client_secret that the embedded
+ * onboarding component uses to render KYC / bank / identity flow inside
+ * the app. The creator never leaves Skillset.
+ */
+export async function fetchConnectAccountSessionSecret(): Promise<string> {
+  const callable = httpsCallable<
+    Record<string, never>,
+    ConnectAccountSessionResult
+  >(getFirebaseFunctions(), "createConnectAccountSession");
+  const result = await callable({});
+
+  if (!result.data.clientSecret) {
+    throw new Error("Stripe did not return a Connect Account Session secret.");
+  }
+
+  return result.data.clientSecret;
+}

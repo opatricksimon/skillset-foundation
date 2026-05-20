@@ -1,34 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { InlineHelp } from "@/components/shared/inline-help";
 import { StatusChip } from "@/components/shared/status-chip";
+import { TeacherConnectOnboarding } from "@/components/teacher/teacher-connect-onboarding";
 import type { Order } from "@/domain/order";
 import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import type { UserProfile } from "@/domain/user-profile";
 import { subscribeToTeacherOrders } from "@/lib/data/orders";
 import { subscribeToTeacherPayoutLedger } from "@/lib/data/payout-ledger";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
-import {
-  refreshTeacherStripeAccountStatus,
-  startTeacherStripeOnboarding,
-} from "@/lib/payments/connect";
+import { refreshTeacherStripeAccountStatus } from "@/lib/payments/connect";
 
 export function TeacherWalletPanel() {
   const { user } = useAuth();
-  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isWorking, setIsWorking] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<PayoutLedgerEntry[]>([]);
-  const stripeReturn = searchParams.get("stripe");
 
   useEffect(() => {
     if (!user) {
@@ -76,47 +70,25 @@ export function TeacherWalletPanel() {
     );
   }, [user]);
 
-  useEffect(() => {
-    if (!user || stripeReturn !== "return") {
-      return;
-    }
+  // Stripe redirect-return path is dead now that onboarding is embedded:
+  // <TeacherConnectOnboarding onComplete /> fires inline, no querystring
+  // round-trip. Kept the searchParam read above only so any in-flight
+  // returns from BEFORE the migration don't show a stale URL fragment.
 
-    startTransition(() => {
-      setIsWorking(true);
-    });
-    void refreshTeacherStripeAccountStatus()
-      .then((status) => {
-        startTransition(() => {
-          setMessage(
-            status.payoutsEnabled
-              ? "Stripe payouts are ready for this teacher account."
-              : "Stripe onboarding was saved. Stripe may still require more information before payouts are enabled.",
-          );
-        });
-      })
-      .catch(() => {
-        startTransition(() => {
-          setError("We could not refresh Stripe payout status.");
-        });
-      })
-      .finally(() => {
-        startTransition(() => {
-          setIsWorking(false);
-        });
-      });
-  }, [stripeReturn, user]);
-
-  async function handleConnectStripe() {
+  function handleOnboardingComplete() {
     setError("");
     setMessage("");
-    setIsWorking(true);
-
-    try {
-      await startTeacherStripeOnboarding();
-    } catch {
-      setError("We could not open Stripe onboarding. Try again in a moment.");
-      setIsWorking(false);
-    }
+    void refreshTeacherStripeAccountStatus()
+      .then((status) => {
+        setMessage(
+          status.payoutsEnabled
+            ? "Stripe payouts are ready for this teacher account."
+            : "Onboarding saved. Stripe may still require more information before payouts are enabled.",
+        );
+      })
+      .catch(() => {
+        setError("We could not refresh Stripe payout status.");
+      });
   }
 
   const connected = Boolean(profile?.stripeConnectedAccountId);
@@ -199,18 +171,14 @@ export function TeacherWalletPanel() {
         </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={handleConnectStripe}
-        disabled={isWorking || isLoading}
-        className="button-solid mt-5 px-5 py-3 text-sm disabled:opacity-60"
-      >
-        {isWorking
-          ? "Opening Stripe..."
-          : connected
-            ? "Continue Stripe onboarding"
-            : "Connect Stripe payouts"}
-      </button>
+      {ready ? null : (
+        <div className="mt-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            {connected ? "Continue payout setup" : "Set up payouts"}
+          </p>
+          <TeacherConnectOnboarding onComplete={handleOnboardingComplete} />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-3 border-t border-[var(--color-line)] pt-5 sm:grid-cols-3">
         {[
