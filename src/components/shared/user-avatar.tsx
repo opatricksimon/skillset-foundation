@@ -27,12 +27,16 @@ export function UserAvatar({
       className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border border-[rgba(26,54,93,0.16)] bg-[linear-gradient(145deg,#f8fbff,#e8eef7)] text-[var(--color-primary)] ${sizeClasses[size]} ${className}`}
     >
       {photoURL ? (
+        // unoptimized: the Next image optimizer 400s on Firebase Storage URLs
+        // (SSR fetch times out / rejects). Avatars are 40-80px so bypassing the
+        // optimizer is free — the browser scales the source down anyway.
         <Image
           src={photoURL}
           alt={label}
           fill
           sizes={size === "lg" ? "80px" : "40px"}
           className="object-cover"
+          unoptimized
         />
       ) : (
         <svg
