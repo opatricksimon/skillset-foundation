@@ -18,33 +18,37 @@ export function MarketingHero() {
         }}
       />
       <div className="mx-auto w-full max-w-7xl px-5 pb-10 pt-32 sm:px-8 sm:pb-14 lg:pb-16 lg:pt-40">
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center lg:mx-0 lg:items-start lg:text-left">
           <div className="inline-flex w-fit rounded-[8px] border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
-            International professional learning
+            For independent experts who want to teach for a living
           </div>
           <div className="mt-5 space-y-4 sm:mt-8 lg:mt-10">
+            {/* Hook + outcome (Hormozi value equation: dream outcome ÷
+                perceived effort). Old copy described WHAT we are; new copy
+                names WHO they become + WHAT they get to skip. */}
             <h1 className="display-title text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98] text-white">
-              The marketplace for serious online courses.
+              Turn your expertise into a global course business.
               <span className="block text-white/58">
-                Reviewed before they go live.
+                Without building a website, hiring a developer, or
+                stitching tools together.
               </span>
             </h1>
             <p className="max-w-2xl text-[17px] leading-[1.7] text-white/84">
-              Skillset is an international platform where independent experts
-              publish full courses with structured learning, course communities,
-              live sessions, and verifiable credentials. Every program goes
-              through review before going public.
+              Publish a reviewed program in days. Skillset handles checkout
+              in 30+ currencies, the student workspace, the course community,
+              and your payouts — so you can spend your week teaching, not
+              configuring software.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/auth?mode=signup" className="button-solid-light px-5 py-3 text-sm">
-                Get started free
+            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              <Link href="/auth?mode=signup&path=teacher" className="button-solid-light px-5 py-3 text-sm">
+                Start teaching free
               </Link>
-              <Link href="/promise" className="button-outline-light px-5 py-3 text-sm">
-                Read the Promise
+              <Link href="/pricing" className="button-outline-light px-5 py-3 text-sm">
+                See how you get paid
               </Link>
             </div>
           </div>
-          <dl className="mt-12 hidden max-w-2xl grid-cols-3 gap-4 border-t border-white/20 pt-5 sm:grid">
+          <dl className="mt-12 hidden w-full max-w-2xl grid-cols-3 gap-4 border-t border-white/20 pt-5 sm:grid">
             {[
               ["Reviewed", "Every program goes through Skillset review before publishing."],
               ["Global", "Multi-currency checkout in 30+ currencies via Stripe."],

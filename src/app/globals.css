@@ -481,6 +481,11 @@ select {
   align-items: center;
   flex-shrink: 0;
   gap: 8px;
+  /* margin-left: auto ensures actions (and the mobile hamburger inside)
+     always sit at the right edge of the header — even when .site-header__links
+     is display:none on mobile and isn't there to push the actions right
+     via flex:1. Standard top-bar pattern: brand left, hamburger right. */
+  margin-left: auto;
 }
 
 .btn-signin {

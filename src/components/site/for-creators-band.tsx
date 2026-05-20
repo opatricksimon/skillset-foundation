@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 import { RevealSection } from "@/components/shared/reveal-section";
 import { planById, payoutClearDays } from "@/data/plans";
@@ -6,10 +7,10 @@ import { planById, payoutClearDays } from "@/data/plans";
 const freePlan = planById("free");
 
 const trustBullets = [
-  `Start free at ${freePlan.commissionPercent}% commission — drop to 0% as you grow.`,
-  `D+${payoutClearDays} payouts, no creator-side subscription on Free.`,
-  "Drip tools to protect content from refund abuse.",
-  "Course community and certificates included on every plan.",
+  `Keep ${100 - freePlan.commissionPercent}% on Free — drop commission to 0% on Plus as you scale.`,
+  `Payouts clear D+${payoutClearDays}. No creator-side subscription required.`,
+  "Drip release + refund window protect you from abuse.",
+  "Course community, live sessions, and verifiable certificates on every plan.",
 ];
 
 export function ForCreatorsBand() {
@@ -41,8 +42,14 @@ export function ForCreatorsBand() {
             <div className="grid gap-3 sm:grid-cols-2">
               {trustBullets.map((bullet, index) => (
                 <RevealSection key={bullet} delay={index * 80}>
-                  <div className="h-full rounded-[14px] border border-white/16 bg-white/10 p-4 text-sm leading-6 text-white/80">
-                    {bullet}
+                  <div className="flex h-full items-start gap-3 rounded-[14px] border border-white/16 bg-white/10 p-4 text-sm leading-6 text-white/85">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--color-accent)]/30 text-[var(--color-accent-soft)]"
+                    >
+                      <Check size={14} strokeWidth={2.4} />
+                    </span>
+                    <span>{bullet}</span>
                   </div>
                 </RevealSection>
               ))}

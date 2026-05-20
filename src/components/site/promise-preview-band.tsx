@@ -1,22 +1,33 @@
 import Link from "next/link";
+import { Lock, Download, LogOut, type LucideIcon } from "lucide-react";
 
 import { RevealSection } from "@/components/shared/reveal-section";
 
-const promises = [
+type Promise = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  Icon: LucideIcon;
+};
+
+const promises: ReadonlyArray<Promise> = [
   {
     eyebrow: "01",
     title: "Fee-lock for 24 months",
-    description: "Your fee at signup is your fee for two years.",
+    description: "Your commission rate at signup is yours for two years. No surprise hikes after you've built a business here.",
+    Icon: Lock,
   },
   {
     eyebrow: "03",
     title: "Data portability",
-    description: "Export your full business in one click, anytime.",
+    description: "Export every course, student, sale, and post as a ZIP in one click. Whenever. No questions asked.",
+    Icon: Download,
   },
   {
     eyebrow: "04",
     title: "One-click cancellation",
-    description: "Delete your account in one click. No retention games.",
+    description: "Delete your account in one click. No retention emails, no support runaround, no friction.",
+    Icon: LogOut,
   },
 ];
 
@@ -40,22 +51,33 @@ export function PromisePreviewBand() {
           </div>
         </RevealSection>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3 sm:mt-12">
-          {promises.map((promise, index) => (
-            <RevealSection key={promise.title} delay={index * 100}>
-              <article className="h-full rounded-[14px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] transition duration-[180ms] ease-out hover:-translate-y-0.5">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                  {promise.eyebrow}
-                </p>
-                <h3 className="mt-4 text-lg font-bold text-[var(--color-primary)]">
-                  {promise.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
-                  {promise.description}
-                </p>
-              </article>
-            </RevealSection>
-          ))}
+        <div className="mt-10 grid gap-5 sm:mt-12 md:grid-cols-3">
+          {promises.map((promise, index) => {
+            const { Icon } = promise;
+            return (
+              <RevealSection key={promise.title} delay={index * 100}>
+                <article className="group h-full rounded-[14px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] transition duration-[180ms] ease-out hover:-translate-y-0.5 hover:border-[rgba(26,54,93,0.18)] hover:shadow-[0_18px_36px_rgba(15,39,68,0.10)]">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="grid size-11 place-items-center rounded-[10px] bg-[var(--color-surface-soft)] text-[var(--color-primary)] transition-colors group-hover:bg-[var(--color-primary)] group-hover:text-white"
+                      aria-hidden="true"
+                    >
+                      <Icon size={20} strokeWidth={1.7} />
+                    </span>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      {promise.eyebrow}
+                    </p>
+                  </div>
+                  <h3 className="mt-5 text-lg font-bold text-[var(--color-primary)]">
+                    {promise.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+                    {promise.description}
+                  </p>
+                </article>
+              </RevealSection>
+            );
+          })}
         </div>
 
         <RevealSection delay={260}>
