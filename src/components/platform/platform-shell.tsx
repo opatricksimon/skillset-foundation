@@ -9,7 +9,6 @@ import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { StatusBanner } from "@/components/platform/status-banner";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
@@ -74,15 +73,10 @@ export function PlatformShell({
               </div>
             )}
             <PlatformNav collapsed={isCollapsed} />
-            {/* Profile + sign-out live in the top-right AccountMenu; the
-                sidebar footer is intentionally just the theme toggle. */}
-            <div
-              className={`mt-2 flex items-center border-t border-[var(--color-line)] pt-2 ${
-                isCollapsed ? "justify-center" : "justify-end"
-              }`}
-            >
-              <ThemeToggle />
-            </div>
+            {/* The sidebar footer used to host the theme toggle and a
+                profile card — both moved to the top-right cluster in the
+                PlatformHeader (cleaner mental model: identity + global
+                controls live in one place). Sidebar is now nav-only. */}
           </aside>
           <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
             <div

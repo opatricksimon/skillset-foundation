@@ -7,6 +7,7 @@ import { useRef, type KeyboardEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { NotificationBell } from "@/components/platform/notification-bell";
 import { AccountMenu } from "@/components/site/account-menu";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { platformNav } from "@/data/site";
 
 const surfaceCopy = {
@@ -100,6 +101,7 @@ export function PlatformHeader() {
         </label>
 
         <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle />
           <NotificationBell />
           <Link
             href={copy.cta.href}

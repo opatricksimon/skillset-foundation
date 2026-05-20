@@ -112,7 +112,7 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
                   aria-current={active ? "page" : undefined}
                   className={`flex-1 rounded-[7px] px-2 py-1.5 text-center text-[11px] font-bold uppercase tracking-[0.08em] transition-colors ${
                     active
-                      ? "bg-[var(--color-primary)] text-[var(--color-base)] shadow-[0_6px_14px_rgba(26,54,93,0.18)]"
+                      ? "platform-nav-active bg-[var(--color-primary)] shadow-[0_6px_14px_rgba(26,54,93,0.18)]"
                       : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-primary)]"
                   }`}
                 >
@@ -209,7 +209,7 @@ function PlatformNavLink({
       aria-current={active ? "page" : undefined}
       className={`group flex items-center gap-2 rounded-[10px] border py-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
-          ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-[var(--color-base)] shadow-[0_10px_22px_rgba(26,54,93,0.16)] hover:text-[var(--color-base)]"
+          ? "platform-nav-active border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
       }`}
     >

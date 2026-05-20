@@ -776,6 +776,19 @@ select {
   white-space: nowrap;
 }
 
+/* Bulletproof active-state colors for nav items and the workspace switcher.
+   Tailwind arbitrary values (text-[var(--color-base)]) sometimes lose to
+   cascaded color, so we burn the rule in here with !important — same trick
+   .button-solid uses. color-base flips white↔near-black on theme, so this
+   stays high-contrast against bg-primary in both light and dark mode. */
+.platform-nav-active,
+.platform-nav-active * {
+  color: var(--color-base) !important;
+}
+.platform-nav-active svg {
+  color: var(--color-primary) !important;
+}
+
 .sidebar-collapsed .platform-sidebar-label {
   width: 0;
   opacity: 0;
