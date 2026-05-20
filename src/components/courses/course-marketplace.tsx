@@ -181,24 +181,39 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
             </button>
           </div>
         ) : (
-          <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
-              Creator catalog opening
+          <div className="rounded-[18px] border-2 border-dashed border-[var(--color-line-strong)] bg-white p-8 text-center sm:p-12">
+            <div className="mx-auto grid size-14 place-items-center rounded-[14px] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-7"
+              >
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+            </div>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Marketplace opening soon
             </p>
-            <h2 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
-              Published courses will appear here after Skillset review.
+            <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)] sm:text-4xl">
+              The first courses are in review.
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-              The marketplace is connected to the teacher publishing workflow. As
-              creators submit and Skillset approves courses, this page becomes the
-              public storefront for enrollment, previews, and course discovery.
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              Skillset reviews every course before it goes live so the catalog
+              stays high signal. Want to be in the first wave of published
+              creators? The runway is open.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/for-creators" className="button-solid px-5 py-3 text-sm">
-                For creators
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link href="/auth?mode=signup&path=teacher" className="button-solid px-5 py-3 text-sm">
+                Apply to teach
               </Link>
-              <Link href="/teach" className="button-outline px-5 py-3 text-sm">
-                Open Creator Studio
+              <Link href="/for-creators" className="button-outline px-5 py-3 text-sm">
+                Creator overview
               </Link>
             </div>
           </div>
