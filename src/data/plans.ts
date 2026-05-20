@@ -92,8 +92,8 @@ export const plans: ReadonlyArray<Plan> = [
     yearlyUsd: 190,
     commissionPercent: 4,
     stripePriceIds: {
-      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_monthly`,
-      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_yearly`,
+      monthlyId: "price_1TZFTmPvg1vJW0IjLAYWqZok",
+      yearlyId: "price_1TZFTnPvg1vJW0IjjaQXBpDW",
     },
     tagline: "Half the commission, small monthly cost.",
     audience: "Creators earning around $500–$2,000 a month.",
@@ -111,8 +111,8 @@ export const plans: ReadonlyArray<Plan> = [
     yearlyUsd: 890,
     commissionPercent: 1,
     stripePriceIds: {
-      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_monthly`,
-      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_yearly`,
+      monthlyId: "price_1TZFTnPvg1vJW0IjHYe4yW9V",
+      yearlyId: "price_1TZFToPvg1vJW0IjDHGPIzH0",
     },
     tagline: "Almost zero commission for established catalogs.",
     audience: "Creators earning around $2,000–$11,000 a month.",
@@ -130,8 +130,8 @@ export const plans: ReadonlyArray<Plan> = [
     yearlyUsd: 1990,
     commissionPercent: 0,
     stripePriceIds: {
-      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_monthly`,
-      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_yearly`,
+      monthlyId: "price_1TZFToPvg1vJW0Ijf35SQQzt",
+      yearlyId: "price_1TZFTpPvg1vJW0IjgE9PQ5To",
     },
     tagline: "Zero commission for high-volume creators.",
     audience: "Creators earning $11,000 a month and up.",

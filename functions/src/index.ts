@@ -1412,16 +1412,16 @@ const PLAN_PRICE_MAP: Record<
   Record<SubscriptionBillingCycle, string>
 > = {
   starter: {
-    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_monthly`,
-    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_yearly`,
+    monthly: "price_1TZFTmPvg1vJW0IjLAYWqZok",
+    yearly: "price_1TZFTnPvg1vJW0IjjaQXBpDW",
   },
   pro: {
-    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_monthly`,
-    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_yearly`,
+    monthly: "price_1TZFTnPvg1vJW0IjHYe4yW9V",
+    yearly: "price_1TZFToPvg1vJW0IjDHGPIzH0",
   },
   plus: {
-    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_monthly`,
-    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_yearly`,
+    monthly: "price_1TZFToPvg1vJW0Ijf35SQQzt",
+    yearly: "price_1TZFTpPvg1vJW0IjgE9PQ5To",
   },
 };
 
