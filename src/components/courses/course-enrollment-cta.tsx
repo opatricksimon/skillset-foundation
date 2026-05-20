@@ -74,10 +74,10 @@ export function CourseEnrollmentCta({ course }: CourseEnrollmentCtaProps) {
   if (!user) {
     return (
       <>
-        <Link href="/signup" className="button-solid mt-6 w-full px-5 py-3 text-sm">
+        <Link href="/auth?mode=signup" className="button-solid mt-6 w-full px-5 py-3 text-sm">
           Create account to enroll
         </Link>
-        <Link href="/login" className="button-outline mt-3 w-full px-5 py-3 text-sm">
+        <Link href="/auth?mode=signin" className="button-outline mt-3 w-full px-5 py-3 text-sm">
           Sign in to continue
         </Link>
       </>
