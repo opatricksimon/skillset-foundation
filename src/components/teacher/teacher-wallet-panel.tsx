@@ -167,9 +167,10 @@ export function TeacherWalletPanel() {
         Skillset Checkout; Stripe can route the teacher share to the connected
         account while Skillset keeps the platform fee.
       </p>
-      <InlineHelp topic="D+30 payouts" href="/help#payouts" className="mt-4">
-        Payouts stay in release until the refund window closes, which keeps
-        learner protection and creator reporting aligned.
+      <InlineHelp topic="Payout schedule" href="/help#payouts" className="mt-4">
+        Earnings clear from pending to available 7 days after each sale,
+        matching the refund window so cleared payouts never need to be
+        clawed back.
       </InlineHelp>
 
       <div className="mt-5 grid gap-3 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm">

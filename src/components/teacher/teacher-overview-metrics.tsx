@@ -95,7 +95,7 @@ export function TeacherOverviewMetrics() {
     {
       label: "Net earnings",
       value: money.format(netMinor / 100),
-      hint: "Paid orders, after the 15% platform fee",
+      hint: "Paid orders, after platform commission and Stripe fee",
     },
   ];
 

@@ -18,8 +18,8 @@ const capabilities = [
     description: "30+ currencies. Stripe Adaptive Pricing handles local conversion at checkout.",
   },
   {
-    title: "Creator wallet, D+30 payouts",
-    description: "Transparent ledger. Optional payout advance. Full audit trail.",
+    title: "Creator wallet, 7-day clearance",
+    description: "Earnings clear from pending to available 7 days after each sale. Transparent ledger with full audit trail.",
   },
   {
     title: "Verifiable certificates",
@@ -38,8 +38,8 @@ export function CapabilitiesGrid() {
           Everything a program needs, included.
         </h2>
         <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
-          No add-ons. No premium tiers. Every creator gets the full toolset for
-          the same 15% fee.
+          No add-ons. No feature paywalls. Every plan unlocks the same toolset
+          — your plan only changes the commission per sale.
         </p>
       </RevealSection>
       <div className="mt-10 grid gap-5 sm:mt-12 md:grid-cols-2 xl:grid-cols-3">

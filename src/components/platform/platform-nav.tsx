@@ -1,6 +1,5 @@
 "use client";
 
-import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -68,28 +67,21 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
 
   return (
     <nav className="mt-2 flex flex-col gap-0.5">
-      {visibleItems.map((item, index) => {
-        const previous = visibleItems[index - 1];
-        const showHeader =
-          previous === undefined || previous.section !== item.section;
-
-        return (
-          <Fragment key={item.href}>
-            {!collapsed && showHeader ? (
-              <p className="mt-1.5 px-2 pb-0 text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)] first:mt-0">
-                {item.section}
-              </p>
-            ) : null}
-            <PlatformNavLink
-              href={item.href}
-              label={item.label}
-              icon={item.icon}
-              active={isActivePlatformRoute(pathname, item.href)}
-              collapsed={collapsed}
-            />
-          </Fragment>
-        );
-      })}
+      {/* Section headers (STUDIO / GROWTH / SETUP / DISCOVER / ACCOUNT)
+          were removed per user audit — Cakto-style flat list. The section
+          metadata stays on each PlatformNavItem so future grouping (e.g.
+          a divider between unrelated areas) can be re-introduced cheaply
+          without touching site.ts. */}
+      {visibleItems.map((item) => (
+        <PlatformNavLink
+          key={item.href}
+          href={item.href}
+          label={item.label}
+          icon={item.icon}
+          active={isActivePlatformRoute(pathname, item.href)}
+          collapsed={collapsed}
+        />
+      ))}
     </nav>
   );
 }

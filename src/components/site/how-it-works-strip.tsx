@@ -17,7 +17,7 @@ const steps = [
     number: "03",
     title: "Sell globally",
     description:
-      "Skillset reviews your program. Once approved, your course is live on the marketplace. Get paid in 30+ currencies, D+30.",
+      "Skillset reviews your program. Once approved, your course is live on the marketplace. Get paid in 30+ currencies, with earnings clearing 7 days after each sale.",
   },
 ];
 

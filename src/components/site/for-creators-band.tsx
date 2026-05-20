@@ -1,12 +1,15 @@
 import Link from "next/link";
 
 import { RevealSection } from "@/components/shared/reveal-section";
+import { planById, payoutClearDays } from "@/data/plans";
+
+const freePlan = planById("free");
 
 const trustBullets = [
-  "15% platform fee, paid only when you sell.",
-  "D+30 payouts with optional advance.",
+  `Start free at ${freePlan.commissionPercent}% commission — drop to 0% as you grow.`,
+  `D+${payoutClearDays} payouts, no creator-side subscription on Free.`,
   "Drip tools to protect content from refund abuse.",
-  "Course community and certificates included.",
+  "Course community and certificates included on every plan.",
 ];
 
 export function ForCreatorsBand() {
