@@ -26,7 +26,6 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { platformNav, type PlatformNavContext } from "@/data/site";
 import {
   hasPermission,
-  type Permission,
   type PermissionSubject,
 } from "@/lib/permissions";
 
@@ -50,33 +49,10 @@ const iconMap: Record<string, LucideIcon> = {
   Users,
 };
 
-// Explicit workspace switcher (Learn / Teach / Ops). Only the workspaces
-// the member can access are shown; with a single workspace it is hidden.
-const workspaces: {
-  context: PlatformNavContext;
-  label: string;
-  href: string;
-  permission: Permission;
-}[] = [
-  {
-    context: "learner",
-    label: "Learn",
-    href: "/learn",
-    permission: "courses.viewLearning",
-  },
-  {
-    context: "teacher",
-    label: "Teach",
-    href: "/teach",
-    permission: "teacherStudio.access",
-  },
-  {
-    context: "ops",
-    label: "Ops",
-    href: "/ops",
-    permission: "platform.accessAdmin",
-  },
-];
+// Workspace switching lives in the top-right AccountMenu ("Switch view"
+// section with Manage my teaching / My learning) — clearer labels and a
+// single source of truth. The 2-letter LEARN/TEACH/OPS chips that used
+// to live at the top of this sidebar were redundant.
 
 export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useAuth();
@@ -90,40 +66,8 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
       (!item.permission || hasPermission(subject, item.permission)),
   );
 
-  const availableWorkspaces = workspaces.filter((workspace) =>
-    hasPermission(subject, workspace.permission),
-  );
-
   return (
     <nav className="mt-2 flex flex-col gap-0.5">
-      {!collapsed && availableWorkspaces.length > 1 ? (
-        <div className="mb-1">
-          <p className="px-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
-            Workspace
-          </p>
-          <div className="flex gap-1 rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-1">
-            {availableWorkspaces.map((workspace) => {
-              const active = workspace.context === context;
-
-              return (
-                <Link
-                  key={workspace.context}
-                  href={workspace.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex-1 rounded-[7px] px-2 py-1.5 text-center text-[11px] font-bold uppercase tracking-[0.08em] transition-colors ${
-                    active
-                      ? "platform-nav-active bg-[var(--color-primary)] shadow-[0_6px_14px_rgba(26,54,93,0.18)]"
-                      : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-primary)]"
-                  }`}
-                >
-                  {workspace.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
       {visibleItems.map((item, index) => {
         const previous = visibleItems[index - 1];
         const showHeader =
