@@ -1,8 +1,14 @@
 import Link from "next/link";
 
 export function MarketingHero() {
+  // Negative top margin pulls the hero UP behind the floating SiteNav pill
+  // so the navy bg becomes the canvas the nav sits on (matches the
+  // user-cited preference for nav-over-navy at scroll=0). The inner
+  // container's pt-* compensates so the hero copy stays where it was.
+  // Only renders on the home page; SiteNav is z-40, hero is at default
+  // stacking so the pill stays on top.
   return (
-    <section className="relative overflow-hidden bg-[var(--color-primary)] text-white">
+    <section className="relative -mt-24 overflow-hidden bg-[var(--color-primary)] text-white lg:-mt-32">
       <div className="absolute inset-0 bg-gradient-to-br from-[#07172a] via-[#102944] to-[#1a365d]" />
       <div
         className="absolute inset-0 opacity-[0.12]"
@@ -11,7 +17,7 @@ export function MarketingHero() {
             "radial-gradient(circle at 18% 28%, rgba(255,255,255,0.45), transparent 32%), radial-gradient(circle at 86% 64%, rgba(178,34,52,0.46), transparent 34%)",
         }}
       />
-      <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:py-28">
+      <div className="mx-auto w-full max-w-7xl px-5 pb-20 pt-44 sm:px-8 lg:pb-28 lg:pt-60">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex w-fit rounded-[8px] border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
             International professional learning
