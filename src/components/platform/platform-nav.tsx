@@ -154,7 +154,7 @@ function PlatformNavLink({
       className={`group flex items-center gap-2 rounded-[10px] border py-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
           ? "platform-nav-active border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
-          : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
+          : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-strong)] hover:text-[var(--color-ink)]"
       }`}
     >
       <span
