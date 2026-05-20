@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition } from "react";
 
+import { PlansPanel } from "@/components/account/plans-panel";
 import { HorizontalTabs } from "@/components/shared/horizontal-tabs";
 import { StatusChip } from "@/components/shared/status-chip";
 
@@ -36,12 +37,7 @@ export function BillingTabs() {
       />
       <div className="mt-6">
         {activeTab === "subscriptions" ? (
-          <BillingEmptyState
-            eyebrow="Subscriptions"
-            title="No subscriptions yet."
-            detail="Recurring course subscriptions are planned for a future release. Active subscriptions will appear here when that payment model is available."
-            statusLabel="Coming soon"
-          />
+          <PlansPanel />
         ) : activeTab === "invoices" ? (
           <BillingEmptyState
             eyebrow="Invoices"

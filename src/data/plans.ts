@@ -14,6 +14,25 @@
 
 export type PlanId = "free" | "starter" | "pro" | "plus";
 
+export type PlanBillingCycle = "monthly" | "yearly";
+
+/**
+ * Stripe Price IDs for the paid plans. Create the Prices in Stripe
+ * Dashboard (Product catalog → Skillset {Plan} → recurring monthly/yearly
+ * in USD) and replace the PLACEHOLDER strings with the real `price_...`
+ * IDs. The Free plan has no Stripe Price — its presence is implicit
+ * (no active subscription → on Free).
+ *
+ * The runtime guard `hasRealStripePriceIds` lets the UI render an
+ * informative "billing not configured yet" state when placeholders
+ * still ship, so the upgrade buttons fail loudly instead of producing
+ * a confusing Stripe error.
+ */
+export type StripePriceIds = {
+  monthlyId: string;
+  yearlyId: string;
+};
+
 export type Plan = {
   id: PlanId;
   name: string;
@@ -23,6 +42,8 @@ export type Plan = {
   yearlyUsd: number;
   /** Commission rate per paid sale, as a percent (e.g. 8 = 8%). */
   commissionPercent: number;
+  /** Stripe Price IDs for monthly and yearly cycles. Null on Free. */
+  stripePriceIds: StripePriceIds | null;
   /** One-line positioning tagline. */
   tagline: string;
   /** Who this plan is for. */
@@ -41,6 +62,10 @@ export type Plan = {
   highlights: ReadonlyArray<string>;
 };
 
+/** Placeholder marker — the runtime treats any Price ID starting with
+ * this prefix as "not configured yet" and surfaces a clear error. */
+export const STRIPE_PRICE_PLACEHOLDER_PREFIX = "price_PLACEHOLDER_";
+
 export const plans: ReadonlyArray<Plan> = [
   {
     id: "free",
@@ -48,6 +73,7 @@ export const plans: ReadonlyArray<Plan> = [
     monthlyUsd: 0,
     yearlyUsd: 0,
     commissionPercent: 8,
+    stripePriceIds: null,
     tagline: "Start selling without a subscription.",
     audience: "New creators validating an idea.",
     breakEvenGmvUsd: null,
@@ -65,6 +91,10 @@ export const plans: ReadonlyArray<Plan> = [
     monthlyUsd: 19,
     yearlyUsd: 190,
     commissionPercent: 4,
+    stripePriceIds: {
+      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_monthly`,
+      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_yearly`,
+    },
     tagline: "Half the commission, small monthly cost.",
     audience: "Creators earning around $500–$2,000 a month.",
     breakEvenGmvUsd: 475,
@@ -80,6 +110,10 @@ export const plans: ReadonlyArray<Plan> = [
     monthlyUsd: 89,
     yearlyUsd: 890,
     commissionPercent: 1,
+    stripePriceIds: {
+      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_monthly`,
+      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_yearly`,
+    },
     tagline: "Almost zero commission for established catalogs.",
     audience: "Creators earning around $2,000–$11,000 a month.",
     breakEvenGmvUsd: 2333,
@@ -95,6 +129,10 @@ export const plans: ReadonlyArray<Plan> = [
     monthlyUsd: 199,
     yearlyUsd: 1990,
     commissionPercent: 0,
+    stripePriceIds: {
+      monthlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_monthly`,
+      yearlyId: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_yearly`,
+    },
     tagline: "Zero commission for high-volume creators.",
     audience: "Creators earning $11,000 a month and up.",
     breakEvenGmvUsd: 11000,
@@ -105,6 +143,31 @@ export const plans: ReadonlyArray<Plan> = [
     ],
   },
 ];
+
+export function isPlaceholderStripePriceId(id: string): boolean {
+  return id.startsWith(STRIPE_PRICE_PLACEHOLDER_PREFIX);
+}
+
+export function hasRealStripePriceIds(plan: Plan): boolean {
+  if (!plan.stripePriceIds) return false;
+  return (
+    !isPlaceholderStripePriceId(plan.stripePriceIds.monthlyId) &&
+    !isPlaceholderStripePriceId(plan.stripePriceIds.yearlyId)
+  );
+}
+
+/** Are at least the paid plans configured with real Stripe Price IDs? */
+export function isBillingConfigured(): boolean {
+  return plans.filter((plan) => plan.id !== "free").every(hasRealStripePriceIds);
+}
+
+export function planByStripePriceId(priceId: string): Plan | undefined {
+  return plans.find(
+    (plan) =>
+      plan.stripePriceIds?.monthlyId === priceId ||
+      plan.stripePriceIds?.yearlyId === priceId,
+  );
+}
 
 /** Default plan for any account without an active subscription. */
 export const defaultPlanId: PlanId = "free";

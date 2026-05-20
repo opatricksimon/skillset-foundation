@@ -1,3 +1,4 @@
+import type { PlanId } from "@/data/plans";
 import type { Role } from "@/lib/permissions";
 
 export const userGoalOptions = [
@@ -50,6 +51,14 @@ export type UserProfile = {
   stripeConnectChargesEnabled?: boolean;
   stripeConnectPayoutsEnabled?: boolean;
   stripeConnectUpdatedAt?: unknown;
+  /**
+   * Current effective plan, mirrored from the active subscription record.
+   * Absent = treat as "free" (default). The subscription webhook is the
+   * single writer; never set this from the client.
+   */
+  currentPlanId?: PlanId;
+  /** Stripe Customer ID used for subscription billing (separate from Connect). */
+  stripeCustomerId?: string | null;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string;

@@ -1102,8 +1102,27 @@ export const stripeWebhook = onRequest(
     }
 
     try {
+      // Idempotency: short-circuit on redelivered events. Stripe retries
+      // on any non-2xx, so we MUST acknowledge duplicates with 200.
+      const shouldProcess = await markStripeEventProcessed(event.id);
+      if (!shouldProcess) {
+        response.json({ received: true, duplicate: true });
+        return;
+      }
+
       if (event.type === "checkout.session.completed") {
-        await handleCheckoutCompleted(event.data.object);
+        const session = event.data.object;
+        if (session.mode === "subscription") {
+          // Subscription Checkout: subscription.created will deliver
+          // shortly with full state, so we just log and let that handler
+          // own the persistence. Avoids race conditions.
+          logger.info("Subscription Checkout completed", {
+            sessionId: session.id,
+            subscriptionId: session.subscription,
+          });
+        } else {
+          await handleCheckoutCompleted(session);
+        }
       }
 
       if (event.type === "checkout.session.expired") {
@@ -1116,6 +1135,26 @@ export const stripeWebhook = onRequest(
 
       if (event.type === "charge.refunded") {
         await handleChargeRefunded(event.data.object);
+      }
+
+      if (
+        event.type === "customer.subscription.created" ||
+        event.type === "customer.subscription.updated"
+      ) {
+        await syncSubscriptionFromStripe(event.data.object);
+      }
+
+      if (event.type === "customer.subscription.deleted") {
+        await syncSubscriptionFromStripe(event.data.object);
+      }
+
+      if (event.type === "invoice.payment_failed") {
+        // Stripe Smart Retries handles the actual retry cadence.
+        // We log here so the wallet panel can surface a banner later.
+        logger.warn("Subscription invoice payment_failed", {
+          invoiceId: event.data.object.id,
+          customerId: event.data.object.customer,
+        });
       }
 
       response.json({ received: true });
@@ -1349,3 +1388,360 @@ async function markOrderStatus(
     { merge: true },
   );
 }
+
+/* ---------------------------------------------------------------------- *
+ *  Subscription billing (Plans: Free / Starter / Pro / Plus)
+ *
+ *  Canonical plan + price-id catalog: src/data/plans.ts (frontend).
+ *  This file mirrors the Price-ID → Plan map used by the webhook so the
+ *  function runtime can resolve a subscription back to a Skillset plan
+ *  without importing the Next package.
+ *
+ *  When the user populates real Stripe Price IDs in src/data/plans.ts,
+ *  update PLAN_PRICE_MAP below to match (same string values). Mismatch
+ *  is caught at runtime and logged — no silent fallback to a wrong plan.
+ * ---------------------------------------------------------------------- */
+
+type SubscriptionPlanId = "starter" | "pro" | "plus";
+type SubscriptionBillingCycle = "monthly" | "yearly";
+
+const STRIPE_PRICE_PLACEHOLDER_PREFIX = "price_PLACEHOLDER_";
+
+const PLAN_PRICE_MAP: Record<
+  SubscriptionPlanId,
+  Record<SubscriptionBillingCycle, string>
+> = {
+  starter: {
+    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_monthly`,
+    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}starter_yearly`,
+  },
+  pro: {
+    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_monthly`,
+    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}pro_yearly`,
+  },
+  plus: {
+    monthly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_monthly`,
+    yearly: `${STRIPE_PRICE_PLACEHOLDER_PREFIX}plus_yearly`,
+  },
+};
+
+function isPlaceholderPriceId(id: string): boolean {
+  return id.startsWith(STRIPE_PRICE_PLACEHOLDER_PREFIX);
+}
+
+function resolvePriceId(
+  planId: SubscriptionPlanId,
+  cycle: SubscriptionBillingCycle,
+): string {
+  const id = PLAN_PRICE_MAP[planId]?.[cycle];
+  if (!id) {
+    throw new HttpsError(
+      "failed-precondition",
+      `No Stripe Price configured for plan ${planId} (${cycle}).`,
+    );
+  }
+  if (isPlaceholderPriceId(id)) {
+    throw new HttpsError(
+      "failed-precondition",
+      `Stripe Price ID for ${planId} (${cycle}) is still a placeholder. ` +
+        `Create the Price in the Stripe Dashboard and update ` +
+        `PLAN_PRICE_MAP in functions/src/index.ts + plans.ts.`,
+    );
+  }
+  return id;
+}
+
+function planByPriceId(priceId: string): SubscriptionPlanId | null {
+  for (const planId of Object.keys(PLAN_PRICE_MAP) as SubscriptionPlanId[]) {
+    const cycles = PLAN_PRICE_MAP[planId];
+    if (cycles.monthly === priceId || cycles.yearly === priceId) {
+      return planId;
+    }
+  }
+  return null;
+}
+
+function cycleByPriceId(
+  priceId: string,
+): SubscriptionBillingCycle | null {
+  for (const planId of Object.keys(PLAN_PRICE_MAP) as SubscriptionPlanId[]) {
+    const cycles = PLAN_PRICE_MAP[planId];
+    if (cycles.monthly === priceId) return "monthly";
+    if (cycles.yearly === priceId) return "yearly";
+  }
+  return null;
+}
+
+/**
+ * Returns the user's Stripe Customer ID, creating one on first use and
+ * persisting it in the user profile so future sessions reuse it. Without
+ * a stable customer record, every checkout would create a duplicate
+ * customer in Stripe.
+ */
+async function getOrCreateBillingStripeCustomer(
+  uid: string,
+  emailFromAuth?: string | null,
+): Promise<string> {
+  const userRef = db.collection("users").doc(uid);
+  const snapshot = await userRef.get();
+  const profile = (snapshot.data() ?? {}) as UserProfileRecord & {
+    stripeCustomerId?: string | null;
+  };
+
+  if (profile.stripeCustomerId) {
+    return profile.stripeCustomerId;
+  }
+
+  const customer = await getStripeClient().customers.create({
+    email: profile.email ?? emailFromAuth ?? undefined,
+    name: profile.displayName ?? undefined,
+    metadata: { uid },
+  });
+
+  await userRef.set(
+    {
+      stripeCustomerId: customer.id,
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return customer.id;
+}
+
+export const createBillingCheckoutSession = onCall(
+  { secrets: [stripeSecretKey] },
+  async (request: CallableRequest<{
+    planId?: string;
+    cycle?: string;
+  }>) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in before upgrading.");
+    }
+
+    const uid = request.auth.uid;
+    await enforceRateLimit(`billing_checkout_${uid}`, 10, 60 * 60 * 1000);
+
+    const rawPlanId = request.data.planId;
+    const rawCycle = request.data.cycle;
+
+    if (rawPlanId !== "starter" && rawPlanId !== "pro" && rawPlanId !== "plus") {
+      throw new HttpsError(
+        "invalid-argument",
+        "planId must be one of: starter, pro, plus.",
+      );
+    }
+    if (rawCycle !== "monthly" && rawCycle !== "yearly") {
+      throw new HttpsError(
+        "invalid-argument",
+        "cycle must be 'monthly' or 'yearly'.",
+      );
+    }
+
+    const planId = rawPlanId as SubscriptionPlanId;
+    const cycle = rawCycle as SubscriptionBillingCycle;
+    const priceId = resolvePriceId(planId, cycle);
+
+    const customerId = await getOrCreateBillingStripeCustomer(
+      uid,
+      request.auth.token.email ?? null,
+    );
+
+    const appUrl = getAppUrl();
+
+    const session = await getStripeClient().checkout.sessions.create(
+      {
+        mode: "subscription",
+        ui_mode: "embedded",
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        subscription_data: {
+          metadata: {
+            uid,
+            planId,
+            cycle,
+          },
+        },
+        metadata: {
+          uid,
+          planId,
+          cycle,
+          purpose: "skillset_plan_subscription",
+        },
+        return_url: `${appUrl}/account/billing/return?session_id={CHECKOUT_SESSION_ID}`,
+      },
+      {
+        // Idempotency on (uid, plan, cycle) so a double-click doesn't
+        // create two parallel sessions in the same minute. Window changes
+        // when the user picks a different plan or cycle.
+        idempotencyKey: `billing_checkout_${uid}_${planId}_${cycle}_${Math.floor(
+          Date.now() / 60000,
+        )}`,
+      },
+    );
+
+    if (!session.client_secret) {
+      throw new HttpsError(
+        "internal",
+        "Stripe did not return a client_secret for the embedded session.",
+      );
+    }
+
+    return {
+      clientSecret: session.client_secret,
+      sessionId: session.id,
+    };
+  },
+);
+
+export const createBillingPortalSession = onCall(
+  { secrets: [stripeSecretKey] },
+  async (request: CallableRequest<Record<string, never>>) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in before opening billing.");
+    }
+
+    const uid = request.auth.uid;
+    await enforceRateLimit(`billing_portal_${uid}`, 20, 60 * 60 * 1000);
+
+    const userSnapshot = await db.collection("users").doc(uid).get();
+    const profile = (userSnapshot.data() ?? {}) as UserProfileRecord & {
+      stripeCustomerId?: string | null;
+    };
+
+    if (!profile.stripeCustomerId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "No active subscription found for this account.",
+      );
+    }
+
+    const appUrl = getAppUrl();
+    const portal = await getStripeClient().billingPortal.sessions.create({
+      customer: profile.stripeCustomerId,
+      return_url: `${appUrl}/account/billing?tab=subscriptions`,
+    });
+
+    return { url: portal.url };
+  },
+);
+
+/**
+ * Mirrors the active Stripe subscription state into Firestore.
+ * Source of truth lives at Stripe; this is a cache so the rest of the
+ * app (commission resolution, billing UI) doesn't need to re-query
+ * Stripe on every render.
+ */
+async function syncSubscriptionFromStripe(
+  subscription: Stripe.Subscription,
+): Promise<void> {
+  const uid =
+    (subscription.metadata?.uid as string | undefined) ??
+    (await uidFromCustomer(subscription.customer));
+
+  if (!uid) {
+    logger.warn(
+      "syncSubscriptionFromStripe: could not resolve uid for subscription",
+      { subscriptionId: subscription.id },
+    );
+    return;
+  }
+
+  const item = subscription.items.data[0];
+  const priceId = item?.price?.id ?? null;
+  const planId = priceId ? planByPriceId(priceId) : null;
+  const cycle = priceId ? cycleByPriceId(priceId) : null;
+
+  if (!planId || !cycle || !priceId) {
+    logger.warn(
+      "syncSubscriptionFromStripe: unrecognized Stripe price",
+      { subscriptionId: subscription.id, priceId },
+    );
+    return;
+  }
+
+  const subRef = db.collection("subscriptions").doc(subscription.id);
+
+  const periodStart = secondsToIso(
+    (item as { current_period_start?: number })?.current_period_start ??
+      (subscription as { current_period_start?: number }).current_period_start,
+  );
+  const periodEnd = secondsToIso(
+    (item as { current_period_end?: number })?.current_period_end ??
+      (subscription as { current_period_end?: number }).current_period_end,
+  );
+
+  await subRef.set(
+    {
+      userId: uid,
+      planId,
+      cycle,
+      stripeCustomerId:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id,
+      stripeSubscriptionId: subscription.id,
+      stripePriceId: priceId,
+      status: subscription.status,
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  // Reflect on the user profile so commission resolution is O(1) without
+  // joining subscriptions. The user is on the plan when entitled
+  // (active/trialing); otherwise revert to Free.
+  const entitled =
+    subscription.status === "active" || subscription.status === "trialing";
+
+  await db.collection("users").doc(uid).set(
+    {
+      currentPlanId: entitled ? planId : "free",
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+async function uidFromCustomer(
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer,
+): Promise<string | null> {
+  const customerId =
+    typeof customer === "string" ? customer : customer.id;
+  if (!customerId) return null;
+
+  const found = await db
+    .collection("users")
+    .where("stripeCustomerId", "==", customerId)
+    .limit(1)
+    .get();
+
+  return found.empty ? null : (found.docs[0].id);
+}
+
+function secondsToIso(seconds: number | null | undefined): string | null {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds)) return null;
+  return new Date(seconds * 1000).toISOString();
+}
+
+/**
+ * Idempotency gate for Stripe webhook events. Stripe will redeliver on
+ * any non-2xx response, so the same event id can hit our handler many
+ * times. The first invocation creates the document; subsequent ones
+ * short-circuit. Atomic via create() — fails if the doc already exists.
+ */
+async function markStripeEventProcessed(eventId: string): Promise<boolean> {
+  const ref = db.collection("processedStripeEvents").doc(eventId);
+  try {
+    await ref.create({
+      processedAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
