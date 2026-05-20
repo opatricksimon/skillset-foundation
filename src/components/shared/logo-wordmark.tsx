@@ -12,18 +12,18 @@ type LogoWordmarkProps = {
   className?: string;
 };
 
-// Rendered height per placement. Bumped up from the previous ~20px nav size,
-// which read as too small in the top-left of the marketing and app shells.
+// Rendered height per placement. Sized to read as a brand anchor (not as
+// chrome), matching reference platforms in the same SaaS-marketplace tier.
 function heightClass(nav: boolean, compact: boolean): string {
-  if (nav) return "h-8";
-  if (compact) return "h-10";
-  return "h-12";
+  if (nav) return "h-10";
+  if (compact) return "h-12";
+  return "h-14";
 }
 
 function markSizeClass(nav: boolean, compact: boolean): string {
-  if (nav) return "size-8";
-  if (compact) return "size-9";
-  return "size-10";
+  if (nav) return "size-10";
+  if (compact) return "size-11";
+  return "size-12";
 }
 
 export function LogoWordmark({

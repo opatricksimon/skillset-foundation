@@ -14,12 +14,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-// No caret affordance: these are direct links, not dropdown menus.
-// A caret implies a sub-menu that does not exist (misleading). Labels
-// are deduped — "Programs" already points to /courses.
+// Trimmed: "Courses" (marketplace) and "Instructors" were removed from the
+// global nav — Marketplace lives in the in-app sidebar and the public
+// /courses page is currently empty (would mislead visitors).
 const navItems = [
-  { href: "/courses", label: "Courses" },
-  { href: "/instructors", label: "Instructors" },
   { href: "/for-creators", label: "For creators" },
   { href: "/pricing", label: "Pricing" },
   { href: "/promise", label: "Promise" },

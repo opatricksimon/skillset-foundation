@@ -95,10 +95,10 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   );
 
   return (
-    <nav className="mt-3 flex flex-col gap-1">
+    <nav className="mt-2 flex flex-col gap-0.5">
       {!collapsed && availableWorkspaces.length > 1 ? (
-        <div className="mb-2">
-          <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+        <div className="mb-1">
+          <p className="px-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
             Workspace
           </p>
           <div className="flex gap-1 rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-1">
@@ -132,7 +132,7 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
         return (
           <Fragment key={item.href}>
             {!collapsed && showHeader ? (
-              <p className="mt-3 px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)] first:mt-0">
+              <p className="mt-1.5 px-2 pb-0 text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)] first:mt-0">
                 {item.section}
               </p>
             ) : null}
@@ -207,7 +207,7 @@ function PlatformNavLink({
       href={href}
       title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-2 rounded-[10px] border py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
+      className={`group flex items-center gap-2 rounded-[10px] border py-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
           ? "border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.16)] hover:text-white"
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)]"
