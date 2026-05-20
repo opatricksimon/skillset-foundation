@@ -33,19 +33,52 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        <Suspense
-          fallback={
-            <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-sm text-[var(--color-ink-soft)]">
-                Loading courses...
-              </p>
-            </section>
-          }
-        >
+        <Suspense fallback={<MarketplaceSkeleton />}>
           <CourseMarketplace />
         </Suspense>
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+// SSR-visible fallback that mirrors the client-side loading state in
+// CourseMarketplace. Without this, search engines and no-JS visitors see
+// "Loading courses..." and bounce — the real page has filters + a card grid.
+function MarketplaceSkeleton() {
+  return (
+    <section aria-hidden="true">
+      <div className="mb-8 grid gap-3 lg:grid-cols-[1fr_280px] lg:items-center">
+        <div className="flex flex-wrap gap-2.5">
+          {[80, 110, 96, 88, 120].map((width, index) => (
+            <div
+              key={index}
+              className="h-9 animate-pulse rounded-[10px] bg-[var(--color-surface-strong)]"
+              style={{ width }}
+            />
+          ))}
+        </div>
+        <div className="grid gap-2">
+          <div className="h-3 w-12 animate-pulse rounded bg-[var(--color-surface-strong)]" />
+          <div className="h-11 animate-pulse rounded-[10px] bg-[var(--color-surface-soft)]" />
+        </div>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map((index) => (
+          <div
+            key={index}
+            className="surface-card animate-pulse overflow-hidden rounded-[18px]"
+          >
+            <div className="aspect-[4/3] bg-[var(--color-surface-strong)]" />
+            <div className="space-y-3 p-5">
+              <div className="h-3 w-24 rounded bg-[var(--color-surface-strong)]" />
+              <div className="h-6 w-3/4 rounded bg-[var(--color-surface-strong)]" />
+              <div className="h-16 rounded bg-[var(--color-surface-soft)]" />
+              <div className="h-8 w-1/3 rounded bg-[var(--color-surface-soft)]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
