@@ -24,8 +24,35 @@ export default function PricingPage() {
       title="Pricing that lowers as you grow."
       description="Every feature is included on every plan. The plan you pick only changes the commission Skillset takes per paid sale. Stripe's processing fee is passed through to you transparently — never hidden inside the platform percentage."
     >
+      {/* Quick decision hint above the cards — answers the question every
+          creator actually asks: 'which plan fits me?'. Break-even numbers
+          come straight from plans.ts so they stay in sync if pricing moves. */}
+      <aside className="mt-8 rounded-[18px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          Which plan is for me?
+        </p>
+        <div className="mt-3 grid gap-3 text-sm text-[var(--color-ink-soft)] sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <strong className="block text-[var(--color-ink)]">$0 – $475/mo</strong>
+            Stay on Free. No subscription, 8% per sale.
+          </div>
+          <div>
+            <strong className="block text-[var(--color-ink)]">$475 – $2,333/mo</strong>
+            Starter pays for itself. 4% per sale, less than 6 sales of $19.
+          </div>
+          <div>
+            <strong className="block text-[var(--color-ink)]">$2,333 – $11,000/mo</strong>
+            Pro becomes cheaper than Starter. 1% per sale.
+          </div>
+          <div>
+            <strong className="block text-[var(--color-ink)]">$11,000/mo+</strong>
+            Plus zeroes out commission. Worth it past this volume.
+          </div>
+        </div>
+      </aside>
+
       <section
-        className="mt-10 grid gap-4 lg:grid-cols-4"
+        className="mt-6 grid gap-4 lg:grid-cols-4"
         aria-label="Plan comparison"
       >
         {plans.map((plan, index) => {

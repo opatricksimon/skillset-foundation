@@ -1,29 +1,57 @@
+import {
+  Award,
+  Calendar,
+  Globe,
+  LayoutGrid,
+  MessagesSquare,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+
 import { RevealSection } from "@/components/shared/reveal-section";
 
-const capabilities = [
+type Capability = {
+  title: string;
+  description: string;
+  Icon: LucideIcon;
+};
+
+const capabilities: ReadonlyArray<Capability> = [
   {
     title: "Course builder",
-    description: "Modular structure, multiple lesson types, scheduled events, free preview slot.",
+    description:
+      "Modular structure, multiple lesson types, scheduled events, free preview slot.",
+    Icon: LayoutGrid,
   },
   {
     title: "Drip-released content",
-    description: "Protect your work from refund abuse. Release lessons by progress or schedule.",
+    description:
+      "Protect your work from refund abuse. Release lessons by progress or schedule.",
+    Icon: Calendar,
   },
   {
     title: "Course-linked community",
-    description: "Every paid course opens its own private community space for posts, replies, and likes.",
+    description:
+      "Every paid course opens its own private community space for posts, replies, and likes.",
+    Icon: MessagesSquare,
   },
   {
     title: "Multi-currency checkout",
-    description: "30+ currencies. Stripe Adaptive Pricing handles local conversion at checkout.",
+    description:
+      "30+ currencies. Stripe Adaptive Pricing handles local conversion at checkout.",
+    Icon: Globe,
   },
   {
     title: "Creator wallet, 7-day clearance",
-    description: "Earnings clear from pending to available 7 days after each sale. Transparent ledger with full audit trail.",
+    description:
+      "Earnings clear from pending to available 7 days after each sale. Transparent ledger with full audit trail.",
+    Icon: Wallet,
   },
   {
     title: "Verifiable certificates",
-    description: "Public verification URL. Employers can confirm credentials in seconds.",
+    description:
+      "Public verification URL. Employers can confirm credentials in seconds.",
+    Icon: Award,
   },
 ];
 
@@ -43,18 +71,27 @@ export function CapabilitiesGrid() {
         </p>
       </RevealSection>
       <div className="mt-10 grid gap-5 sm:mt-12 md:grid-cols-2 xl:grid-cols-3">
-        {capabilities.map((capability, index) => (
-          <RevealSection key={capability.title} delay={index * 80}>
-            <article className="h-full rounded-[14px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] transition duration-[180ms] ease-out hover:-translate-y-0.5">
-              <h3 className="text-lg font-bold text-[var(--color-primary)]">
-                {capability.title}
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
-                {capability.description}
-              </p>
-            </article>
-          </RevealSection>
-        ))}
+        {capabilities.map((capability, index) => {
+          const { Icon } = capability;
+          return (
+            <RevealSection key={capability.title} delay={index * 80}>
+              <article className="group h-full rounded-[14px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] transition duration-[180ms] ease-out hover:-translate-y-0.5 hover:border-[rgba(26,54,93,0.18)] hover:shadow-[0_18px_36px_rgba(15,39,68,0.10)]">
+                <span
+                  className="grid size-11 place-items-center rounded-[10px] bg-[var(--color-surface-soft)] text-[var(--color-primary)] transition-colors group-hover:bg-[var(--color-primary)] group-hover:text-white"
+                  aria-hidden="true"
+                >
+                  <Icon size={20} strokeWidth={1.7} />
+                </span>
+                <h3 className="mt-5 text-lg font-bold text-[var(--color-primary)]">
+                  {capability.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+                  {capability.description}
+                </p>
+              </article>
+            </RevealSection>
+          );
+        })}
       </div>
     </section>
   );
