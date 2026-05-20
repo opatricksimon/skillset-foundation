@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PublicPage } from "@/components/site/public-page";
+import { planById, payoutClearDays } from "@/data/plans";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 const creatorTools = [
@@ -12,10 +13,11 @@ const creatorTools = [
   "Shareable course links for simple launch campaigns.",
 ];
 
+const freePlan = planById("free");
+
 export const metadata = buildPageMetadata({
   title: "Teach on Skillset",
-  description:
-    "Publish professional courses to a global audience. 15% fee paid only on sales, D+30 payouts, course community and certificates included.",
+  description: `Publish professional courses to a global audience. Start free at ${freePlan.commissionPercent}% commission, D+${payoutClearDays} payouts, course community and certificates included on every plan.`,
   path: "/for-creators",
 });
 
@@ -28,13 +30,13 @@ export default function ForCreatorsPage() {
     >
       <section className="mt-8 rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-6 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="grid grid-cols-2 gap-5 sm:flex sm:gap-8">
+          <div className="grid grid-cols-3 gap-5 sm:flex sm:gap-8">
             <div>
               <p className="display-title text-3xl text-[var(--color-primary)]">
-                15%
+                {freePlan.commissionPercent}%
               </p>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
-                Flat platform fee
+                Commission on Free
               </p>
             </div>
             <div>
@@ -42,12 +44,12 @@ export default function ForCreatorsPage() {
                 $0
               </p>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
-                Subscription
+                To start
               </p>
             </div>
             <div>
               <p className="display-title text-3xl text-[var(--color-primary)]">
-                D+30
+                D+{payoutClearDays}
               </p>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
                 Payout schedule
@@ -56,13 +58,13 @@ export default function ForCreatorsPage() {
           </div>
           <div className="sm:text-right">
             <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
-              Paid only when you sell. No subscription, no hidden costs.
+              Start free. Upgrade to drop commission to 4%, 1%, or 0%.
             </p>
             <Link
               href="/pricing"
               className="mt-2 inline-flex text-sm font-semibold text-[var(--color-primary)] underline-offset-4 hover:underline"
             >
-              See full pricing
+              See all four plans
             </Link>
           </div>
         </div>

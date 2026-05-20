@@ -38,7 +38,7 @@ const categories: ReadonlyArray<{
       {
         id: "course-pricing",
         q: "How do I set pricing for my course?",
-        a: "Pricing is set per course inside Studio → course builder. You choose a one-time price in the currency of your choice; Stripe handles multi-currency checkout at the learner's end. The 15% platform fee is deducted after the sale and shown clearly in the wallet ledger.",
+        a: "Pricing is set per course inside Studio → course builder. You choose a one-time price in the currency of your choice; Stripe handles multi-currency checkout at the learner's end. The platform commission (8% on Free, 4% on Starter, 1% on Pro, 0% on Plus) plus the Stripe processing fee are shown clearly in the wallet ledger for every sale.",
       },
       {
         id: "drip-release",
@@ -53,13 +53,31 @@ const categories: ReadonlyArray<{
     ],
   },
   {
+    id: "plans",
+    label: "Plans & commission",
+    items: [
+      {
+        q: "Which plan should I start on?",
+        a: "Start on Free if you're validating an idea — there's no subscription and you keep 92% of every $100 sale before Stripe fees. Move to Starter ($19/mo, 4% commission) once you cross about $475/mo in sales. Pro and Plus pay back as you scale further. The pricing page lays out the break-even point for each plan.",
+      },
+      {
+        q: "What happens when I upgrade or downgrade?",
+        a: "Upgrades take effect immediately — the new commission applies to new sales right away (Stripe Billing prorates the subscription automatically). Downgrades take effect at the end of your current billing cycle. Sales made under your old plan keep that plan's commission rate; the rate is snapshotted at the moment of sale.",
+      },
+      {
+        q: "What if I cancel my plan?",
+        a: "Cancellation downgrades you to Free at the end of your paid period. Your courses, students, content, and history are preserved — Skillset never deletes a creator's data. Commission goes back to 8% (the Free rate) on new sales from the moment of downgrade.",
+      },
+    ],
+  },
+  {
     id: "payouts",
     label: "Payouts",
     items: [
       {
         id: "payouts",
         q: "When do I receive my first payout?",
-        a: "Creator earnings move from pending to available after the 7-day refund window closes for each enrollment. Payouts are then scheduled via Stripe Connect — typically D+30 from clearance today, with shorter cycles planned as the platform matures. The wallet panel in Studio shows the exact next payout date.",
+        a: "Creator earnings move from pending to available 7 days after each sale — matching the refund window so cleared payouts never need to be clawed back. From there, transfers settle to your connected Stripe account on Stripe's standard payout schedule. The wallet panel in Studio shows the exact clearance date for every line item.",
       },
       {
         q: "How are creator payouts handled?",

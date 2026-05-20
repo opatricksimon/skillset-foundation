@@ -1,77 +1,244 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 import { PublicPage } from "@/components/site/public-page";
-import { formatUsd, platformFeePercent } from "@/data/platform";
+import { formatUsd } from "@/data/platform";
+import { plans, refundWindowDays } from "@/data/plans";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
-
-const sampleCoursePrice = 200;
-const sampleFee = (sampleCoursePrice * platformFeePercent) / 100;
-const examples = [
-  ["Course price", formatUsd(sampleCoursePrice)],
-  [`Skillset platform fee (${platformFeePercent}%)`, formatUsd(sampleFee)],
-  ["Estimated creator net", formatUsd(sampleCoursePrice - sampleFee)],
-];
 
 export const metadata = buildPageMetadata({
   title: "Pricing",
   description:
-    "Transparent pricing for Skillset creators: a flat 15% platform fee, paid only when you sell. No subscription, no hidden costs.",
+    "Four plans. Free starts at 8% commission with no subscription. Pro drops it to 1%. Plus goes to 0%. Stripe processing fee is shown separately so the math is never hidden.",
   path: "/pricing",
 });
+
+// $100 sample so the breakdown is easy to read at a glance.
+const sampleSaleUsd = 100;
+const sampleStripeFeeUsd = sampleSaleUsd * 0.029 + 0.3;
 
 export default function PricingPage() {
   return (
     <PublicPage
       eyebrow="Pricing"
-      title="Clear learner pricing. Transparent creator economics."
-      description="Learners pay the price set by each creator. Skillset keeps a platform fee on successful paid enrollments, then releases creator earnings through the payout ledger."
+      title="Pricing that lowers as you grow."
+      description="Every feature is included on every plan. The plan you pick only changes the commission Skillset takes per paid sale. Stripe's processing fee is passed through to you transparently — never hidden inside the platform percentage."
     >
-      <section className="mt-10 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-            Default model
-          </p>
-          <h2 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
-            Skillset earns when creators sell.
-          </h2>
-          <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-            The default platform fee is {platformFeePercent}% per paid sale. Creators keep control
-            of course price, content, and learning experience while Skillset
-            provides checkout, access control, review, community, and payout
-            infrastructure.
-          </p>
-        </div>
-        <div className="grid gap-3">
-          {examples.map(([label, value]) => (
-            <div
-              key={label}
-              className="flex items-center justify-between rounded-[14px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)]"
+      <section
+        className="mt-10 grid gap-4 lg:grid-cols-4"
+        aria-label="Plan comparison"
+      >
+        {plans.map((plan, index) => {
+          const isHighlight = plan.id === "pro";
+          return (
+            <article
+              key={plan.id}
+              className={
+                isHighlight
+                  ? "relative rounded-[18px] border-2 border-[var(--color-primary)] bg-white p-6 shadow-[0_24px_48px_rgba(15,39,68,0.12)]"
+                  : "rounded-[18px] border fine-rule bg-white p-6 shadow-[var(--shadow-soft)]"
+              }
             >
-              <p className="text-sm font-semibold text-[var(--color-ink)]">
-                {label}
+              {isHighlight ? (
+                <span className="absolute -top-3 left-6 rounded-full bg-[var(--color-accent)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                  Most popular
+                </span>
+              ) : null}
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                {plan.name}
               </p>
-              <p className="text-xl font-bold text-[var(--color-primary)]">
-                {value}
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="display-title text-4xl text-[var(--color-primary)]">
+                  {plan.monthlyUsd === 0 ? "Free" : formatUsd(plan.monthlyUsd)}
+                </span>
+                {plan.monthlyUsd > 0 ? (
+                  <span className="text-sm text-[var(--color-ink-soft)]">
+                    /month
+                  </span>
+                ) : null}
+              </div>
+              {plan.yearlyUsd > 0 ? (
+                <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                  or {formatUsd(plan.yearlyUsd)} billed yearly
+                </p>
+              ) : null}
+              <p className="mt-4 text-sm leading-6 text-[var(--color-ink)]">
+                {plan.tagline}
               </p>
-            </div>
-          ))}
-        </div>
+              <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                {plan.audience}
+              </p>
+              <div className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  Commission per sale
+                </p>
+                <p className="mt-1 display-title text-3xl text-[var(--color-primary)]">
+                  {plan.commissionPercent}%
+                </p>
+                {plan.breakEvenGmvUsd ? (
+                  <p className="mt-1 text-[11px] text-[var(--color-ink-soft)]">
+                    Worth it from {formatUsd(plan.breakEvenGmvUsd)}/mo in sales
+                  </p>
+                ) : null}
+              </div>
+              <ul className="mt-5 grid gap-2 text-sm text-[var(--color-ink-soft)]">
+                {plan.highlights.map((highlight) => (
+                  <li key={highlight} className="flex items-start gap-2">
+                    <Check
+                      aria-hidden="true"
+                      size={14}
+                      strokeWidth={2.4}
+                      className="mt-1 shrink-0 text-[var(--color-primary)]"
+                    />
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth?mode=signup&path=teacher"
+                className={
+                  isHighlight
+                    ? "button-solid mt-6 w-full justify-center px-4 py-2.5 text-sm"
+                    : "button-outline mt-6 w-full justify-center px-4 py-2.5 text-sm"
+                }
+                aria-label={`Start on ${plan.name}`}
+                data-plan-position={index}
+              >
+                {plan.monthlyUsd === 0 ? "Start free" : `Start on ${plan.name}`}
+              </Link>
+            </article>
+          );
+        })}
       </section>
 
-      <section className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-6">
+      {/* Breakdown — same $100 sale across all four tiers so the user can
+          see exactly where every cent goes. */}
+      <section className="mt-12 rounded-[18px] border fine-rule bg-white p-6 shadow-[var(--shadow-soft)]">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          The math, on a $100 USD sale
+        </p>
+        <h2 className="display-title mt-3 text-3xl text-[var(--color-primary)] sm:text-4xl">
+          Same gross, different net.
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+          A learner pays {formatUsd(sampleSaleUsd)} for a course. Stripe takes
+          its standard USD processing fee of {formatUsd(sampleStripeFeeUsd)}{" "}
+          (2.9% + $0.30). Skillset takes the plan&apos;s commission. The rest
+          goes to you.
+        </p>
+
+        <div className="mt-6 overflow-hidden rounded-[12px] border fine-rule">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-[var(--color-surface-soft)] text-[11px] uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+              <tr>
+                <th scope="col" className="px-4 py-3 font-bold">
+                  Plan
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-bold">
+                  Gross
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-bold">
+                  Platform fee
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-bold">
+                  Stripe fee
+                </th>
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-right font-bold text-[var(--color-primary)]"
+                >
+                  You receive
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-line)]">
+              {plans.map((plan) => {
+                const platformFee = (sampleSaleUsd * plan.commissionPercent) / 100;
+                const net = sampleSaleUsd - platformFee - sampleStripeFeeUsd;
+                return (
+                  <tr key={plan.id} className="bg-white">
+                    <td className="px-4 py-3 font-semibold text-[var(--color-ink)]">
+                      {plan.name}
+                    </td>
+                    <td className="px-4 py-3 text-right text-[var(--color-ink-soft)]">
+                      {formatUsd(sampleSaleUsd)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-[var(--color-ink-soft)]">
+                      −{formatUsd(platformFee)}
+                      <span className="ml-1 text-xs text-[var(--color-ink-muted)]">
+                        ({plan.commissionPercent}%)
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-[var(--color-ink-soft)]">
+                      −{formatUsd(sampleStripeFeeUsd)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-[var(--color-primary)]">
+                      {formatUsd(net)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4 text-xs text-[var(--color-ink-muted)]">
+          International cards (non-USD) use Stripe&apos;s international rate of
+          3.9% + $0.30 instead of 2.9% + $0.30. Everything else is identical.
+        </p>
+      </section>
+
+      {/* Operational rules — refund window, payout clearance, plan changes. */}
+      <section className="mt-8 grid gap-4 md:grid-cols-3">
+        <article className="rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Refund window
+          </p>
+          <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+            Learners can self-refund within {refundWindowDays} days of purchase
+            if they haven&apos;t crossed the progress threshold. Refunds restore
+            the creator&apos;s commission automatically.
+          </p>
+        </article>
+        <article className="rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Payout clearance
+          </p>
+          <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+            Creator earnings clear from pending to available {refundWindowDays}{" "}
+            days after each sale — matching the refund window so payouts never
+            need to be clawed back.
+          </p>
+        </article>
+        <article className="rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Plan changes
+          </p>
+          <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+            Upgrade any time — new commission applies to new sales. Downgrade at
+            the end of your billing cycle. Cancel anytime; you keep your
+            content and revert to Free.
+          </p>
+        </article>
+      </section>
+
+      <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[18px] border fine-rule bg-[var(--color-surface-soft)] p-6">
         <div>
           <p className="text-sm font-semibold text-[var(--color-ink)]">
             Ready to publish on Skillset?
           </p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-            No subscription. The platform fee applies only when you sell.
+            Start on Free — upgrade only when the math works in your favor.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/for-creators" className="button-outline px-5 py-3 text-sm">
             Creator overview
           </Link>
-          <Link href="/auth?mode=signup" className="button-solid px-5 py-3 text-sm">
+          <Link
+            href="/auth?mode=signup&path=teacher"
+            className="button-solid px-5 py-3 text-sm"
+          >
             Get started free
           </Link>
         </div>

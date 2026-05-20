@@ -7,16 +7,16 @@ const promises = [
   {
     number: "01",
     title: "Fee-lock for 24 months",
-    body: "The 15% platform fee you sign up with is the fee you keep for the next 24 months. If Skillset ever needs to change it, Skillset gives 90 days notice and you keep the right to export everything and leave with no friction.",
+    body: "The commission rate of the plan you sign up on is the rate you keep for the next 24 months — even if Skillset raises plan pricing later. If Skillset ever needs to change it, you get 90 days notice and the right to export everything and leave with no friction.",
     practice:
-      "If a creator joins at 15%, that creator does not wake up to a surprise fee increase after building a business here.",
+      "If a creator joins on Free at 8%, that creator does not wake up to a surprise commission increase after building a business here.",
   },
   {
     number: "02",
-    title: "Feature parity for everyone",
-    body: "No add-ons. No premium tiers locking certificates, quizzes, drip content, custom domains, analytics, community, or affiliate tools. Everything Skillset builds is included in the 15%. Always.",
+    title: "Feature parity across all plans",
+    body: "No add-ons. No premium tier locking certificates, quizzes, drip content, custom domains, analytics, community, or affiliate tools. Every Skillset feature is on every plan. The plan you pick only changes the commission rate Skillset takes per sale — never what you can build.",
     practice:
-      "A new educator and a high-volume educator get the same product surface. Skillset does not tax growth with feature paywalls.",
+      "A creator on Free and a creator on Plus get the same product surface. Skillset does not tax growth with feature paywalls.",
   },
   {
     number: "03",

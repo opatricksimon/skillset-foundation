@@ -14,8 +14,13 @@
  * (separate Firebase Functions package) and must be kept in sync with this.
  */
 
-/** Default platform commission: 15%. */
-export const DEFAULT_PLATFORM_FEE_BPS = 1500;
+/**
+ * Default platform commission, in basis points. Matches the Free plan
+ * (8%) — any creator without an active subscription is treated as Free.
+ * Callers WITH a plan attached must pass the plan's commission rate
+ * explicitly via the `platformFeeBps` argument.
+ */
+export const DEFAULT_PLATFORM_FEE_BPS = 800;
 
 /** Stripe standard pricing, USD cards: 2.9%. */
 const USD_PERCENT_BPS = 290;

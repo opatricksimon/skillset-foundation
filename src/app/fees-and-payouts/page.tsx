@@ -1,16 +1,43 @@
+import Link from "next/link";
+
 import { PublicPage } from "@/components/site/public-page";
-import { platformFeePercent } from "@/data/platform";
+import { plans, refundWindowDays, payoutClearDays } from "@/data/plans";
 
 const policies = [
   [
     "Platform fee",
-    `Default ${platformFeePercent}% Skillset fee on successful paid enrollments.`,
+    `Plan-based: ${plans
+      .map((plan) => `${plan.name} ${plan.commissionPercent}%`)
+      .join(" · ")}. Every plan unlocks the same features — the difference is the commission Skillset takes per paid sale. Start free, upgrade when the math helps you.`,
   ],
-  ["Refund window", "7-day automatic refund window, subject to course progress and certificate status."],
-  ["Release schedule", "Creator net revenue is held in release and scheduled for transfer after 30 days."],
-  ["Payout account", "Creators connect Stripe before selling paid courses."],
-  ["Currency", "Marketplace displays USD by default; Stripe Checkout can present local payment options when supported."],
-  ["Taxes", "Tax automation is planned through Stripe Tax when international volume justifies activation."],
+  [
+    "Stripe processing fee",
+    "Passed through to the creator on every sale: 2.9% + $0.30 for USD card payments, 3.9% + $0.30 for non-USD. Never hidden inside the platform percentage.",
+  ],
+  [
+    "Refund window",
+    `Self-serve for ${refundWindowDays} days from purchase, subject to course progress and certificate status. Refunds inside the window restore the creator's commission automatically.`,
+  ],
+  [
+    "Payout clearance",
+    `Creator net moves from pending to available ${payoutClearDays} days after each sale, matched to the refund window so cleared earnings never need to be clawed back.`,
+  ],
+  [
+    "Payout account",
+    "Creators connect Stripe Connect before selling any paid course. Transfers settle to the connected bank account on Stripe's standard schedule.",
+  ],
+  [
+    "Currency",
+    "Marketplace shows USD by default. Stripe Checkout presents local payment methods and currency where supported.",
+  ],
+  [
+    "Taxes",
+    "Stripe Tax can be enabled per market when international volume justifies activation. Creators see the breakdown per sale in the wallet ledger.",
+  ],
+  [
+    "Disputes and chargebacks",
+    "Commission is held until resolution. If the creator loses, the commission is deducted from the available balance. Auto-suspension never triggers below 1.5% chargebacks over a rolling 90-day window (see the Promise).",
+  ],
 ];
 
 export default function FeesAndPayoutsPage() {
@@ -18,7 +45,7 @@ export default function FeesAndPayoutsPage() {
     <PublicPage
       eyebrow="Fees and payouts"
       title="A payout policy built for trust."
-      description="Skillset separates the student payment, refund window, platform fee, and creator payout ledger so the marketplace can protect learners and creators without hiding the rules."
+      description="Skillset separates the learner payment, refund window, platform fee, Stripe processing fee, and creator payout ledger so the marketplace can protect learners and creators without hiding the rules."
     >
       <section className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {policies.map(([title, detail]) => (
@@ -35,6 +62,20 @@ export default function FeesAndPayoutsPage() {
           </article>
         ))}
       </section>
+
+      <div className="mt-10 rounded-[18px] border fine-rule bg-[var(--color-surface-soft)] p-6">
+        <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+          Full plan comparison, sample breakdowns, and break-even points are on
+          the{" "}
+          <Link
+            href="/pricing"
+            className="font-semibold text-[var(--color-primary)] underline underline-offset-2"
+          >
+            pricing page
+          </Link>
+          .
+        </p>
+      </div>
     </PublicPage>
   );
 }

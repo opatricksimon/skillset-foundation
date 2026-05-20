@@ -205,7 +205,10 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
   return {
     amountMinor,
     currency: normalizeSkillsetCurrency(course.currency).toLowerCase(),
-    platformFeeBps: course.platformFeeBps ?? 1500,
+    // 800 bps = 8% (Free-plan default). When the subscription system is
+    // live, callers will set platformFeeBps explicitly from the creator's
+    // plan; this fallback only covers accounts with no plan record.
+    platformFeeBps: course.platformFeeBps ?? 800,
   };
 }
 
@@ -1164,7 +1167,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const order = orderSnapshot.data() || {};
     const course = courseSnapshot.data() as TeacherCourseRecord;
     const grossAmountMinor = Number(order.amountMinor || 0);
-    const platformFeeBps = Number(order.platformFeeBps || 1500);
+    // Falls back to 800 bps (8%, Free plan) when an order pre-dates the
+    // subscription system. Once plans are live, every order writes its
+    // commission rate at sale time so historical math is preserved.
+    const platformFeeBps = Number(order.platformFeeBps || 800);
     const skillsetFeeMinor = Math.floor((grossAmountMinor * platformFeeBps) / 10000);
     const stripeFeeMinor = stripeProcessingFeeMinor(
       grossAmountMinor,
