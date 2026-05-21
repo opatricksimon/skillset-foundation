@@ -28,7 +28,7 @@ export function BillingTabs() {
   }
 
   return (
-    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
       <HorizontalTabs
         tabs={billingTabs}
         activeValue={activeTab}

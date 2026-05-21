@@ -104,7 +104,7 @@ export function LearnEventsHub() {
 
   if (isLoadingEnrollments || isLoadingEvents) {
     return (
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-sm text-[var(--color-ink-soft)]">Loading your event schedule...</p>
       </section>
     );
@@ -112,7 +112,7 @@ export function LearnEventsHub() {
 
   if (error) {
     return (
-      <section className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
@@ -122,7 +122,7 @@ export function LearnEventsHub() {
 
   if (enrollments.length === 0) {
     return (
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Live learning
         </p>
@@ -144,7 +144,7 @@ export function LearnEventsHub() {
 
   if (events.length === 0) {
     return (
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Your schedule
         </p>
@@ -228,7 +228,7 @@ function LearnerEventCard({
   const rsvpLabel = rsvp ? courseEventRsvpStatusLabels[rsvp.status] : "No RSVP yet";
 
   return (
-    <article className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <article className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">

@@ -77,7 +77,7 @@ export function TeacherCourseStudio() {
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">Start a course submission</h3>
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Course submissions</span>
@@ -115,7 +115,7 @@ export function TeacherCourseStudio() {
           ) : null}
       </section>
 
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-4">
           <div>
             <div className="flex items-baseline gap-2">

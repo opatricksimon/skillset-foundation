@@ -98,7 +98,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
   if (!enrollment) {
     return (
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           Access required
         </p>
@@ -147,7 +147,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
           {space.name}
         </p>
@@ -177,7 +177,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
 
       {activeTab === "posts" ? (
         <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
-          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
               New post
             </p>
@@ -215,7 +215,7 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
             </form>
           </section>
 
-          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
               Feed
             </p>
@@ -287,7 +287,7 @@ function CommunityInfoPanel({
   cta?: { href: string; label: string };
 }) {
   return (
-    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
         Course community
       </p>

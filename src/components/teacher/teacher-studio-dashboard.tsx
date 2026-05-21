@@ -110,7 +110,7 @@ export function TeacherStudioDashboard() {
           <TeacherOverviewMetrics />
           <RevenueMilestoneStrip />
           <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
               <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
                 <h3 className="text-base font-bold text-[var(--color-ink)]">
                   Publishing flow
@@ -136,7 +136,7 @@ export function TeacherStudioDashboard() {
               </div>
             </div>
             <div className="grid gap-5">
-              <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
                   <h3 className="text-base font-bold text-[var(--color-ink)]">
                     Educator support

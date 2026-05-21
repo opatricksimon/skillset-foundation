@@ -49,7 +49,7 @@ export function LearnDashboard() {
   if (isLoading) {
     return (
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
           <p className="text-sm text-[var(--color-ink-soft)]">Loading your learning workspace...</p>
         </div>
       </div>
@@ -59,7 +59,7 @@ export function LearnDashboard() {
   if (error) {
     return (
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <div className="rounded-[4px] border border-[rgba(178,34,52,0.2)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
           <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
             {error}
           </p>
@@ -71,7 +71,7 @@ export function LearnDashboard() {
   if (enrollments.length === 0) {
     return (
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+        <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             My learning
           </p>
@@ -99,7 +99,7 @@ export function LearnDashboard() {
     <div className="grid gap-5">
       <LearnerOverviewMetrics />
 
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-soft)] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             My courses

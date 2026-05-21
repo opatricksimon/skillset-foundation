@@ -126,7 +126,7 @@ export function TeacherEventStudio() {
 
   return (
     <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
             Schedule a class or mentorship
@@ -247,7 +247,7 @@ export function TeacherEventStudio() {
         </form>
       </div>
 
-      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+      <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
             Scheduled sessions
