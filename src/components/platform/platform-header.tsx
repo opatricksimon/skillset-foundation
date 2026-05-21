@@ -87,7 +87,10 @@ export function PlatformHeader() {
           </span>
         </nav>
 
-        <label className="ml-auto min-w-0 max-w-[240px] flex-1 sm:max-w-xs">
+        {/* Search input only on sm+ — on mobile the marketplace surface
+            has its own search field; cramming it into a 375px header
+            squeezed every other action. */}
+        <label className="ml-auto hidden min-w-0 max-w-[240px] flex-1 sm:block sm:max-w-xs">
           <span className="sr-only">
             Workspace search — press Enter to search
           </span>
@@ -100,14 +103,38 @@ export function PlatformHeader() {
           />
         </label>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:ml-0">
           <ThemeToggle />
           <NotificationBell />
+          {/* Primary CTA: full label on sm+, icon-only chip on mobile.
+              Was hidden entirely on mobile before, leaving inner pages with
+              no primary action in the header. */}
           <Link
             href={copy.cta.href}
+            aria-label={copy.cta.label}
             className="button-solid hidden px-4 py-2 text-sm sm:inline-flex"
           >
             {copy.cta.label}
+          </Link>
+          <Link
+            href={copy.cta.href}
+            aria-label={copy.cta.label}
+            title={copy.cta.label}
+            className="button-solid grid size-9 place-items-center px-0 py-0 text-sm sm:hidden"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4"
+            >
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
           </Link>
           {status === "authenticated" && user ? (
             <AccountMenu user={user} onSignOut={signOut} />

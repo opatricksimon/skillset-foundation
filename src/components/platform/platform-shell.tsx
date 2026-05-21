@@ -80,7 +80,7 @@ export function PlatformShell({
           </aside>
           <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
             <div
-              className={`dash-card ${compact ? "px-5 py-4" : "p-5"}`}
+              className={`dash-card ${compact ? "px-4 py-4 sm:px-5" : "p-4 sm:p-5"}`}
             >
               {eyebrow ? (
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -90,8 +90,8 @@ export function PlatformShell({
               <h1
                 className={
                   compact
-                    ? "display-title max-w-4xl text-2xl leading-tight text-[var(--color-primary)] sm:text-3xl"
-                    : `display-title ${eyebrow ? "mt-3" : ""} max-w-4xl text-4xl leading-none text-[var(--color-primary)] sm:text-5xl`
+                    ? "display-title max-w-4xl text-xl leading-tight text-[var(--color-primary)] sm:text-2xl lg:text-3xl"
+                    : `display-title ${eyebrow ? "mt-3" : ""} max-w-4xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl lg:text-5xl`
                 }
               >
                 {title}

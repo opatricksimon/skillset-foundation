@@ -17,7 +17,9 @@ describe("marketing home", () => {
     render(<Home />);
 
     expect(
-      screen.getByText("The marketplace for serious online courses."),
+      screen.getByText("Turn your expertise into a global course business.", {
+        exact: false,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Three steps from idea to income."),

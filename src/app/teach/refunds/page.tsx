@@ -27,8 +27,8 @@ export default function TeacherRefundsPage() {
             onChange={() => undefined}
             ariaLabel="Refund filters"
           />
-          <div className="mt-6 overflow-hidden rounded-[4px] border border-[var(--color-line)]">
-            <table className="w-full border-collapse text-left text-sm">
+          <div className="mt-6 overflow-x-auto rounded-[4px] border border-[var(--color-line)]">
+            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
               <thead className="bg-[var(--color-surface-soft)] text-xs uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Date</th>
