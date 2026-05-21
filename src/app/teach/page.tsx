@@ -7,8 +7,8 @@ export default function TeachPage() {
     <ProtectedSurface permissions={["teacherStudio.access"]}>
       <PlatformShell
         eyebrow="Teacher Studio"
-        title="Create courses for Skillset review."
-        description="Build your course details, prepare the learner experience, and submit when ready. Skillset reviews every submission before publication."
+        title="Build, ship, get paid."
+        description="Draft a course, prepare the learner experience, and submit when ready. Skillset reviews every submission before publication."
       >
         <TeacherStudioDashboard />
       </PlatformShell>

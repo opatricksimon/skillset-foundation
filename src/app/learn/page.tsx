@@ -7,7 +7,7 @@ export default function LearnPage() {
     <ProtectedSurface permissions={["courses.viewLearning"]}>
       <PlatformShell
         eyebrow="Student experience"
-        title="A learner dashboard built for focus and continuity."
+        title="Your learning, in one place."
         description="Courses, milestones, community, and certificates come together in a workspace that keeps progress easy to follow."
       >
         <LearnDashboard />
