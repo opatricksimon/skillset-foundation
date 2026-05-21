@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { UpgradeModal } from "@/components/account/upgrade-modal";
 import { StatusChip } from "@/components/shared/status-chip";
 import {
   hasRealStripePriceIds,
@@ -18,6 +18,11 @@ import { formatUsd } from "@/data/platform";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
 import { openBillingPortal } from "@/lib/payments/billing";
 
+type UpgradeState = {
+  planId: Exclude<PlanId, "free">;
+  cycle: PlanBillingCycle;
+} | null;
+
 const billingCycles: ReadonlyArray<{
   value: PlanBillingCycle;
   label: string;
@@ -29,11 +34,11 @@ const billingCycles: ReadonlyArray<{
 
 export function PlansPanel() {
   const { user } = useAuth();
-  const router = useRouter();
   const [cycle, setCycle] = useState<PlanBillingCycle>("monthly");
   const [currentPlanId, setCurrentPlanId] = useState<PlanId>("free");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState<UpgradeState>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,12 +61,15 @@ export function PlansPanel() {
   function handleUpgrade(plan: Plan) {
     if (plan.id === "free") return;
     setError(null);
-    setBusyAction(`upgrade-${plan.id}`);
-    // Navigate to the in-app upgrade page that mounts the embedded
-    // Stripe checkout — the learner never leaves Skillset.
-    router.push(
-      `/account/billing/upgrade?plan=${plan.id}&cycle=${cycle}`,
-    );
+    // Open the upgrade modal on top of the platform shell — the learner
+    // stays in context (no full page navigation) and the embedded Stripe
+    // checkout mounts inside the modal body.
+    setUpgrade({ planId: plan.id, cycle });
+  }
+
+  function closeUpgrade() {
+    setUpgrade(null);
+    setBusyAction(null);
   }
 
   async function handleManage() {
@@ -240,7 +248,7 @@ export function PlansPanel() {
                 <button
                   type="button"
                   onClick={() => handleUpgrade(plan)}
-                  disabled={!canPurchase || busyAction === `upgrade-${plan.id}`}
+                  disabled={!canPurchase}
                   className={
                     canPurchase
                       ? "button-solid mt-5 w-full justify-center px-3 py-2 text-xs disabled:opacity-60"
@@ -248,11 +256,7 @@ export function PlansPanel() {
                   }
                   title={canPurchase ? undefined : "Stripe Price ID not configured yet."}
                 >
-                  {busyAction === `upgrade-${plan.id}`
-                    ? "Opening Stripe..."
-                    : canPurchase
-                      ? `Upgrade to ${plan.name}`
-                      : "Unavailable"}
+                  {canPurchase ? `Upgrade to ${plan.name}` : "Unavailable"}
                 </button>
               ) : (
                 <p className="mt-5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-muted)]">
@@ -270,6 +274,13 @@ export function PlansPanel() {
         take effect at the end of the current billing period. You can update
         your card or download invoices any time from the Stripe Customer Portal.
       </footer>
+
+      <UpgradeModal
+        open={upgrade !== null}
+        planId={upgrade?.planId ?? null}
+        cycle={upgrade?.cycle ?? "monthly"}
+        onClose={closeUpgrade}
+      />
     </section>
   );
 }
