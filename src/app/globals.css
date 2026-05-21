@@ -785,13 +785,23 @@ select {
    Tailwind arbitrary values (text-[var(--color-base)]) sometimes lose to
    cascaded color, so we burn the rule in here with !important — same trick
    .button-solid uses. color-base flips white↔near-black on theme, so this
-   stays high-contrast against bg-primary in both light and dark mode. */
+   stays high-contrast against bg-primary in both light and dark mode.
+   Icons inherit the same color-base — they used to live in a white badge
+   wrapper that visually swallowed the glyph on hi-DPI screens, so the
+   icon now sits inline and gets the same bright contrast as the text. */
 .platform-nav-active,
 .platform-nav-active * {
   color: var(--color-base) !important;
 }
-.platform-nav-active svg {
-  color: var(--color-primary) !important;
+
+/* Inactive nav items: icons match the muted text color, then go bright
+   on hover so the whole row lights up together. */
+.platform-nav-link:not(.platform-nav-active) svg {
+  color: currentColor;
+  opacity: 0.85;
+}
+.platform-nav-link:not(.platform-nav-active):hover svg {
+  opacity: 1;
 }
 
 /* ── Dashboard design system ─────────────────────────────────────────────

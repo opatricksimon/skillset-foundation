@@ -138,34 +138,28 @@ function PlatformNavLink({
 }) {
   const Icon = iconMap[icon] ?? LayoutDashboard;
 
+  // Icon sits directly inline with the label — no white badge wrapper.
+  // Previous design (white square holding a tiny 13px icon) made the icon
+  // visually disappear in the active state on hi-DPI screens. Now: a solid
+  // 18px icon, on a transparent background, inheriting currentColor. Active
+  // = bright white over primary blue. Inactive = ink-soft, hover = ink.
   return (
     <Link
       href={href}
       title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-2 rounded-[10px] border py-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
+      className={`platform-nav-link group flex items-center gap-2.5 rounded-[10px] border py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
           ? "platform-nav-active border-[rgba(24,58,94,0.2)] bg-[var(--color-primary)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-strong)] hover:text-[var(--color-ink)]"
       }`}
     >
-      <span
-        className={`grid size-6 shrink-0 place-items-center rounded-[7px] border ${
-          active
-            ? "border-[var(--color-base)]/30 bg-[var(--color-base)]"
-            : "border-[var(--color-line)] bg-white group-hover:border-[rgba(26,54,93,0.18)]"
-        }`}
-      >
-        {/* Inline color (not Tailwind class) so the cascade from
-            .platform-nav-active * { color: base !important } can't override it
-            — Lucide draws via stroke="currentColor", so the color set HERE
-            is what the icon renders as on the white badge. */}
-        <Icon
-          size={13}
-          strokeWidth={2.2}
-          style={{ color: "var(--color-primary)" }}
-        />
-      </span>
+      <Icon
+        aria-hidden="true"
+        size={18}
+        strokeWidth={2}
+        className="shrink-0"
+      />
       <span
         className={`platform-sidebar-label ${active ? "text-[var(--color-base)]" : ""}`}
       >

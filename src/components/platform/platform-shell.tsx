@@ -35,13 +35,7 @@ export function PlatformShell({
   compact = false,
   children,
 }: PlatformShellProps) {
-  const {
-    handleMouseEnter,
-    handleMouseLeave,
-    isCollapsed,
-    persistentState,
-    toggle,
-  } = useSidebarState();
+  const { isCollapsed, persistentState, toggle } = useSidebarState();
 
   return (
     <ThemeProvider>
@@ -52,8 +46,6 @@ export function PlatformShell({
         <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
           <aside
             className={`platform-sidebar platform-sidebar-panel h-fit rounded-[4px] border border-[var(--color-line-strong)] bg-[var(--color-surface-strong)] p-2 shadow-[0_1px_0_rgba(15,39,68,0.06)] ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
           >
             <SidebarToggle
               state={persistentState}

@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type SidebarState = "expanded" | "collapsed";
 
 const STORAGE_KEY = "skillset_sidebar_state";
 
+// Sidebar is click-controlled only. No hover expansion — the previous
+// hover-to-peek behavior made the menu jump unexpectedly when the cursor
+// passed nearby. State persists in localStorage, toggled only via
+// SidebarToggle at the top of the menu.
 export function useSidebarState() {
   const [state, setState] = useState<SidebarState>("expanded");
-  const [hoverExpanded, setHoverExpanded] = useState(false);
-  const hoverTimer = useRef<number | null>(null);
 
   useEffect(() => {
+    // Defer the setState by a microtask so React doesn't flag this as
+    // a sync setState-in-effect cascade. localStorage is read post-hydration
+    // anyway — SSR defaults to "expanded".
     const timer = window.setTimeout(() => {
       const savedState = window.localStorage.getItem(STORAGE_KEY);
 
@@ -27,43 +32,13 @@ export function useSidebarState() {
     setState((currentState) => {
       const nextState = currentState === "expanded" ? "collapsed" : "expanded";
       window.localStorage.setItem(STORAGE_KEY, nextState);
-      setHoverExpanded(false);
       return nextState;
     });
   }
 
-  function handleMouseEnter() {
-    if (state !== "collapsed") {
-      return;
-    }
-
-    const canHover = typeof window.matchMedia === "function"
-      ? window.matchMedia("(hover: hover)").matches
-      : true;
-
-    if (!canHover) {
-      return;
-    }
-
-    hoverTimer.current = window.setTimeout(() => {
-      setHoverExpanded(true);
-    }, 240);
-  }
-
-  function handleMouseLeave() {
-    if (hoverTimer.current) {
-      window.clearTimeout(hoverTimer.current);
-      hoverTimer.current = null;
-    }
-
-    setHoverExpanded(false);
-  }
-
   return {
-    isCollapsed: state === "collapsed" && !hoverExpanded,
+    isCollapsed: state === "collapsed",
     persistentState: state,
     toggle,
-    handleMouseEnter,
-    handleMouseLeave,
   };
 }
