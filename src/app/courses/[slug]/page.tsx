@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Target } from "lucide-react";
 
 import { CourseEnrollmentCta } from "@/components/courses/course-enrollment-cta";
 import { CreatorCourseDetail } from "@/components/courses/creator-course-detail";
@@ -64,62 +65,76 @@ export default function CourseDetailPage({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
               {course.category}
             </p>
-            <h1 className="display-title mt-4 text-6xl leading-none text-[var(--color-primary)]">
+            {/* Title scales smoothly from 380px phones up to desktop — the
+                fixed text-6xl used to overflow narrow viewports. */}
+            <h1 className="display-title mt-4 text-[clamp(2rem,5vw,3.75rem)] leading-[1.05] text-[var(--color-primary)]">
               {course.title}
             </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-ink-soft)] sm:text-lg">
               {course.summary}
             </p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {course.outcomes.map((item) => (
                 <div
                   key={item}
-                  className="rounded-[14px] border fine-rule bg-white p-4"
+                  className="flex items-start gap-3 rounded-[14px] border fine-rule bg-white p-4"
                 >
-                  <p className="text-sm font-semibold text-[var(--color-ink)]">{item}</p>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-[8px] bg-[var(--color-surface-soft)] text-[var(--color-primary)]">
+                    <Target aria-hidden="true" size={14} strokeWidth={2.2} />
+                  </span>
+                  <p className="text-sm font-semibold leading-6 text-[var(--color-ink)]">
+                    {item}
+                  </p>
                 </div>
               ))}
             </div>
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-primary-light)]">
               {course.detail}
             </p>
-            <section className="mt-8 rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
-              <div id="free-preview" className="scroll-mt-24 rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                  Free preview
-                </p>
-                <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-                  Preview what&apos;s inside.
-                </h2>
-                <div className="mt-4 grid gap-3">
-                  {previewLessons.length > 0 ? (
-                    previewLessons.map((lesson) => (
-                      <div
-                        key={lesson.id}
-                        className="flex items-center justify-between gap-3 rounded-[10px] bg-white px-4 py-3 text-sm"
-                      >
-                        <div>
-                          <p className="font-semibold text-[var(--color-ink)]">
-                            {lesson.title}
-                          </p>
-                          <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                            {lesson.moduleTitle}
-                          </p>
-                        </div>
-                        <span className="shrink-0 rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
-                          {lesson.duration}
-                        </span>
+            {/* Free preview and curriculum used to live nested inside an
+                outer white card with rounded-[16px] holding inner rounded-[14px]
+                blocks — the rounded-on-rounded made the section feel busy.
+                Now both sit as flat sibling sections with their own breathing
+                room. */}
+            <section
+              id="free-preview"
+              className="mt-10 scroll-mt-24 rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-5 sm:p-6"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Free preview
+              </p>
+              <h2 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
+                Preview what&apos;s inside.
+              </h2>
+              <div className="mt-4 grid gap-3">
+                {previewLessons.length > 0 ? (
+                  previewLessons.map((lesson) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center justify-between gap-3 rounded-[10px] bg-white px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-[var(--color-ink)]">
+                          {lesson.title}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                          {lesson.moduleTitle}
+                        </p>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
-                      The instructor has not added a public preview lesson yet.
-                    </p>
-                  )}
-                </div>
+                      <span className="shrink-0 rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+                        {lesson.duration}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm leading-7 text-[var(--color-ink-soft)]">
+                    The instructor has not added a public preview lesson yet.
+                  </p>
+                )}
               </div>
+            </section>
 
-              <div className="mt-6">
+            <section className="mt-8">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
                 Course structure
               </p>
@@ -151,21 +166,31 @@ export default function CourseDetailPage({
                   </div>
                 ))}
               </div>
-              </div>
             </section>
           </section>
-          <aside className="h-fit self-start rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] lg:sticky lg:top-24">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-brand)]">
-              At a glance
+          <aside id="enroll-card" className="h-fit scroll-mt-24 self-start rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)] lg:sticky lg:top-24">
+            {/* Price hero: the priceLabel used to be a single line in a
+                six-row <dl> alongside Category and Level — buyers had to
+                scan past four neutral rows to find what it costs. Now it
+                anchors the sidebar so the cost is the first thing you see. */}
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Access
             </p>
+            <p className="display-title mt-1 text-4xl leading-none text-[var(--color-primary)]">
+              {course.priceLabel}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
+              {course.freePreviewLabel}
+            </p>
+
+            <div className="mt-5 h-px bg-[var(--color-line)]" />
+
             <dl className="mt-5 grid gap-4">
               {[
                 ["Duration", course.durationLabel],
                 ["Status", course.statusLabel],
                 ["Category", course.category],
                 ["Level", course.level],
-                ["Access", course.priceLabel],
-                ["Preview", course.freePreviewLabel],
               ].map(([label, value]) => (
                 <div key={label} className="border-b border-[var(--color-line)] pb-4 last:border-b-0 last:pb-0">
                   <dt className="text-xs uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
@@ -190,6 +215,30 @@ export default function CourseDetailPage({
           </aside>
         </div>
       </main>
+
+      {/* Mobile sticky enroll bar: on phones the aside lives at the bottom
+          of the grid (single column), so a buyer has to scroll past every
+          module to find the CTA. This sticky bar surfaces the price and
+          scrolls them straight to the enroll card. Hidden on lg+ where
+          the aside is already sticky in the side column. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-3 lg:hidden">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-[14px] border border-[var(--color-line)] bg-white/95 px-4 py-3 shadow-[0_-6px_30px_rgba(15,39,68,0.18)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Access
+            </p>
+            <p className="display-title truncate text-xl leading-none text-[var(--color-primary)]">
+              {course.priceLabel}
+            </p>
+          </div>
+          <Link
+            href="#enroll-card"
+            className="button-solid shrink-0 px-4 py-2 text-sm"
+          >
+            Enroll
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
