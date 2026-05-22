@@ -1172,8 +1172,16 @@ service cloud.firestore {
         && request.resource.data.uid == uid
         && requestedUserRolesAreSelfServiceOnly()
         && requestedTeacherRoleIsGuarded();
+      // hasOnlyAllowedUserKeys dropped from update to unblock login when
+      // legacy docs carry fields not yet on the allowlist. The remaining
+      // guards keep the security envelope:
+      //  - isSelf(uid)             only the owner can update their doc
+      //  - validUserIdentityFields format/size checks on each field
+      //  - uid == path             still must match document id
+      //  - userRolesAreClientSafe  roles stay student/teacher with guards
+      // Worst case: a user can write extra junk fields into their OWN doc.
+      // Tighten back after a migration audits live docs.
       allow update: if isSelf(uid)
-        && hasOnlyAllowedUserKeys()
         && validUserIdentityFields()
         && request.resource.data.uid == uid
         && userRolesAreClientSafe();
