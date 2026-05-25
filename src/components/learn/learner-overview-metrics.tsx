@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { Certificate } from "@/domain/certificate";
 import type { CourseEvent } from "@/domain/course-event";
-import { canOpenEnrollment, type Enrollment } from "@/domain/enrollment";
+import { canContinueEnrollment, type Enrollment } from "@/domain/enrollment";
 import { subscribeToUserCertificates } from "@/lib/data/certificates";
 import { subscribeToCourseEvents } from "@/lib/data/course-events";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
@@ -99,7 +99,7 @@ export function LearnerOverviewMetrics() {
   }, [enrollments]);
 
   const inProgress = enrollments.filter((enrollment) =>
-    canOpenEnrollment(enrollment.status),
+    canContinueEnrollment(enrollment.status),
   ).length;
 
   const liveThisWeek = useMemo(() => {

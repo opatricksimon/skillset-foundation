@@ -1,12 +1,10 @@
-import { notFound } from "next/navigation";
-
 import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { CourseCommunityFeed } from "@/components/learn/course-community-feed";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { getCommunitySpaces } from "@/lib/data/catalog";
+import type { CommunitySpace } from "@/domain/learning";
 
 export function generateStaticParams() {
-  return getCommunitySpaces().map((space) => ({ slug: space.courseSlug }));
+  return [];
 }
 
 export default async function LearnCommunityCoursePage({
@@ -15,11 +13,15 @@ export default async function LearnCommunityCoursePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const space = getCommunitySpaces().find((item) => item.courseSlug === slug);
-
-  if (!space) {
-    notFound();
-  }
+  const space: CommunitySpace = {
+    id: `community-${slug}`,
+    courseSlug: slug,
+    name: "Course community",
+    description:
+      "This space is loaded from your real enrollment. Open it only after enrolling in the matching course.",
+    visibility: "enrolled_only",
+    categories: ["announcement", "discussion", "question", "resource"],
+  };
 
   return (
     <ProtectedSurface permissions={["community.read"]}>

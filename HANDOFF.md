@@ -136,3 +136,25 @@ Validacao:
 
 Proximo bloco:
 - Bloco B: corrigir pagamentos em `functions/src/index.ts`, com testes Vitest.
+
+## 2026-05-25 - Fase 2 / Bloco C - Consistencia de dados da learning UI
+
+Estado: concluido e validado.
+
+Feito:
+- Confirmado que nenhum componente importado do Design V2 le `window.SkillsetData`, `mockData` ou `data.js`.
+- `Continue learning` agora usa apenas enrollments `active`; cursos `completed` continuam abrindo na biblioteca, mas nao aparecem como curso em andamento.
+- Metricas de aluno passaram a contar `Courses in progress` apenas com status `active`.
+- `LearnCommunityHub` deixou de misturar comunidades de catalogo demo; a lista agora deriva somente de enrollments reais do usuario.
+- Rota legada `/learn/community/[slug]` preservada sem importar catalogo demo; ela monta um espaco generico pelo slug real e deixa o gate de enrollment validar acesso.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 16 arquivos / 63 testes passaram.
+- `npm run build`: passou.
+- `firebase emulators:exec --project demo-skillset --only firestore "npm run test:rules:run"`: passou apos rerun isolado; primeira tentativa foi timeout de inicializacao do emulator.
+- `npm --prefix functions run build`: passou.
+
+Proximo bloco:
+- Bloco D: validar gate pos-compra para classroom/video protegido contra `storage.rules`.

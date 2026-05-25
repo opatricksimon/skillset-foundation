@@ -1,4 +1,6 @@
 import {
+  canContinueEnrollment,
+  createEnrollmentCommunityCards,
   canOpenEnrollment,
   canSelfEnrollCourse,
   createEnrollmentSnapshot,
@@ -25,6 +27,14 @@ describe("enrollment helpers", () => {
     expect(canOpenEnrollment("refunded")).toBe(false);
     expect(canOpenEnrollment("revoked")).toBe(false);
     expect(canOpenEnrollment("expired")).toBe(false);
+  });
+
+  it("continues only active enrollments, never completed courses", () => {
+    expect(canContinueEnrollment("active")).toBe(true);
+    expect(canContinueEnrollment("completed")).toBe(false);
+    expect(canContinueEnrollment("refunded")).toBe(false);
+    expect(canContinueEnrollment("revoked")).toBe(false);
+    expect(canContinueEnrollment("expired")).toBe(false);
   });
 
   it("creates a course snapshot for enrollment records", () => {
@@ -57,5 +67,49 @@ describe("enrollment helpers", () => {
       courseCategory: "Management",
       courseImage: "https://example.com/course.jpg",
     });
+  });
+
+  it("creates course community cards only from open real enrollments", () => {
+    const cards = createEnrollmentCommunityCards([
+      {
+        id: "enrollment-active",
+        userId: "user-1",
+        courseId: "course-1",
+        courseSlug: "leadership-development",
+        courseTitle: "Leadership Development",
+        courseCategory: "Management",
+        courseImage: "https://example.com/course.jpg",
+        status: "active",
+        source: "payment",
+        progressPercent: 40,
+        lastLessonId: "lesson-1",
+      },
+      {
+        id: "enrollment-refunded",
+        userId: "user-1",
+        courseId: "course-2",
+        courseSlug: "refunded-course",
+        courseTitle: "Refunded Course",
+        courseCategory: "Marketing",
+        courseImage: "https://example.com/refunded.jpg",
+        status: "refunded",
+        source: "payment",
+        progressPercent: 0,
+        lastLessonId: null,
+      },
+    ]);
+
+    expect(cards).toEqual([
+      {
+        id: "community-enrollment-active",
+        categories: "course community",
+        courseTitle: "Leadership Development",
+        description:
+          "A course-linked space for teacher announcements, learner questions, discussion, and shared resources.",
+        href: "/learn/community/creator?courseId=course-1",
+        name: "Leadership Development community",
+        visibility: "enrolled only",
+      },
+    ]);
   });
 });

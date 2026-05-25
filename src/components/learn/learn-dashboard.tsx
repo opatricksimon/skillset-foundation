@@ -10,7 +10,11 @@ import { LearnerOverviewMetrics } from "@/components/learn/learner-overview-metr
 import { RefundButton } from "@/components/learn/refund-button";
 import { ListingSearchBar } from "@/components/shared/listing-search-bar";
 import { StatusChip } from "@/components/shared/status-chip";
-import { canOpenEnrollment, type Enrollment } from "@/domain/enrollment";
+import {
+  canContinueEnrollment,
+  canOpenEnrollment,
+  type Enrollment,
+} from "@/domain/enrollment";
 import { getCourseBySlug } from "@/lib/data/catalog";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
 
@@ -97,17 +101,15 @@ export function LearnDashboard() {
     );
   }
 
-  const openEnrollments = enrollments.filter((enrollment) =>
-    canOpenEnrollment(enrollment.status),
+  const activeEnrollments = enrollments.filter((enrollment) =>
+    canContinueEnrollment(enrollment.status),
   );
   const completedEnrollments = enrollments.filter(
     (enrollment) => enrollment.status === "completed",
   );
   const continueEnrollment =
-    openEnrollments
-      .filter((enrollment) => enrollment.status !== "completed")
+    activeEnrollments
       .sort((left, right) => right.progressPercent - left.progressPercent)[0]
-    ?? openEnrollments[0]
     ?? null;
   const continueCourse = continueEnrollment
     ? getCourseBySlug(continueEnrollment.courseSlug)
@@ -132,8 +134,8 @@ export function LearnDashboard() {
             <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
               You have{" "}
               <strong className="text-[var(--color-ink)]">
-                {openEnrollments.length} active{" "}
-                {openEnrollments.length === 1 ? "course" : "courses"}
+                {activeEnrollments.length} active{" "}
+                {activeEnrollments.length === 1 ? "course" : "courses"}
               </strong>{" "}
               and{" "}
               <strong className="text-[var(--color-ink)]">
@@ -143,7 +145,7 @@ export function LearnDashboard() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href={continueHref} className="button-solid px-5 py-3 text-sm">
-                Continue learning
+                {continueEnrollment ? "Continue learning" : "Explore courses"}
               </Link>
               <Link href="/courses" className="button-outline bg-white px-5 py-3 text-sm">
                 Explore courses
@@ -159,7 +161,7 @@ export function LearnDashboard() {
               Continue
             </p>
             <h3 className="display-title mt-3 text-3xl leading-tight text-[var(--color-primary)]">
-              {continueEnrollment?.courseTitle ?? "Choose your first course."}
+              {continueEnrollment?.courseTitle ?? "No active course right now."}
             </h3>
             <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
               {continueCourse?.summary ??
@@ -176,7 +178,7 @@ export function LearnDashboard() {
             <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
               {continueEnrollment
                 ? `${continueEnrollment.progressPercent}% complete`
-                : "No enrollment yet"}
+                : "Completed courses stay in your library"}
             </p>
           </div>
         </div>
