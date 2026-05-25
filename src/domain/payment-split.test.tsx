@@ -15,7 +15,7 @@ describe("payment split — Stripe fee passed to teacher", () => {
     [5000, "USD", 400, 175, 4425],
     [10000, "USD", 800, 320, 8880],
     [20000, "USD", 1600, 610, 17790],
-    [10000, "BRL", 800, 420, 8780],
+    [10000, "BRL", 800, 570, 8630],
   ])(
     "%i %s -> commission %i, stripeFee %i, net %i",
     (gross, currency, commission, stripeFee, net) => {
@@ -38,9 +38,9 @@ describe("payment split — Stripe fee passed to teacher", () => {
     );
   });
 
-  it("uses the international rate (3.9%) for non-USD", () => {
+  it("uses the international card plus conversion estimate (5.4%) for non-USD", () => {
     expect(stripeProcessingFeeMinor(10000, "USD")).toBe(320);
-    expect(stripeProcessingFeeMinor(10000, "EUR")).toBe(420);
+    expect(stripeProcessingFeeMinor(10000, "EUR")).toBe(570);
   });
 
   it("never returns a negative teacher net on tiny amounts", () => {

@@ -63,7 +63,7 @@ export const demoCourses: Course[] = [
     priceLabel: "Price to be announced",
     priceAmountMinor: null,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Intro preview planned",
     outcomes: [
       "Understand core clinical psychology foundations",
@@ -90,7 +90,7 @@ export const demoCourses: Course[] = [
     priceLabel: "$149 pilot access",
     priceAmountMinor: 14900,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Free leadership preview",
     outcomes: [
       "Build a practical leadership operating rhythm",
@@ -117,7 +117,7 @@ export const demoCourses: Course[] = [
     priceLabel: "Waitlist access",
     priceAmountMinor: null,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Preview available soon",
     outcomes: [
       "Understand core HR responsibilities",
@@ -144,7 +144,7 @@ export const demoCourses: Course[] = [
     priceLabel: "$49 introductory access",
     priceAmountMinor: 4900,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Free mental health preview",
     outcomes: [
       "Learn core mental health concepts",
@@ -171,7 +171,7 @@ export const demoCourses: Course[] = [
     priceLabel: "$79 early access",
     priceAmountMinor: 7900,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Free communication preview",
     outcomes: [
       "Speak with more structure and confidence",
@@ -198,7 +198,7 @@ export const demoCourses: Course[] = [
     priceLabel: "Price to be announced",
     priceAmountMinor: null,
     currency: "USD",
-    platformFeeBps: 1500,
+    platformFeeBps: 800,
     freePreviewLabel: "Intro preview planned",
     outcomes: [
       "Plan realistic projects from scope to delivery",

@@ -171,7 +171,7 @@ export default function PricingPage() {
                 <th scope="col" className="px-4 py-3 text-right font-bold">
                   <span className="inline-flex items-center gap-1">
                     Stripe fee
-                    <Tooltip content="Stripe's processing fee on each successful charge (2.9% + $0.30 for USD cards, 3.9% + $0.30 international). Passed through to the creator on every plan.">
+                    <Tooltip content="Stripe's processing fee on each successful charge (2.9% + $0.30 for USD cards, 5.4% + $0.30 estimated non-USD). Passed through to the creator on every plan.">
                       <HelpCircle
                         aria-hidden="true"
                         size={12}
@@ -222,7 +222,7 @@ export default function PricingPage() {
 
         <p className="mt-4 text-xs text-[var(--color-ink-muted)]">
           International cards (non-USD) use Stripe&apos;s international rate of
-          3.9% + $0.30 instead of 2.9% + $0.30. Everything else is identical.
+          5.4% + $0.30 estimated instead of 2.9% + $0.30. Everything else is identical.
         </p>
       </section>
 

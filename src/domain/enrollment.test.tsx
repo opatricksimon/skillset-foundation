@@ -43,7 +43,7 @@ describe("enrollment helpers", () => {
       priceLabel: "$149 pilot access",
       priceAmountMinor: 14900,
       currency: "USD",
-      platformFeeBps: 1500,
+      platformFeeBps: 800,
       freePreviewLabel: "Free preview",
       outcomes: [],
       modules: [],

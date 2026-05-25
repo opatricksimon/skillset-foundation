@@ -129,7 +129,7 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     priceLabel,
     priceAmountMinor: course.priceAmountMinor ?? null,
     currency: course.currency ?? "USD",
-    platformFeeBps: course.platformFeeBps ?? 1500,
+    platformFeeBps: course.platformFeeBps ?? 800,
     dripStrategy: course.dripStrategy ?? "instant",
     dripIntervalDays: course.dripIntervalDays ?? 1,
     freePreviewLabel: hasFreePreview

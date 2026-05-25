@@ -1,5 +1,26 @@
 # DECISIONS — escolhas feitas sozinho
 
+## 2026-05-25 - Fase 2 / Bloco B
+
+**D16 - Payout release D+10.** A release automatica de payout agora usa 10
+dias, mantendo a janela de auto-refund em 7 dias. Motivo: dar folga operacional
+para atraso de webhook/refund antes de transferir dinheiro ao professor.
+
+**D17 - Estimativa Stripe non-USD = 5.4% + fixo.** Mantive USD em
+2.9% + $0.30 e mudei moedas nao-USD para 5.4% + $0.30 estimado
+(cartao internacional 4.4% + conversao 1%). Motivo: previsao conservadora no
+ledger; a taxa exata so fecha no saldo Stripe depois.
+
+**D18 - Comissao canonica vem do plano do professor no servidor.** O servidor
+ignora bps enviados pelo cliente e resolve a taxa pelo plano atual:
+Free 800 bps, Starter 400 bps, Pro 100 bps, Plus 0 bps. O pedido salva esse
+snapshot para preservar historico de vendas.
+
+**D19 - Refund depois de payout liberado reverte o transfer.** Se o ledger ja
+esta `released`, o webhook `charge.refunded` cria uma reversal proporcional ao
+valor reembolsado, com idempotency key. Motivo: nao deixar a plataforma carregar
+o valor que ja foi transferido ao professor.
+
 > Sessão autônoma 2026-05-19. Onde houve ambiguidade, escolhi a opção mais
 > simples/conservadora. Você revisa e reverte se discordar.
 

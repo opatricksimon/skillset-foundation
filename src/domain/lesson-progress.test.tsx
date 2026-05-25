@@ -21,7 +21,7 @@ const course: Course = {
   priceLabel: "$79 early access",
   priceAmountMinor: 7900,
   currency: "USD",
-  platformFeeBps: 1500,
+  platformFeeBps: 800,
   freePreviewLabel: "Free preview",
   outcomes: [],
   communityEnabled: true,

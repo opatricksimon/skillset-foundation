@@ -27,9 +27,9 @@ Conclusão: **não falta nada no Stripe Dashboard.** O Connect está pronto. O q
 | Cartão internacional / câmbio | +~1.5% (intl) +~1% (conversão) | venda com cartão estrangeiro |
 | Conta Express ativa | $2/mês por conta **que recebeu payout naquele mês** | só meses com payout do teacher |
 | Payout para teacher (Express) | 0.25% + $0.25 por payout | por payout executado |
-| Taxa de plataforma Skillset (15%) | **receita da Skillset**, não custo | por venda (application_fee) |
+| Taxa de plataforma Skillset (8/4/1/0% por plano) | **receita da Skillset**, não custo | por venda |
 
-Sem tráfego = custo zero. Com vendas, o custo é proporcional e a taxa de 15% da Skillset cobre folgadamente o processamento.
+Sem tráfego = custo zero. Com vendas, o custo é proporcional e a taxa do plano Skillset cobre processamento e margem conforme o tier.
 
 ## Estado atual do código (consistente e seguro)
 

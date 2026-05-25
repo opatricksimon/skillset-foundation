@@ -18,7 +18,7 @@ const baseCourse: Course = {
   priceLabel: "Free",
   priceAmountMinor: 0,
   currency: "USD",
-  platformFeeBps: 1500,
+  platformFeeBps: 800,
   freePreviewLabel: "Preview",
   outcomes: [],
   modules: [],

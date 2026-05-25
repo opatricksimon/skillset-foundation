@@ -1,5 +1,31 @@
 # HANDOFF — sessão autônoma 2026-05-19
 
+## 2026-05-25 - Fase 2 / Bloco B - Pagamentos criticos
+
+Feito:
+- Extraido `functions/src/payment-rules.ts` com regras testaveis de pagamento.
+- Payout release alterado de D+7 para D+10, mantendo auto-refund em 7 dias.
+- Estimativa Stripe non-USD alterada para 5.4% + fixo; USD mantido em 2.9% + fixo.
+- Comissao unificada por plano no servidor: Free 800 bps, Starter 400, Pro 100, Plus 0.
+- `createTeacherCourseDraft`, `updateTeacherCourseBuilder` e checkout pago agora resolvem bps pelo plano real do professor no servidor, nao pelo cliente.
+- `requestRefund` passou de busca `userId + limit(50) + filtro em memoria` para query direta `userId + courseId + status paid`.
+- `charge.refunded` agora cria reversal proporcional quando o payout ledger ja foi `released` e existe `transferId`, com idempotency key.
+- Docs existentes de split/fees atualizadas para nao continuar comunicando 15%/3.9% como regra atual.
+
+Validado:
+- `npx tsc --noEmit --pretty false --types vitest/globals` OK.
+- `npm run lint` OK.
+- `npm test` OK: 16 arquivos, 61 testes.
+- `firebase emulators:exec --project demo-skillset --only firestore "npm run test:rules:run"` OK: 7 regras.
+- `npm --prefix functions run build` OK.
+- `npm run build` OK.
+
+Bloqueio registrado:
+- B8 em `BLOCKERS.md`: falta `STRIPE_SECRET_KEY` local para validar os 6 Stripe Price IDs na API real. O codigo manteve os IDs existentes e nao inventou novos.
+
+Proximo bloco:
+- Bloco C: varrer consistencia de UI/dados migrados, sem mockData, garantindo enrollment/autor/status coerentes.
+
 Tratamento normal (sem "senhor"). Padrão de code review sênior aplicado.
 Tudo validado e no GitHub. **Nada foi deployado** (deploy/LIVE = sua decisão).
 

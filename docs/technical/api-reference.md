@@ -84,7 +84,7 @@ Request:
   "paymentType": "one_time",
   "installmentsEnabled": false,
   "installmentsMax": null,
-  "platformFeeBps": 1500,
+  "platformFeeBps": 800,
   "dripStrategy": "instant",
   "dripIntervalDays": null,
   "freePreviewLessonId": null
@@ -329,4 +329,3 @@ Response:
 |----------|------|---------|
 | `stripeWebhook` | HTTP request | Handles Stripe payment, billing, and account events. |
 | `dailyReleaseTransfers` | Scheduled job | Releases eligible teacher transfers after refund window. |
-

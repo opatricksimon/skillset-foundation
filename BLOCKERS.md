@@ -1,5 +1,22 @@
 # BLOCKERS — precisa de você
 
+## 2026-05-25 - Fase 2 / Bloco B
+
+**B8 - Validar os 6 Stripe Price IDs reais.**
+Nao ha `STRIPE_SECRET_KEY` carregada em `.env.local`, `.env.production` ou no
+ambiente desta sessao, entao nao consigo consultar a API da Stripe para confirmar
+se estes Price IDs existem:
+`price_1TZFTmPvg1vJW0IjLAYWqZok`,
+`price_1TZFTnPvg1vJW0IjjaQXBpDW`,
+`price_1TZFTnPvg1vJW0IjHYe4yW9V`,
+`price_1TZFToPvg1vJW0IjDHGPIzH0`,
+`price_1TZFToPvg1vJW0Ijf35SQQzt`,
+`price_1TZFTpPvg1vJW0IjgE9PQ5To`.
+
+Desbloqueio: carregar `STRIPE_SECRET_KEY` TEST/secret no ambiente local ou
+confirmar esses IDs diretamente no Stripe Dashboard. Codigo nao inventou IDs
+novos; manteve os IDs ja presentes no projeto.
+
 > Sessão autônoma 2026-05-19. Itens que NÃO consigo fazer sozinho.
 > Para cada um: o que é, por que travou, e o passo EXATO pra desbloquear.
 
