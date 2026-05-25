@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Award, BookOpenCheck, PlayCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -19,6 +20,7 @@ export function LearnDashboard() {
   const [enrollmentQuery, setEnrollmentQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const firstName = user?.displayName?.trim().split(/\s+/)[0] ?? "there";
   const normalizedEnrollmentQuery = enrollmentQuery.toLowerCase().trim();
   const visibleEnrollments = normalizedEnrollmentQuery
     ? enrollments.filter((enrollment) =>
@@ -95,15 +97,103 @@ export function LearnDashboard() {
     );
   }
 
+  const openEnrollments = enrollments.filter((enrollment) =>
+    canOpenEnrollment(enrollment.status),
+  );
+  const completedEnrollments = enrollments.filter(
+    (enrollment) => enrollment.status === "completed",
+  );
+  const continueEnrollment =
+    openEnrollments
+      .filter((enrollment) => enrollment.status !== "completed")
+      .sort((left, right) => right.progressPercent - left.progressPercent)[0]
+    ?? openEnrollments[0]
+    ?? null;
+  const continueCourse = continueEnrollment
+    ? getCourseBySlug(continueEnrollment.courseSlug)
+    : undefined;
+  const continueHref = continueEnrollment
+    ? continueCourse
+      ? `/learn/courses/${continueEnrollment.courseSlug}`
+      : `/learn/courses/${continueEnrollment.courseId}`
+    : "/courses";
+
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-8">
+      <section className="learner-home-hero dash-card dash-card--strong p-5 sm:p-7">
+        <div className="relative z-[1] grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+              Learning workspace
+            </p>
+            <h2 className="display-title mt-3 max-w-3xl text-4xl leading-[1.03] text-[var(--color-primary)] sm:text-5xl">
+              Welcome back, {firstName}.
+            </h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
+              You have{" "}
+              <strong className="text-[var(--color-ink)]">
+                {openEnrollments.length} active{" "}
+                {openEnrollments.length === 1 ? "course" : "courses"}
+              </strong>{" "}
+              and{" "}
+              <strong className="text-[var(--color-ink)]">
+                {completedEnrollments.length} completed
+              </strong>
+              . Continue the next lesson or explore a reviewed Skillset course.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href={continueHref} className="button-solid px-5 py-3 text-sm">
+                Continue learning
+              </Link>
+              <Link href="/courses" className="button-outline bg-white px-5 py-3 text-sm">
+                Explore courses
+              </Link>
+            </div>
+          </div>
+
+          <div className="learner-continue-card">
+            <span className="learner-continue-card__icon">
+              <PlayCircle aria-hidden="true" size={20} strokeWidth={1.9} />
+            </span>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+              Continue
+            </p>
+            <h3 className="display-title mt-3 text-3xl leading-tight text-[var(--color-primary)]">
+              {continueEnrollment?.courseTitle ?? "Choose your first course."}
+            </h3>
+            <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
+              {continueCourse?.summary ??
+                "Your next enrolled course opens here with lessons, progress, materials, and community context."}
+            </p>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-[rgba(26,54,93,0.12)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-accent)]"
+                style={{
+                  width: `${Math.max(0, Math.min(100, continueEnrollment?.progressPercent ?? 0))}%`,
+                }}
+              />
+            </div>
+            <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+              {continueEnrollment
+                ? `${continueEnrollment.progressPercent}% complete`
+                : "No enrollment yet"}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <LearnerOverviewMetrics />
 
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-soft)] sm:p-6">
+      <section className="dash-card dash-card--strong p-4 shadow-[var(--shadow-soft)] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-            My courses
-          </p>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              My courses
+            </p>
+            <h3 className="display-title mt-2 text-3xl text-[var(--color-primary)]">
+              Your enrolled learning paths.
+            </h3>
+          </div>
           <ListingSearchBar
             value={enrollmentQuery}
             onChange={setEnrollmentQuery}
@@ -126,7 +216,7 @@ export function LearnDashboard() {
             return (
               <article
                 key={enrollment.id}
-                className="grid gap-4 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4 md:grid-cols-[220px_1fr]"
+                className="grid gap-4 rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)] md:grid-cols-[220px_1fr]"
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-[3px]">
                   <Image
@@ -152,6 +242,21 @@ export function LearnDashboard() {
                       {course?.summary ??
                         "This enrollment is connected. The private course workspace is ready for the next lesson and progress tools."}
                     </p>
+                  </div>
+                  <div className="grid gap-2 rounded-[12px] border border-[var(--color-line)] bg-white p-3 text-xs font-semibold text-[var(--color-ink-soft)] sm:grid-cols-3">
+                    <span className="inline-flex items-center gap-2">
+                      <BookOpenCheck aria-hidden="true" size={14} />
+                      {course?.modules.length ?? "Private"} modules
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <PlayCircle aria-hidden="true" size={14} />
+                      {course?.modules.flatMap((module) => module.lessons).length
+                        ?? "Course"} lessons
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Award aria-hidden="true" size={14} />
+                      Credential path
+                    </span>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">

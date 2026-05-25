@@ -266,6 +266,11 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
                   <p className="text-xs leading-5 text-[var(--color-ink-soft)]">
                     {track.freePreviewLabel}
                   </p>
+                  {track.ratingLabel ? (
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+                      {track.ratingLabel}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="mt-6 flex flex-wrap gap-2">
                   <Link

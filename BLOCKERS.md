@@ -54,3 +54,7 @@ seção de planos na home. Spec resumida em DECISIONS D12.
 
 ---
 _Atualizado conforme a sessão avança._
+# 2026-05-25 - Fase 2 / Bloco A
+
+Nenhum bloqueador novo. O Builder, upload de assets e regras de acesso usam
+Firebase/Firestore/Storage ja configurados no projeto.

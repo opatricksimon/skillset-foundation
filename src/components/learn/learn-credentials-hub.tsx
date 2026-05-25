@@ -2,6 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  Award,
+  CheckCircle2,
+  Clock3,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import {
@@ -69,6 +76,11 @@ export function LearnCredentialsHub() {
   );
   const eligibleCount = candidates.filter((candidate) => candidate.status === "eligible").length;
   const issuedCount = candidates.filter((candidate) => candidate.status === "issued").length;
+  const inProgressCount = candidates.filter((candidate) => candidate.status === "in_progress").length;
+  const [activeFilter, setActiveFilter] = useState<"all" | "issued" | "eligible" | "in_progress">("all");
+  const visibleCandidates = activeFilter === "all"
+    ? candidates
+    : candidates.filter((candidate) => candidate.status === activeFilter);
 
   if (isLoading || !certificatesReady) {
     return (
@@ -111,27 +123,105 @@ export function LearnCredentialsHub() {
   }
 
   return (
-    <div className="grid gap-5">
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          `${candidates.length} credential track${candidates.length === 1 ? "" : "s"}`,
-          `${eligibleCount} ready for review`,
-          `${issuedCount} issued`,
-        ].map((item) => (
-          <div
-            key={item}
-            className="rounded-[4px] border fine-rule bg-white p-4 shadow-[var(--shadow-soft)]"
-          >
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{item}</p>
+    <div className="grid gap-8">
+      <section className="credential-hero dash-card dash-card--strong p-5 sm:p-7">
+        <div className="relative z-[1] flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+              Skillset Verified
+            </p>
+            <h2 className="display-title mt-3 max-w-3xl text-4xl leading-[1.03] text-[var(--color-primary)] sm:text-5xl">
+              Credentials from real course progress.
+            </h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
+              Completed courses become credential candidates. Issued certificates
+              receive public verification codes.
+            </p>
           </div>
-        ))}
+          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[420px]">
+            <CredentialMetric
+              icon={Award}
+              label="Tracks"
+              value={String(candidates.length)}
+            />
+            <CredentialMetric
+              icon={Clock3}
+              label="Ready"
+              value={String(eligibleCount)}
+            />
+            <CredentialMetric
+              icon={ShieldCheck}
+              label="Issued"
+              value={String(issuedCount)}
+            />
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        {candidates.map((candidate) => (
-          <CredentialCard key={candidate.enrollmentId} candidate={candidate} />
-        ))}
+      <section className="dash-card dash-card--strong p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-line)] pb-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Credential tracks
+            </p>
+            <h3 className="display-title mt-2 text-3xl text-[var(--color-primary)]">
+              Earned and in progress.
+            </h3>
+          </div>
+          <div className="credential-filter-tabs" aria-label="Credential filters">
+            {[
+              ["all", `All ${candidates.length}`],
+              ["issued", `Issued ${issuedCount}`],
+              ["eligible", `Ready ${eligibleCount}`],
+              ["in_progress", `In progress ${inProgressCount}`],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={activeFilter === value ? "is-active" : undefined}
+                onClick={() => setActiveFilter(value as typeof activeFilter)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {visibleCandidates.length ? (
+            visibleCandidates.map((candidate) => (
+              <CredentialCard key={candidate.enrollmentId} candidate={candidate} />
+            ))
+          ) : (
+            <div className="rounded-[16px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 lg:col-span-2">
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                No credentials match this filter.
+              </p>
+              <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+                Continue course progress or switch filters to see all credential tracks.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
+    </div>
+  );
+}
+
+function CredentialMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="credential-metric-card">
+      <Icon aria-hidden="true" size={16} strokeWidth={2} />
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -141,7 +231,7 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
   const isIssued = candidate.status === "issued";
 
   return (
-    <article className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+    <article className="credential-card rounded-[16px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -163,10 +253,23 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
           : "Continue the course to unlock credential review eligibility."}
       </p>
       <div className="mt-5 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
-        <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-          Progress
-        </p>
-        <p className="mt-2 text-2xl font-semibold text-[var(--color-primary)]">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+            Progress
+          </p>
+          <CheckCircle2
+            aria-hidden="true"
+            size={16}
+            className={isIssued ? "text-[var(--color-success)]" : "text-[var(--color-primary-light)]"}
+          />
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(26,54,93,0.12)]">
+          <div
+            className="h-full rounded-full bg-[var(--color-accent)]"
+            style={{ width: `${Math.max(0, Math.min(100, candidate.progressPercent))}%` }}
+          />
+        </div>
+        <p className="mt-3 text-2xl font-semibold text-[var(--color-primary)]">
           {candidate.progressPercent}%
         </p>
       </div>

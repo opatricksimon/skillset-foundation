@@ -77,6 +77,10 @@ type TeacherCourseRecord = {
   platformFeeBps?: number;
   coverImageUrl?: string | null;
   stripeConnectedAccountId?: string | null;
+  ratingAverage?: number;
+  ratingCount?: number;
+  ratingSum?: number;
+  reviewCount?: number;
 };
 
 type UserProfileRecord = {
@@ -116,6 +120,17 @@ type PayoutLedgerRecord = {
   status: string;
   releaseAt?: unknown;
   releaseAttemptCount?: number;
+};
+
+type CourseReviewRecord = {
+  id: string;
+  courseId: string;
+  userId: string;
+  authorName: string;
+  rating: number;
+  body?: string | null;
+  status: string;
+  createdAt?: unknown;
 };
 
 type AccountActionRequestType = "account_deletion" | "data_export";
@@ -248,6 +263,23 @@ function cleanOptionalText(value: unknown, maxLength = 2000): string | null {
 
   const nextValue = value.trim();
   return nextValue ? nextValue.slice(0, maxLength) : null;
+}
+
+function cleanCourseReviewBody(value: unknown): string | null {
+  const body = cleanOptionalText(value, 1200);
+
+  if (!body) {
+    return null;
+  }
+
+  if (body.length < 3) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Review text must be at least 3 characters when provided.",
+    );
+  }
+
+  return body;
 }
 
 function cleanRequiredText(
@@ -1132,6 +1164,153 @@ export const createFreeCourseEnrollment = onCall(async (request) => {
 
   return {
     enrollmentId: enrollmentRef.id,
+  };
+});
+
+export const submitCourseReview = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before reviewing a course.");
+  }
+
+  const userId = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+  const rating =
+    typeof input.rating === "number" && Number.isFinite(input.rating)
+      ? Math.round(input.rating)
+      : 0;
+  const body = cleanCourseReviewBody(input.body);
+
+  if (rating < 1 || rating > 5) {
+    throw new HttpsError("invalid-argument", "Rating must be between 1 and 5.");
+  }
+
+  await enforceRateLimit(`course_review_${courseId}_${userId}`, 20, 60 * 60 * 1000);
+
+  const reviewId = `${courseId}__${userId}`;
+  const courseRef = db.collection("courses").doc(courseId);
+  const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
+  const reviewRef = db.collection("courseReviews").doc(reviewId);
+  const userRef = db.collection("users").doc(userId);
+
+  let nextRatingAverage = 0;
+  let nextRatingCount = 0;
+
+  await db.runTransaction(async (transaction) => {
+    const [
+      courseSnapshot,
+      enrollmentSnapshot,
+      reviewSnapshot,
+      userSnapshot,
+    ] = await Promise.all([
+      transaction.get(courseRef),
+      transaction.get(enrollmentRef),
+      transaction.get(reviewRef),
+      transaction.get(userRef),
+    ]);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.status !== "published") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only published courses can receive reviews.",
+      );
+    }
+
+    if (!enrollmentSnapshot.exists) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Enroll in this course before leaving a review.",
+      );
+    }
+
+    const enrollment = enrollmentSnapshot.data() as EnrollmentRecord;
+
+    if (enrollment.userId !== userId || enrollment.courseId !== courseId) {
+      throw new HttpsError(
+        "permission-denied",
+        "You can only review courses attached to your account.",
+      );
+    }
+
+    if (!["active", "completed"].includes(enrollment.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This enrollment cannot leave a review.",
+      );
+    }
+
+    if ((enrollment.progressPercent ?? 0) < 50) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Complete at least 50% of the course before leaving a review.",
+      );
+    }
+
+    const previousReview = reviewSnapshot.exists
+      ? (reviewSnapshot.data() as CourseReviewRecord)
+      : null;
+    const previousRating =
+      previousReview && Number.isFinite(previousReview.rating)
+        ? Math.round(previousReview.rating)
+        : 0;
+    const currentRatingSum =
+      typeof course.ratingSum === "number"
+        ? course.ratingSum
+        : Math.round((course.ratingAverage ?? 0) * (course.ratingCount ?? 0));
+    const currentRatingCount =
+      typeof course.ratingCount === "number" ? course.ratingCount : 0;
+    const ratingSum = previousReview
+      ? currentRatingSum - previousRating + rating
+      : currentRatingSum + rating;
+    const ratingCount = previousReview
+      ? Math.max(1, currentRatingCount)
+      : currentRatingCount + 1;
+    const ratingAverage = Math.round((ratingSum / ratingCount) * 10) / 10;
+    const user = userSnapshot.data() as UserProfileRecord | undefined;
+    const authorName =
+      user?.displayName?.trim()
+      || request.auth?.token.name?.toString().trim()
+      || "Skillset learner";
+
+    transaction.set(
+      reviewRef,
+      {
+        id: reviewId,
+        courseId,
+        userId,
+        authorName,
+        rating,
+        body,
+        status: "published",
+        createdAt: previousReview?.createdAt ?? FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    transaction.update(courseRef, {
+      ratingAverage,
+      ratingCount,
+      ratingSum,
+      reviewCount: ratingCount,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    nextRatingAverage = ratingAverage;
+    nextRatingCount = ratingCount;
+  });
+
+  return {
+    success: true,
+    reviewId,
+    ratingAverage: nextRatingAverage,
+    ratingCount: nextRatingCount,
   };
 });
 

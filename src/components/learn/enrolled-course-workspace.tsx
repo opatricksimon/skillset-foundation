@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { CourseReviewPanel } from "@/components/learn/course-review-panel";
 import { WatermarkedVideoPlayer } from "@/components/learn/watermarked-video-player";
 import type { CourseAsset } from "@/domain/course-asset";
 import { courseAssetKindLabels, formatCourseAssetSize } from "@/domain/course-asset";
@@ -659,6 +660,12 @@ export function EnrolledCourseWorkspace({
           )}
         />
       ) : null}
+
+      <CourseReviewPanel
+        courseId={course.id}
+        progressPercent={progressPercent}
+        previewMode={previewMode}
+      />
     </div>
   );
 }

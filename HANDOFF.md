@@ -87,3 +87,26 @@ Detalhe em **`DECISIONS.md`** (D1–D6). Destaques:
 `main` à frente do remoto anterior; pushes: `01e8d5b`, `0a07b33`, `978f63a`,
 `0a48290`, `5071f44` (+ commit destes docs). Sem force push, sem reset,
 nada deletado. Servidor dev pode ainda estar rodando em :3000 (background).
+
+## 2026-05-25 - Fase 2 / Bloco A - Course Builder funcional
+
+Estado: concluido e validado.
+
+Feito:
+- Branch de trabalho criada: `fase-2-builder-backend`.
+- Confirmado que nao existe uso de `window.SkillsetData`, `mockData` ou `data.js`.
+- `CreateCourseModal` deixou de criar draft com resumo padrao hardcoded; agora exige `Course promise` real do professor e envia esse valor para `createTeacherCourseDraft`.
+- `CourseBuilderStudio` separa progresso de etapa (`Builder step X of 4`) de readiness de revisao, evitando o estado confuso tipo "step atual + percentual global".
+- Upload de video/material agora fica bloqueado para aulas criadas apenas no estado local. A aula precisa ser salva no draft primeiro, aparecer no Firestore, e so entao libera `Open lesson studio` para upload via `course-assets.ts`.
+- Fluxo real confirmado: `createTeacherCourseDraft`, `updateTeacherCourseBuilder`, `submitTeacherCourseForReview`, `uploadCourseAsset`, Firebase Storage e subcolecao `courses/{courseId}/assets`.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 15 arquivos / 55 testes passaram.
+- `npm run build`: passou.
+- `npm run test:rules`: 7 testes passaram.
+- `npm --prefix functions run build`: passou.
+
+Proximo bloco:
+- Bloco B: corrigir pagamentos em `functions/src/index.ts`, com testes Vitest.

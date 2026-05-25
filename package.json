@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:rules": "firebase emulators:exec --only firestore \"npm run test:rules:run\"",
-    "test:rules:run": "vitest run tests/firestore-rules.ts",
+    "test:rules:run": "vitest run --config vitest.rules.config.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

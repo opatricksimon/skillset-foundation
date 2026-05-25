@@ -74,6 +74,10 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
         }).format(course.priceAmountMinor / 100)
       : "Enrollment opening soon";
   const hasFreePreview = Boolean(course.freePreviewLessonId);
+  const ratingLabel =
+    course.ratingCount && course.ratingAverage
+      ? `${course.ratingAverage.toFixed(1)} rating (${course.ratingCount})`
+      : "New course";
 
   return {
     slug: course.id,
@@ -95,6 +99,7 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
       ? `/courses/${course.id}#free-preview`
       : undefined,
     sourceLabel: "Teacher published",
+    ratingLabel,
   };
 }
 

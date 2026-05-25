@@ -17,9 +17,6 @@ type CreateCourseModalProps = {
   triggerClassName?: string;
 };
 
-const draftSummary =
-  "Draft course created from Teacher Studio. Add the full learner outcome, audience, and course promise before submitting for review.";
-
 export function CreateCourseModal({
   ownerId,
   autoOpen = false,
@@ -31,10 +28,12 @@ export function CreateCourseModal({
     useState<NonNullable<CreateTeacherCourseInput["paymentType"]>>("one_time");
   const [delivery, setDelivery] = useState("hosted");
   const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  const canSubmit = title.trim().length >= 3 && !isSaving;
+  const canSubmit =
+    title.trim().length >= 3 && summary.trim().length >= 20 && !isSaving;
 
   function closeModal() {
     setOpen(false);
@@ -74,7 +73,7 @@ export function CreateCourseModal({
       const courseId = await createTeacherCourse({
         ownerId,
         title,
-        summary: draftSummary,
+        summary,
         category: primaryCategory,
         categories,
         paymentType: courseType,
@@ -90,6 +89,8 @@ export function CreateCourseModal({
           ? "A course with this title already exists. Choose a more specific name."
           : message.toLowerCase().includes("permission")
           ? "Course creation is blocked until creator setup is complete. Verify your email and accept Teacher Terms first."
+          : message.toLowerCase().includes("summary")
+          ? "Add a course summary with at least 20 characters."
           : "We could not create this course. Please try again.",
       );
       setIsSaving(false);
@@ -178,6 +179,22 @@ export function CreateCourseModal({
                   placeholder="e.g. Advanced Product Design"
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
                 />
+              </label>
+
+              <label className="grid gap-2 text-xs font-semibold text-[var(--color-ink)]">
+                Course promise
+                <textarea
+                  value={summary}
+                  onChange={(event) => setSummary(event.target.value)}
+                  minLength={20}
+                  maxLength={1200}
+                  rows={4}
+                  placeholder="Explain what learners will be able to do after completing this course."
+                  className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal leading-6 outline-none focus:border-[var(--color-primary-light)]"
+                />
+                <span className="text-[11px] font-normal text-[var(--color-ink-soft)]">
+                  Minimum 20 characters. You can refine this later in the builder.
+                </span>
               </label>
 
               <div className="grid gap-2 text-xs font-semibold text-[var(--color-ink)]">

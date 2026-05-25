@@ -97,6 +97,9 @@ export type TeacherCourse = {
   freePreviewLessonId?: string | null;
   coverImageUrl?: string | null;
   reviewNote?: string | null;
+  ratingAverage?: number;
+  ratingCount?: number;
+  reviewCount?: number;
   createdAt?: unknown;
   updatedAt?: unknown;
 };

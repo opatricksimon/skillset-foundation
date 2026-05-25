@@ -9,6 +9,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   doc,
+  getDoc,
   setDoc,
   Timestamp,
   updateDoc,
@@ -212,6 +213,70 @@ describe("Firestore course publishing rules", () => {
       status: "published",
       updatedAt: Timestamp.now(),
     }));
+  });
+});
+
+describe("Firestore course review rules", () => {
+  it("allows public reads for published course reviews but blocks client writes", async () => {
+    await seedTeacher("teacher-1");
+    await seedUser("student-1", ["student"]);
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
+
+      await setDoc(
+        doc(adminDb, "courses/course-published"),
+        createCourse("teacher-1", "published"),
+      );
+      await setDoc(doc(adminDb, "enrollments/student-1__course-published"), {
+        id: "student-1__course-published",
+        userId: "student-1",
+        courseId: "course-published",
+        courseSlug: "course-published",
+        courseTitle: "Professional Course",
+        courseCategory: "Leadership",
+        courseImage: "/brand/logo-mark.png",
+        status: "completed",
+        source: "admin",
+        progressPercent: 100,
+        lastLessonId: "lesson-1",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      await setDoc(doc(adminDb, "courseReviews/course-published__student-1"), {
+        id: "course-published__student-1",
+        courseId: "course-published",
+        userId: "student-1",
+        authorName: "Seed User",
+        rating: 5,
+        body: "Clear and useful.",
+        status: "published",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+    });
+
+    const publicDb = testEnv.unauthenticatedContext().firestore();
+    const studentDb = testEnv
+      .authenticatedContext("student-1", verifiedAuth)
+      .firestore();
+
+    await assertSucceeds(
+      getDoc(doc(publicDb, "courseReviews/course-published__student-1")),
+    );
+    await assertFails(
+      setDoc(doc(studentDb, "courseReviews/course-published__student-1"), {
+        id: "course-published__student-1",
+        courseId: "course-published",
+        userId: "student-1",
+        authorName: "Seed User",
+        rating: 1,
+        body: "Client write should fail.",
+        status: "published",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
   });
 });
 

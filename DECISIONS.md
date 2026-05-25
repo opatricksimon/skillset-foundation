@@ -136,3 +136,17 @@ SSR) / um único arquivo (não cobre dark/light).
 passou a renderizar a bola. Removido só o import `Link` que EU orfanei.
 
 <!-- novas decisões anexadas conforme a sessão avança -->
+# D14 - Bloco A: upload so para aulas persistidas
+**Decisao:** uma aula criada localmente no Builder nao pode receber video/material
+ate o draft ser salvo e a aula existir no Firestore.
+**Por que:** `course-assets.ts` grava arquivos imediatamente no Storage e cria
+metadata em `courses/{courseId}/assets`. Permitir upload para um lessonId ainda
+nao persistido poderia gerar asset orfao se o professor saisse sem salvar.
+**Tradeoff:** exige um clique em "Save draft" antes do upload da aula nova.
+E a opcao mais conservadora para integridade de dados no MVP.
+
+# D15 - Bloco A: separar progresso do wizard e readiness de revisao
+**Decisao:** a barra lateral do Builder agora usa o progresso da etapa atual
+(`Builder step X of 4`) e mostra readiness como texto separado.
+**Por que:** readiness e etapa atual sao estados diferentes. Misturar os dois
+gerava a percepcao de bug tipo "Step 1 ... 71%".

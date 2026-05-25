@@ -82,207 +82,229 @@ export function TeacherCourseStudio({
 
   return (
     <div className="grid gap-5">
-      <section className="dash-card overflow-hidden p-0">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="p-5 sm:p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-              Course workbench
-            </p>
-            <h2 className="display-title mt-3 max-w-3xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl">
-              Create, structure, upload, price, and submit from one place.
-            </h2>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)]">
-              Course Builder is the production area for teacher content. Drafts
-              stay private until every module, lesson, material, price, and
-              preview setting is ready for Skillset review.
-            </p>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {[
-                {
-                  icon: Layers3,
-                  title: "1. Structure",
-                  detail: "Name the course, choose categories, add modules, and set the learning path.",
-                },
-                {
-                  icon: PlayCircle,
-                  title: "2. Lessons",
-                  detail: "Upload videos, paste YouTube embeds, add PDFs, slides, and lesson notes.",
-                },
-                {
-                  icon: Sparkles,
-                  title: "3. Publish",
-                  detail: "Set pricing, choose free preview lessons, and submit for Skillset review.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4"
-                  >
-                    <span className="grid size-9 place-items-center rounded-[10px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
-                      <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-                    </span>
-                    <p className="mt-4 text-sm font-bold text-[var(--color-ink)]">
-                      {item.title}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
-                      {item.detail}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <aside className="border-t border-[var(--color-line)] bg-[linear-gradient(145deg,var(--color-primary)_0%,#0f2744_100%)] p-5 text-white lg:border-l lg:border-t-0 sm:p-7">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">
-              Start here
-            </p>
-            <h3 className="display-title mt-3 text-3xl leading-tight text-white">
-              Draft the next course.
-            </h3>
-            <p className="mt-4 text-sm leading-7 text-[rgba(255,255,255,0.78)]">
-              Free and draft courses do not require payout setup. Payouts are
-              only required before selling paid courses.
-            </p>
-            <div className="mt-6 grid gap-3">
-              {user ? (
-                <CreateCourseModal
-                  key={autoOpenCreate ? "auto-open-create-course" : "manual-create-course"}
-                  ownerId={user.uid}
-                  autoOpen={autoOpenCreate}
-                  triggerClassName="button-solid-light px-5 py-3 text-sm"
-                />
-              ) : null}
-              <Link href="/teach/media" className="button-outline-light px-4 py-3 text-center text-sm">
-                Open media library
-              </Link>
-            </div>
-          </aside>
-        </div>
-      </section>
-
       {error ? (
         <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {error}
         </p>
       ) : null}
 
-      <section className="dash-card p-4 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-line)] pb-4">
-          <div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-base font-bold text-[var(--color-ink)]">Courses in progress</h3>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">Your drafts and submissions</span>
-            </div>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-              Continue any draft, review status, or course needing changes from
-              this list.
-            </p>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <section className="dash-card dash-card--strong p-5 sm:p-6">
+          <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-5">
+            <h3 className="text-base font-bold text-[var(--color-ink)]">
+              Start a course submission
+            </h3>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+              Course submissions
+            </span>
           </div>
-          {courses.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <ListingSearchBar
-                value={courseQuery}
-                onChange={setCourseQuery}
-                placeholder="Search your courses..."
-              />
-              <StatusFilterDropdown
-                value={statusFilter}
-                onChange={setStatusFilter}
-              />
-            </div>
-          ) : null}
-        </div>
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            Create a draft, shape the learner path in Course Builder, and
+            submit when the structure is ready for Skillset review.
+          </p>
 
-        <div className="mt-5 grid gap-3">
-          {isLoadingCourses ? (
-            <p className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
-              Loading your courses...
-            </p>
-          ) : courses.length === 0 ? (
-            <div className="rounded-[16px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-5 sm:p-6">
-              <div className="flex flex-wrap items-start gap-4">
-                <span className="grid size-11 place-items-center rounded-[12px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
-                  <BookOpenCheck aria-hidden="true" size={20} strokeWidth={1.8} />
+          <div className="mt-6 flex flex-wrap gap-3">
+            {user ? (
+              <CreateCourseModal
+                key={autoOpenCreate ? "auto-open-create-course" : "manual-create-course"}
+                ownerId={user.uid}
+                autoOpen={autoOpenCreate}
+                triggerClassName="button-solid px-5 py-3 text-sm"
+              />
+            ) : null}
+            <Link href="/teach/media" className="button-outline px-5 py-3 text-sm">
+              View media library
+            </Link>
+          </div>
+
+          <div className="mt-7 grid gap-3">
+            {[
+              {
+                icon: Layers3,
+                title: "Step 1",
+                detail: "Choose a title, category, one-time payment or free course.",
+              },
+              {
+                icon: PlayCircle,
+                title: "Step 2",
+                detail: "Add modules, lessons, videos, embeds, and lesson materials.",
+              },
+              {
+                icon: Sparkles,
+                title: "Step 3",
+                detail: "Set pricing, select a free preview, and submit for review.",
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.title}
+                  className="course-submission-step rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4"
+                >
+                  <span className="grid size-9 place-items-center rounded-[10px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
+                    <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-primary-light)]">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-6 text-[var(--color-ink)]">
+                      {item.detail}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="dash-card dash-card--strong p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-5">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-base font-bold text-[var(--color-ink)]">
+                  Courses in progress
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
+                  Your submissions
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                    First course
-                  </p>
-                  <h4 className="mt-2 text-xl font-bold text-[var(--color-ink)]">
-                    No course drafts yet.
-                  </h4>
-                  <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-                    Create a draft using the panel above. The builder then opens
-                    with course details, curriculum, lesson uploads, pricing,
-                    preview, and review controls.
-                  </p>
+              </div>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+                Drafts stay private. Approved courses can keep receiving new
+                lessons and materials while Skillset controls marketplace visibility.
+              </p>
+            </div>
+            {courses.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <ListingSearchBar
+                  value={courseQuery}
+                  onChange={setCourseQuery}
+                  placeholder="Search your courses..."
+                />
+                <StatusFilterDropdown
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-6 grid gap-3">
+            {isLoadingCourses ? (
+              <p className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-ink-soft)]">
+                Loading your courses...
+              </p>
+            ) : courses.length === 0 ? (
+              <div className="course-empty-showcase rounded-[18px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 sm:p-8">
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_250px] lg:items-center">
+                  <div>
+                    <span className="grid size-12 place-items-center rounded-[14px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
+                      <BookOpenCheck aria-hidden="true" size={21} strokeWidth={1.8} />
+                    </span>
+                    <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                      First course
+                    </p>
+                    <h4 className="display-title mt-3 max-w-sm text-4xl leading-[1.05] text-[var(--color-primary)]">
+                      Your course list is empty because no draft exists yet.
+                    </h4>
+                    <p className="mt-4 max-w-xs text-sm leading-7 text-[var(--color-ink-soft)]">
+                      Create a draft first. Then the builder opens with modules,
+                      lessons, pricing, uploads, preview, and review controls.
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    {user ? (
+                      <CreateCourseModal
+                        ownerId={user.uid}
+                        triggerClassName="button-solid px-5 py-3 text-sm"
+                      />
+                    ) : null}
+                    <Link href="/teach/media" className="button-outline px-5 py-3 text-center text-sm">
+                      View media library
+                    </Link>
+                  </div>
+                </div>
+                <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                  {[
+                    ["Structure", "Add modules and organize the learning path."],
+                    ["Lessons", "Add videos, embeds, text, and materials."],
+                    ["Review", "Select a free preview and submit for approval."],
+                  ].map(([title, detail], index) => (
+                    <div key={title} className="rounded-[12px] border border-[var(--color-line)] bg-white p-4">
+                      <p className="text-sm font-bold text-[var(--color-ink)]">
+                        {index + 1}. {title}
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
+                        {detail}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ) : statusFilteredCourses.length === 0 ? (
-            <p className="rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-              No courses match these filters.
-            </p>
-          ) : (
-            statusFilteredCourses.map((course) => (
-              <article
-                key={course.id}
-                className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                      {course.category}
-                    </p>
-                    <h4 className="mt-2 text-base font-semibold text-[var(--color-ink)]">
-                      {course.title}
-                    </h4>
+            ) : statusFilteredCourses.length === 0 ? (
+              <p className="rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+                No courses match these filters.
+              </p>
+            ) : (
+              statusFilteredCourses.map((course) => (
+                <article
+                  key={course.id}
+                  className="rounded-[14px] border fine-rule bg-[var(--color-surface-soft)] p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        {course.category}
+                      </p>
+                      <h4 className="mt-2 text-base font-semibold text-[var(--color-ink)]">
+                        {course.title}
+                      </h4>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-muted)]">
+                        {course.modules.length} modules - {course.lessonCount} lessons
+                      </p>
+                    </div>
+                    <StatusChip status={course.status} />
                   </div>
-                  <StatusChip status={course.status} />
-                </div>
-                <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
-                  {course.summary}
-                </p>
-                {course.reviewNote ? (
-                  <div className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.18)] bg-white px-4 py-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                      Skillset review note
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
-                      {course.reviewNote}
-                    </p>
-                  </div>
-                ) : null}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={`/teach/builder?courseId=${course.id}`}
-                    className="button-outline px-4 py-2 text-xs"
-                  >
-                    Continue course
-                  </Link>
-                  {teacherCanSubmitCourse(course.status) ? (
-                    <button
-                      type="button"
-                      onClick={() => handleSubmitForReview(course.id)}
-                      disabled={reviewingCourseId === course.id}
-                      className="button-solid px-4 py-2 text-xs disabled:opacity-60"
-                    >
-                      {reviewingCourseId === course.id
-                        ? "Submitting..."
-                        : "Send for review"}
-                    </button>
+                  <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
+                    {course.summary}
+                  </p>
+                  {course.reviewNote ? (
+                    <div className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.18)] bg-white px-4 py-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                        Skillset review note
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+                        {course.reviewNote}
+                      </p>
+                    </div>
                   ) : null}
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/teach/builder?courseId=${course.id}`}
+                      className="button-outline px-4 py-2 text-xs"
+                    >
+                      Continue course
+                    </Link>
+                    {teacherCanSubmitCourse(course.status) ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSubmitForReview(course.id)}
+                        disabled={reviewingCourseId === course.id}
+                        className="button-solid px-4 py-2 text-xs disabled:opacity-60"
+                      >
+                        {reviewingCourseId === course.id
+                          ? "Submitting..."
+                          : "Send for review"}
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

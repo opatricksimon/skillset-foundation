@@ -103,6 +103,24 @@ npm run build
 
 ---
 
+## Documentation
+
+Startup-grade documentation now starts at:
+
+- `docs/README.md`
+
+Key areas:
+
+- `docs/company`
+- `docs/product`
+- `docs/technical`
+- `docs/operations`
+- `docs/investor`
+
+These documents are living references for product, engineering, operations, API/payment behavior, and future investor material.
+
+---
+
 ## Next implementation slices
 
 1. Add real auth and role gating.
@@ -112,4 +130,3 @@ npm run build
 5. Add student lesson/player flow.
 6. Add admin moderation primitives.
 7. Decide deployment target beyond the legacy Firebase static setup.
-
