@@ -4,6 +4,7 @@ import {
   FieldValue,
   Timestamp,
   type DocumentReference,
+  type Query,
 } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
@@ -16,6 +17,16 @@ import {
 } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import Stripe from "stripe";
+import {
+  automaticRefundProgressCap,
+  automaticRefundWindowDays,
+  canonicalPlatformFeeBpsForPlan,
+  createReleasedRefundTransferReversal,
+  paidOrderRefundQuerySpec,
+  payoutReleaseDelayDays,
+  stripeProcessingFeeMinor as canonicalStripeProcessingFeeMinor,
+  type TransferReversalStripeClient,
+} from "./payment-rules";
 
 initializeApp();
 setGlobalOptions({ region: "us-central1", maxInstances: 10 });
@@ -77,6 +88,10 @@ type TeacherCourseRecord = {
   platformFeeBps?: number;
   coverImageUrl?: string | null;
   stripeConnectedAccountId?: string | null;
+  ratingAverage?: number;
+  ratingCount?: number;
+  ratingSum?: number;
+  reviewCount?: number;
 };
 
 type UserProfileRecord = {
@@ -87,6 +102,7 @@ type UserProfileRecord = {
   stripeConnectedAccountId?: string | null;
   stripeConnectChargesEnabled?: boolean;
   stripeConnectPayoutsEnabled?: boolean;
+  currentPlanId?: string | null;
 };
 
 type EnrollmentRecord = {
@@ -116,6 +132,19 @@ type PayoutLedgerRecord = {
   status: string;
   releaseAt?: unknown;
   releaseAttemptCount?: number;
+  transferId?: string | null;
+  transferReversedAmountMinor?: number | null;
+};
+
+type CourseReviewRecord = {
+  id: string;
+  courseId: string;
+  userId: string;
+  authorName: string;
+  rating: number;
+  body?: string | null;
+  status: string;
+  createdAt?: unknown;
 };
 
 type AccountActionRequestType = "account_deletion" | "data_export";
@@ -134,13 +163,6 @@ type CertificateVerificationResult =
         issuedAt: string | null;
       };
     };
-
-// Payout is held until the refund window closes, then released. Kept equal to
-// the automatic refund window so a teacher is paid right after a sale can no
-// longer be auto-refunded (aligned with infoproduct standard, e.g. Hotmart 7d).
-const payoutReleaseDelayDays = 7;
-const automaticRefundWindowDays = 7;
-const automaticRefundProgressCap = 50;
 
 function sanitizeRateLimitKey(value: string) {
   return value.replace(/[^a-zA-Z0-9_.-]+/g, "_").slice(0, 220);
@@ -248,6 +270,23 @@ function cleanOptionalText(value: unknown, maxLength = 2000): string | null {
 
   const nextValue = value.trim();
   return nextValue ? nextValue.slice(0, maxLength) : null;
+}
+
+function cleanCourseReviewBody(value: unknown): string | null {
+  const body = cleanOptionalText(value, 1200);
+
+  if (!body) {
+    return null;
+  }
+
+  if (body.length < 3) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Review text must be at least 3 characters when provided.",
+    );
+  }
+
+  return body;
 }
 
 function cleanRequiredText(
@@ -461,10 +500,6 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
   return {
     amountMinor,
     currency: normalizeSkillsetCurrency(course.currency).toLowerCase(),
-    // 800 bps = 8% (Free-plan default). When the subscription system is
-    // live, callers will set platformFeeBps explicitly from the creator's
-    // plan; this fallback only covers accounts with no plan record.
-    platformFeeBps: course.platformFeeBps ?? 800,
   };
 }
 
@@ -472,21 +507,11 @@ function normalizeCoursePrice(course: TeacherCourseRecord) {
 // this is the Firebase Functions package mirror used by the Stripe webhook).
 // Stripe processing fee passed through to the teacher so the platform keeps
 // its full commission. USD card pricing: 2.9% + $0.30. Non-USD treated as
-// international: 3.9% + $0.30 (fixed minor unit). This is an estimate applied
+// international card plus conversion: 5.4% + $0.30. This is an estimate applied
 // at ledger time; the exact fee Stripe charges settles on the platform balance.
 // NOTE: charge model is "separate_charges_and_transfers", so there is no
 // application_fee_amount (that is a destination-charge concept) — the fee is
 // reflected by reducing the teacher transfer (netAmountMinor) instead.
-function stripeProcessingFeeMinor(
-  grossMinor: number,
-  currency?: string | null,
-) {
-  const isUsd = (currency || "").toUpperCase() === "USD";
-  const percentBps = isUsd ? 290 : 390;
-  const fixedMinor = 30;
-  return Math.round((grossMinor * percentBps) / 10000) + fixedMinor;
-}
-
 async function enforceRateLimit(
   key: string,
   limit: number,
@@ -607,6 +632,7 @@ export const createTeacherCourseDraft = onCall(async (request) => {
   const profile = userSnapshot.data() as UserProfileRecord | undefined;
   const roles = Array.isArray(profile?.roles) ? profile.roles : [];
   const acceptedTeacherTerms = Boolean(userSnapshot.get("teacherTermsAcceptedAt"));
+  const platformFeeBps = canonicalPlatformFeeBpsForPlan(profile?.currentPlanId);
 
   if (!roles.includes("teacher") || !acceptedTeacherTerms) {
     throw new HttpsError(
@@ -652,7 +678,7 @@ export const createTeacherCourseDraft = onCall(async (request) => {
       paymentType,
       installmentsEnabled: false,
       installmentsMax: null,
-      platformFeeBps: 1500,
+      platformFeeBps,
       dripStrategy: "instant",
       dripIntervalDays: 1,
       freePreviewLessonId: null,
@@ -739,6 +765,7 @@ export const updateTeacherCourseBuilder = onCall(async (request) => {
   const profile = userSnapshot.data() as UserProfileRecord | undefined;
   const roles = Array.isArray(profile?.roles) ? profile.roles : [];
   const acceptedTeacherTerms = Boolean(userSnapshot.get("teacherTermsAcceptedAt"));
+  const platformFeeBps = canonicalPlatformFeeBpsForPlan(profile?.currentPlanId);
 
   if (!roles.includes("teacher") || !acceptedTeacherTerms) {
     throw new HttpsError(
@@ -837,7 +864,7 @@ export const updateTeacherCourseBuilder = onCall(async (request) => {
       paymentType,
       installmentsEnabled,
       installmentsMax,
-      platformFeeBps: course.platformFeeBps ?? 1500,
+      platformFeeBps,
       dripStrategy,
       dripIntervalDays,
       freePreviewLessonId,
@@ -935,7 +962,7 @@ export const createCheckoutSession = onCall(
       );
     }
 
-    const { amountMinor, currency, platformFeeBps } = normalizeCoursePrice(course);
+    const { amountMinor, currency } = normalizeCoursePrice(course);
     const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
     const enrollmentSnapshot = await enrollmentRef.get();
 
@@ -959,6 +986,7 @@ export const createCheckoutSession = onCall(
     const owner = ownerSnapshot.exists
       ? (ownerSnapshot.data() as UserProfileRecord)
       : null;
+    const platformFeeBps = canonicalPlatformFeeBpsForPlan(owner?.currentPlanId);
     const connectedAccountId =
       course.stripeConnectedAccountId || owner?.stripeConnectedAccountId || null;
 
@@ -1132,6 +1160,153 @@ export const createFreeCourseEnrollment = onCall(async (request) => {
 
   return {
     enrollmentId: enrollmentRef.id,
+  };
+});
+
+export const submitCourseReview = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before reviewing a course.");
+  }
+
+  const userId = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+  const rating =
+    typeof input.rating === "number" && Number.isFinite(input.rating)
+      ? Math.round(input.rating)
+      : 0;
+  const body = cleanCourseReviewBody(input.body);
+
+  if (rating < 1 || rating > 5) {
+    throw new HttpsError("invalid-argument", "Rating must be between 1 and 5.");
+  }
+
+  await enforceRateLimit(`course_review_${courseId}_${userId}`, 20, 60 * 60 * 1000);
+
+  const reviewId = `${courseId}__${userId}`;
+  const courseRef = db.collection("courses").doc(courseId);
+  const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
+  const reviewRef = db.collection("courseReviews").doc(reviewId);
+  const userRef = db.collection("users").doc(userId);
+
+  let nextRatingAverage = 0;
+  let nextRatingCount = 0;
+
+  await db.runTransaction(async (transaction) => {
+    const [
+      courseSnapshot,
+      enrollmentSnapshot,
+      reviewSnapshot,
+      userSnapshot,
+    ] = await Promise.all([
+      transaction.get(courseRef),
+      transaction.get(enrollmentRef),
+      transaction.get(reviewRef),
+      transaction.get(userRef),
+    ]);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.status !== "published") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only published courses can receive reviews.",
+      );
+    }
+
+    if (!enrollmentSnapshot.exists) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Enroll in this course before leaving a review.",
+      );
+    }
+
+    const enrollment = enrollmentSnapshot.data() as EnrollmentRecord;
+
+    if (enrollment.userId !== userId || enrollment.courseId !== courseId) {
+      throw new HttpsError(
+        "permission-denied",
+        "You can only review courses attached to your account.",
+      );
+    }
+
+    if (!["active", "completed"].includes(enrollment.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This enrollment cannot leave a review.",
+      );
+    }
+
+    if ((enrollment.progressPercent ?? 0) < 50) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Complete at least 50% of the course before leaving a review.",
+      );
+    }
+
+    const previousReview = reviewSnapshot.exists
+      ? (reviewSnapshot.data() as CourseReviewRecord)
+      : null;
+    const previousRating =
+      previousReview && Number.isFinite(previousReview.rating)
+        ? Math.round(previousReview.rating)
+        : 0;
+    const currentRatingSum =
+      typeof course.ratingSum === "number"
+        ? course.ratingSum
+        : Math.round((course.ratingAverage ?? 0) * (course.ratingCount ?? 0));
+    const currentRatingCount =
+      typeof course.ratingCount === "number" ? course.ratingCount : 0;
+    const ratingSum = previousReview
+      ? currentRatingSum - previousRating + rating
+      : currentRatingSum + rating;
+    const ratingCount = previousReview
+      ? Math.max(1, currentRatingCount)
+      : currentRatingCount + 1;
+    const ratingAverage = Math.round((ratingSum / ratingCount) * 10) / 10;
+    const user = userSnapshot.data() as UserProfileRecord | undefined;
+    const authorName =
+      user?.displayName?.trim()
+      || request.auth?.token.name?.toString().trim()
+      || "Skillset learner";
+
+    transaction.set(
+      reviewRef,
+      {
+        id: reviewId,
+        courseId,
+        userId,
+        authorName,
+        rating,
+        body,
+        status: "published",
+        createdAt: previousReview?.createdAt ?? FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    transaction.update(courseRef, {
+      ratingAverage,
+      ratingCount,
+      ratingSum,
+      reviewCount: ratingCount,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    nextRatingAverage = ratingAverage;
+    nextRatingCount = ratingCount;
+  });
+
+  return {
+    success: true,
+    reviewId,
+    ratingAverage: nextRatingAverage,
+    ratingCount: nextRatingCount,
   };
 });
 
@@ -1330,16 +1505,18 @@ export const requestRefund = onCall(
       );
     }
 
-    const ordersSnapshot = await db
-      .collection("orders")
-      .where("userId", "==", userId)
-      .limit(50)
+    const refundOrderQuery = paidOrderRefundQuerySpec(userId, enrollment.courseId);
+    let paidOrderQuery: Query = db.collection("orders");
+
+    for (const [field, operator, value] of refundOrderQuery.filters) {
+      paidOrderQuery = paidOrderQuery.where(field, operator, value);
+    }
+
+    const ordersSnapshot = await paidOrderQuery
+      .limit(refundOrderQuery.limit)
       .get();
 
-    const orderDocument = ordersSnapshot.docs.find((document) => {
-      const order = document.data();
-      return order.courseId === enrollment.courseId && order.status === "paid";
-    });
+    const orderDocument = ordersSnapshot.docs[0];
 
     if (!orderDocument) {
       throw new HttpsError("not-found", "Paid order not found.");
@@ -1875,7 +2052,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // commission rate at sale time so historical math is preserved.
     const platformFeeBps = Number(order.platformFeeBps || 800);
     const skillsetFeeMinor = Math.floor((grossAmountMinor * platformFeeBps) / 10000);
-    const stripeFeeMinor = stripeProcessingFeeMinor(
+    const stripeFeeMinor = canonicalStripeProcessingFeeMinor(
       grossAmountMinor,
       order.currency,
     );
@@ -1966,36 +2143,85 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   const paymentRef = db.collection("payments").doc(paymentIntentId);
+  const paymentSnapshot = await paymentRef.get();
+
+  if (!paymentSnapshot.exists) {
+    logger.warn("Refunded payment was not found", { paymentIntentId });
+    return;
+  }
+
+  const payment = paymentSnapshot.data() || {};
+  const orderId = String(payment.orderId || "");
+
+  if (!orderId) {
+    throw new Error(`Payment ${paymentIntentId} is missing orderId.`);
+  }
+
+  const orderRef = db.collection("orders").doc(orderId);
+  const ledgerRef = db.collection("payoutLedger").doc(orderId);
+  const [orderSnapshot, ledgerSnapshot] = await Promise.all([
+    orderRef.get(),
+    ledgerRef.get(),
+  ]);
+
+  if (!orderSnapshot.exists) {
+    throw new Error(`Order ${orderId} not found for refunded payment.`);
+  }
+
+  const order = orderSnapshot.data() || {};
+  const ledger = ledgerSnapshot.exists
+    ? (ledgerSnapshot.data() as PayoutLedgerRecord)
+    : null;
+  const transferId = ledger?.transferId || null;
+  const alreadyReversedAmountMinor = Number(ledger?.transferReversedAmountMinor || 0);
+  const grossAmountMinor = Number(ledger?.grossAmountMinor || order.amountMinor || 0);
+  const releasedTransferAmountMinor = Number(ledger?.netAmountMinor || 0);
+  const shouldReverseReleasedTransfer =
+    ledger?.status === "released"
+    && Boolean(transferId)
+    && releasedTransferAmountMinor > 0;
+  const reversalResult = shouldReverseReleasedTransfer
+    ? await createReleasedRefundTransferReversal({
+        stripe: getStripeClient() as unknown as TransferReversalStripeClient,
+        ledgerId: orderId,
+        transferId,
+        grossAmountMinor,
+        refundedAmountMinor: charge.amount_refunded,
+        releasedTransferAmountMinor,
+        alreadyReversedAmountMinor,
+        idempotencyKey:
+          `transfer_reversal_${orderId}_${charge.id}_${charge.amount_refunded}`,
+        metadata: {
+          orderId,
+          paymentId: paymentIntentId,
+          chargeId: charge.id,
+        },
+      })
+    : { reversalId: null, reversalAmountMinor: 0 };
+  const reversalWriteFields = reversalResult.reversalAmountMinor > 0
+    ? {
+        transferReversedAmountMinor:
+          FieldValue.increment(reversalResult.reversalAmountMinor),
+        latestTransferReversalId: reversalResult.reversalId,
+        latestTransferReversalAt: FieldValue.serverTimestamp(),
+      }
+    : {};
 
   await db.runTransaction(async (transaction) => {
-    const paymentSnapshot = await transaction.get(paymentRef);
+    const currentOrderSnapshot = await transaction.get(orderRef);
 
-    if (!paymentSnapshot.exists) {
-      logger.warn("Refunded payment was not found", { paymentIntentId });
-      return;
-    }
-
-    const payment = paymentSnapshot.data() || {};
-    const orderId = String(payment.orderId || "");
-
-    if (!orderId) {
-      throw new Error(`Payment ${paymentIntentId} is missing orderId.`);
-    }
-
-    const orderRef = db.collection("orders").doc(orderId);
-    const ledgerRef = db.collection("payoutLedger").doc(orderId);
-    const orderSnapshot = await transaction.get(orderRef);
-
-    if (!orderSnapshot.exists) {
+    if (!currentOrderSnapshot.exists) {
       throw new Error(`Order ${orderId} not found for refunded payment.`);
     }
 
-    const order = orderSnapshot.data() || {};
+    const currentOrder = currentOrderSnapshot.data() || {};
     const isFullRefund = charge.refunded === true;
     const refundedStatus = isFullRefund ? "refunded" : "partially_refunded";
     const enrollmentRef =
-      isFullRefund && order.userId && order.courseId
-        ? db.collection("enrollments").doc(`${order.userId}__${order.courseId}`)
+      isFullRefund && currentOrder.userId && currentOrder.courseId
+        ? db
+            .collection("enrollments")
+            .doc(`${currentOrder.userId}__${currentOrder.courseId}`)
         : null;
     const enrollmentSnapshot = enrollmentRef
       ? await transaction.get(enrollmentRef)
@@ -2011,6 +2237,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     transaction.update(orderRef, {
       status: refundedStatus,
       refundedAmountMinor: charge.amount_refunded,
+      ...reversalWriteFields,
       updatedAt: FieldValue.serverTimestamp(),
     });
 
@@ -2019,6 +2246,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       {
         status: isFullRefund ? "refunded" : "partially_refunded",
         refundedAmountMinor: charge.amount_refunded,
+        ...reversalWriteFields,
         refundedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },

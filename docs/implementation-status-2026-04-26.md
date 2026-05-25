@@ -39,7 +39,7 @@ https://skillsetusaofficial.web.app
 - Access is granted only after Stripe webhook confirmation.
 - Refunds can mark orders/payments/enrollments as refunded.
 - Paid checkout is blocked until the teacher has completed Stripe Connect onboarding.
-- The platform fee defaults to `1500` basis points, meaning 15%.
+- The platform fee defaults to the Free plan, `800` basis points, meaning 8%.
 
 ## Founder/Admin Access
 

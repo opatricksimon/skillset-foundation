@@ -25,6 +25,16 @@ export type Enrollment = {
   updatedAt?: unknown;
 };
 
+export type EnrollmentCommunityCard = {
+  id: string;
+  categories: string;
+  courseTitle: string;
+  description: string;
+  href: string;
+  name: string;
+  visibility: string;
+};
+
 export function getEnrollmentId(userId: string, courseSlug: string): string {
   return `${userId}__${courseSlug}`;
 }
@@ -37,6 +47,10 @@ export function canOpenEnrollment(status: EnrollmentStatus): boolean {
   return status === "active" || status === "completed";
 }
 
+export function canContinueEnrollment(status: EnrollmentStatus): boolean {
+  return status === "active";
+}
+
 export function createEnrollmentSnapshot(course: Course) {
   return {
     courseId: course.id,
@@ -45,4 +59,21 @@ export function createEnrollmentSnapshot(course: Course) {
     courseCategory: course.category,
     courseImage: course.image,
   };
+}
+
+export function createEnrollmentCommunityCards(
+  enrollments: Enrollment[],
+): EnrollmentCommunityCard[] {
+  return enrollments
+    .filter((enrollment) => canOpenEnrollment(enrollment.status))
+    .map((enrollment) => ({
+      id: `community-${enrollment.id}`,
+      categories: "course community",
+      courseTitle: enrollment.courseTitle,
+      description:
+        "A course-linked space for teacher announcements, learner questions, discussion, and shared resources.",
+      href: `/learn/community/creator?courseId=${enrollment.courseId}`,
+      name: `${enrollment.courseTitle} community`,
+      visibility: "enrolled only",
+    }));
 }

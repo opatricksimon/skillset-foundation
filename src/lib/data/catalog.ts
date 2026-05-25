@@ -17,6 +17,7 @@ export type CourseCard = {
   href?: string;
   freePreviewHref?: string;
   sourceLabel?: string;
+  ratingLabel?: string;
 };
 
 export function getCourses(): Course[] {

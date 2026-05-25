@@ -442,6 +442,14 @@ export function CourseBuilderStudio() {
   const selectedTabIndex = builderTabs.findIndex(
     (tab) => tab.value === activeTab,
   );
+  const builderStepProgress = Math.round(
+    ((selectedTabIndex + 1) / builderTabs.length) * 100,
+  );
+  const savedLessonIds = new Set(
+    course?.modules.flatMap((module) =>
+      module.lessons.map((lesson) => lesson.id),
+    ) ?? [],
+  );
   const formattedPrice =
     paymentType === "free"
       ? "Free"
@@ -581,7 +589,6 @@ export function CourseBuilderStudio() {
     if (lessonIsFreePreview) {
       setFreePreviewLessonId(nextLessonId);
     }
-    setActiveLessonStudio({ moduleId: lessonModuleId, lessonId: nextLessonId });
     setLessonTitle("");
     setLessonDescription("");
     setLessonDurationMinutes("");
@@ -590,7 +597,7 @@ export function CourseBuilderStudio() {
     setLessonExternalUrl("");
     setLessonIsFreePreview(false);
     setError("");
-    setSuccess("");
+    setSuccess("Lesson added. Save the draft before uploading video or materials to this lesson.");
   }
 
   function updateModuleTitle(moduleId: string, nextTitle: string) {
@@ -790,7 +797,7 @@ export function CourseBuilderStudio() {
         paymentType,
         installmentsEnabled: nextInstallmentsEnabled,
         installmentsMax: nextInstallmentsMax,
-        platformFeeBps: course?.platformFeeBps ?? 1500,
+        platformFeeBps: course?.platformFeeBps ?? 800,
         dripStrategy,
         dripIntervalDays: nextDripIntervalDays,
         freePreviewLessonId: freePreviewLessonId || null,
@@ -872,7 +879,7 @@ export function CourseBuilderStudio() {
         paymentType,
         installmentsEnabled: nextInstallmentsEnabled,
         installmentsMax: nextInstallmentsMax,
-        platformFeeBps: course?.platformFeeBps ?? 1500,
+        platformFeeBps: course?.platformFeeBps ?? 800,
         dripStrategy,
         dripIntervalDays: nextDripIntervalDays,
         freePreviewLessonId: freePreviewLessonId || null,
@@ -984,12 +991,14 @@ export function CourseBuilderStudio() {
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-strong)]">
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent))] transition-[width] duration-300"
-                style={{ width: `${readinessProgress}%` }}
+                style={{ width: `${builderStepProgress}%` }}
               />
             </div>
             <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
-              <span>Step {selectedTabIndex + 1} of {builderTabs.length}</span>
-              <span className="text-[var(--color-primary)]">{readinessProgress}%</span>
+              <span>Builder step {selectedTabIndex + 1} of {builderTabs.length}</span>
+              <span className="text-[var(--color-primary)]">
+                Review readiness {readinessProgress}%
+              </span>
             </div>
           </div>
           <div className="mt-5 grid gap-2">
@@ -1661,9 +1670,17 @@ export function CourseBuilderStudio() {
                                       lessonId: lesson.id,
                                     })
                                   }
-                                  className="button-solid px-3 py-2 text-xs"
+                                  disabled={!savedLessonIds.has(lesson.id)}
+                                  className="button-solid px-3 py-2 text-xs disabled:opacity-60"
+                                  title={
+                                    savedLessonIds.has(lesson.id)
+                                      ? "Open lesson studio"
+                                      : "Save draft before uploading files to this lesson"
+                                  }
                                 >
-                                  Open lesson studio
+                                  {savedLessonIds.has(lesson.id)
+                                    ? "Open lesson studio"
+                                    : "Save draft to upload"}
                                 </button>
                                 <button
                                   type="button"

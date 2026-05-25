@@ -2872,6 +2872,203 @@ button:hover > .dash-card,
   text-transform: uppercase;
 }
 
+.course-submission-step {
+  display: grid;
+  align-items: start;
+  gap: 0.9rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.course-empty-showcase {
+  position: relative;
+  overflow: hidden;
+}
+
+.course-empty-showcase::after {
+  content: "";
+  position: absolute;
+  inset: auto -8rem -8rem auto;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(44, 82, 130, 0.1), transparent 70%);
+  pointer-events: none;
+}
+
+.learner-home-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 22%, rgba(31, 138, 91, 0.12), transparent 15rem),
+    radial-gradient(circle at 14% 0%, rgba(44, 82, 130, 0.13), transparent 17rem),
+    linear-gradient(135deg, #ffffff 0%, var(--color-surface-soft) 58%, var(--color-surface-strong) 100%);
+}
+
+.learner-home-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(26rem, 42%);
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0 38%, rgba(26, 54, 93, 0.055) 38% 39%, transparent 39% 100%),
+    radial-gradient(circle at 72% 55%, rgba(178, 34, 52, 0.07), transparent 10rem);
+}
+
+.learner-continue-card {
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(178, 34, 52, 0.08), transparent 8rem),
+    #ffffff;
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem;
+}
+
+.learner-continue-card__icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-button);
+}
+
+.credential-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(178, 34, 52, 0.1), transparent 14rem),
+    radial-gradient(circle at 12% 0%, rgba(26, 54, 93, 0.11), transparent 17rem),
+    linear-gradient(135deg, #ffffff 0%, var(--color-surface-soft) 56%, var(--color-surface-strong) 100%);
+}
+
+.credential-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(25rem, 42%);
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0 34%, rgba(26, 54, 93, 0.05) 34% 35%, transparent 35% 100%);
+}
+
+.credential-metric-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 1rem;
+  color: var(--color-primary);
+  box-shadow: 0 12px 28px rgba(15, 39, 68, 0.05);
+}
+
+.credential-metric-card span {
+  color: var(--color-ink-soft);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.credential-metric-card strong {
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.credential-filter-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  padding: 0.25rem;
+}
+
+.credential-filter-tabs button {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.55rem 0.75rem;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.credential-filter-tabs button:hover,
+.credential-filter-tabs button.is-active {
+  background: #ffffff;
+  color: var(--color-primary);
+  box-shadow: 0 6px 14px rgba(15, 39, 68, 0.06);
+}
+
+.credential-card {
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.credential-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(26, 54, 93, 0.22);
+  box-shadow: var(--shadow-soft);
+}
+
+.member-review-panel {
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(178, 34, 52, 0.08), transparent 9rem),
+    #ffffff;
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem;
+}
+
+.member-review-star {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.member-review-star:hover,
+.member-review-star.is-active {
+  border-color: rgba(178, 34, 52, 0.28);
+  background: rgba(178, 34, 52, 0.08);
+  color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.member-review-star:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
 @media (max-width: 1180px) {
   .studio-dashboard-grid {
     grid-template-columns: 1fr;

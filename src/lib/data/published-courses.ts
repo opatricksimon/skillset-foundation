@@ -74,6 +74,10 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
         }).format(course.priceAmountMinor / 100)
       : "Enrollment opening soon";
   const hasFreePreview = Boolean(course.freePreviewLessonId);
+  const ratingLabel =
+    course.ratingCount && course.ratingAverage
+      ? `${course.ratingAverage.toFixed(1)} rating (${course.ratingCount})`
+      : "New course";
 
   return {
     slug: course.id,
@@ -95,6 +99,7 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
       ? `/courses/${course.id}#free-preview`
       : undefined,
     sourceLabel: "Teacher published",
+    ratingLabel,
   };
 }
 
@@ -124,7 +129,7 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     priceLabel,
     priceAmountMinor: course.priceAmountMinor ?? null,
     currency: course.currency ?? "USD",
-    platformFeeBps: course.platformFeeBps ?? 1500,
+    platformFeeBps: course.platformFeeBps ?? 800,
     dripStrategy: course.dripStrategy ?? "instant",
     dripIntervalDays: course.dripIntervalDays ?? 1,
     freePreviewLabel: hasFreePreview

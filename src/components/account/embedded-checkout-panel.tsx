@@ -166,7 +166,7 @@ export function EmbeddedCheckoutPanel({
             {plan.commissionPercent}%
           </strong>
           . Stripe processing fee is passed through to you on every sale
-          (2.9% + $0.30 USD / 3.9% + $0.30 intl).
+          (2.9% + $0.30 USD / 5.4% + $0.30 estimated non-USD).
         </p>
         <p className="mt-2 text-[11px] leading-5 text-[var(--color-ink-muted)]">
           Cancel anytime from your billing settings — you keep your plan

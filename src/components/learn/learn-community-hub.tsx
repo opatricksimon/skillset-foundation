@@ -4,26 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
-import type { Enrollment } from "@/domain/enrollment";
-import { getCommunitySpaces } from "@/lib/data/catalog";
+import type { Enrollment, EnrollmentCommunityCard } from "@/domain/enrollment";
+import { createEnrollmentCommunityCards } from "@/domain/enrollment";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
-
-type CommunityCard = {
-  id: string;
-  categories: string;
-  courseTitle: string;
-  description: string;
-  href: string;
-  name: string;
-  type: "official" | "creator";
-  visibility: string;
-};
 
 export function LearnCommunityHub() {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<CommunityCard["type"] | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -63,36 +51,8 @@ export function LearnCommunityHub() {
     );
   }
 
-  const enrolledCourseSlugs = new Set(enrollments.map((enrollment) => enrollment.courseSlug));
-  const demoSpaces = getCommunitySpaces();
-  const demoSpaceSlugs = new Set(demoSpaces.map((space) => space.courseSlug));
-  const communityCards: CommunityCard[] = [
-    ...demoSpaces
-      .filter((space) => enrolledCourseSlugs.has(space.courseSlug))
-      .map((space) => ({
-        id: space.id,
-        categories: space.categories.join(" - "),
-        courseTitle: space.name.replace(" community", ""),
-        description: space.description,
-        href: `/learn/community/${space.courseSlug}`,
-        name: space.name,
-        type: "official" as const,
-        visibility: space.visibility.replace("_", " "),
-      })),
-    ...enrollments
-      .filter((enrollment) => !demoSpaceSlugs.has(enrollment.courseSlug))
-      .map((enrollment) => ({
-        id: `creator-${enrollment.id}`,
-        categories: "announcement - discussion - question - resource",
-        courseTitle: enrollment.courseTitle,
-        description:
-          "A course-linked space for the teacher, enrolled learners, questions, announcements, and resources.",
-        href: `/learn/community/creator?courseId=${enrollment.courseId}`,
-        name: `${enrollment.courseTitle} community`,
-        type: "creator" as const,
-        visibility: "enrolled only",
-      })),
-  ];
+  const communityCards: EnrollmentCommunityCard[] =
+    createEnrollmentCommunityCards(enrollments);
   const filteredCards = communityCards.filter((space) => {
     const normalizedSearch = search.trim().toLowerCase();
     const matchesSearch =
@@ -100,9 +60,8 @@ export function LearnCommunityHub() {
       space.name.toLowerCase().includes(normalizedSearch) ||
       space.courseTitle.toLowerCase().includes(normalizedSearch) ||
       space.categories.toLowerCase().includes(normalizedSearch);
-    const matchesType = typeFilter === "all" || space.type === typeFilter;
 
-    return matchesSearch && matchesType;
+    return matchesSearch;
   });
 
   if (communityCards.length === 0) {
@@ -130,7 +89,7 @@ export function LearnCommunityHub() {
   return (
     <section className="space-y-5">
       <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
-        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+        <div className="grid gap-3">
           <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
             Search enrolled communities
             <input
@@ -140,20 +99,6 @@ export function LearnCommunityHub() {
               placeholder="Search by course, category, or community"
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
             />
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Community type
-            <select
-              value={typeFilter}
-              onChange={(event) =>
-                setTypeFilter(event.target.value as CommunityCard["type"] | "all")
-              }
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-            >
-              <option value="all">All enrolled</option>
-              <option value="official">Skillset demo</option>
-              <option value="creator">Creator courses</option>
-            </select>
           </label>
         </div>
         <p className="mt-4 text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
@@ -182,7 +127,7 @@ export function LearnCommunityHub() {
             {space.categories}
           </p>
           <span className="mt-4 inline-flex rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
-            {space.type === "creator" ? "Creator course" : "Skillset program"}
+            Enrolled course
           </span>
           <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
             {space.name}

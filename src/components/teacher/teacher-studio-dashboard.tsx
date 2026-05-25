@@ -7,10 +7,15 @@ import {
   Settings2,
   WalletCards,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { TeacherOverviewMetrics } from "@/components/teacher/teacher-overview-metrics";
 import { TeacherStudioInsights } from "@/components/teacher/teacher-studio-insights";
+import type { TeacherCourse } from "@/domain/teacher-course";
+import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
+import { subscribeToTeacherPayoutLedger } from "@/lib/data/payout-ledger";
+import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
 
 const studioActions = [
   {
@@ -45,10 +50,31 @@ const studioActions = [
 
 export function TeacherStudioDashboard() {
   const { user } = useAuth();
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [ledger, setLedger] = useState<PayoutLedgerEntry[]>([]);
   const firstName = user?.displayName?.trim().split(/\s+/)[0] ?? "there";
+  const publishedCourses = courses.filter((course) => course.status === "published");
+  const draftCourses = courses.filter((course) => course.status === "draft");
+  const nextPayout = useMemo(() => getNextPayoutLabel(ledger), [ledger]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherCourses(user.uid, setCourses, () => {});
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToTeacherPayoutLedger(user.uid, setLedger, () => {});
+  }, [user]);
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-8">
       <section className="studio-welcome-card dash-card dash-card--strong p-5 sm:p-7">
         <div className="relative z-[1] flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
@@ -59,8 +85,17 @@ export function TeacherStudioDashboard() {
               Welcome back, {firstName}.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
-              Monitor revenue, students, payouts, reviews, and the work that
-              needs attention. Course creation lives in Course Builder.
+              You have{" "}
+              <strong className="text-[var(--color-ink)]">
+                {publishedCourses.length} published{" "}
+                {publishedCourses.length === 1 ? "course" : "courses"}
+              </strong>{" "}
+              and{" "}
+              <strong className="text-[var(--color-ink)]">
+                {draftCourses.length} draft{draftCourses.length === 1 ? "" : "s"}
+              </strong>
+              . Your next payout is{" "}
+              <strong className="text-[var(--color-ink)]">{nextPayout}</strong>.
             </p>
           </div>
 
@@ -84,19 +119,19 @@ export function TeacherStudioDashboard() {
       <TeacherOverviewMetrics />
       <TeacherStudioInsights />
 
-      <section className="dash-card dash-card--strong p-5 sm:p-6">
+      <section className="dash-card dash-card--soft p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-              Command center
+              Studio surfaces
             </p>
             <h2 className="display-title mt-2 text-3xl leading-tight text-[var(--color-primary)]">
-              Go to the right surface.
+              Keep the dashboard clean.
             </h2>
           </div>
           <p className="max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
-            Studio stays focused on dashboard decisions. Operational work is
-            separated into builder, media, payout, and settings surfaces.
+            The Studio summarizes the business. Creation, uploads, payouts, and
+            account settings stay in their own focused work areas.
           </p>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -122,4 +157,53 @@ export function TeacherStudioDashboard() {
       </section>
     </div>
   );
+}
+
+function getNextPayoutLabel(entries: PayoutLedgerEntry[]) {
+  const nextRelease = entries
+    .filter((entry) => entry.status === "in_release" || entry.status === "releasing")
+    .map((entry) => getTimestampMillis(entry.releaseAt))
+    .filter((value): value is number => Boolean(value))
+    .sort((left, right) => left - right)[0];
+
+  if (!nextRelease) {
+    return "scheduled after your first paid order";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(nextRelease);
+}
+
+function getTimestampMillis(value: unknown): number | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "object" && "toMillis" in value) {
+    const maybeTimestamp = value as { toMillis?: () => number };
+
+    return typeof maybeTimestamp.toMillis === "function"
+      ? maybeTimestamp.toMillis()
+      : null;
+  }
+
+  if (typeof value === "object" && "seconds" in value) {
+    const maybeTimestamp = value as { seconds?: number };
+
+    return typeof maybeTimestamp.seconds === "number"
+      ? maybeTimestamp.seconds * 1000
+      : null;
+  }
+
+  return null;
 }

@@ -24,16 +24,16 @@ export const DEFAULT_PLATFORM_FEE_BPS = 800;
 
 /** Stripe standard pricing, USD cards: 2.9%. */
 const USD_PERCENT_BPS = 290;
-/** Stripe pricing for non-USD (treated as international): 3.9%. */
-const INTERNATIONAL_PERCENT_BPS = 390;
+/** Stripe non-USD estimate: international card 4.4% + conversion 1%. */
+const INTERNATIONAL_PERCENT_BPS = 540;
 /** Fixed per-successful-charge component (~$0.30). */
 const FIXED_FEE_MINOR = 30;
 
 /**
  * Estimated Stripe processing fee for a successful charge, in minor units.
- * USD is treated as domestic (2.9% + $0.30); any other currency as
- * international (3.9% + $0.30). The estimate is applied at ledger time; the
- * exact fee settles on the platform balance.
+ * USD is treated as domestic (2.9% + $0.30); any other currency uses the
+ * international card plus conversion estimate (5.4% + $0.30). The estimate is
+ * applied at ledger time; the exact fee settles on the platform balance.
  */
 export function stripeProcessingFeeMinor(
   grossMinor: number,

@@ -318,6 +318,10 @@ service cloud.firestore {
         'freePreviewLessonId',
         'coverImageUrl',
         'reviewNote',
+        'ratingAverage',
+        'ratingCount',
+        'ratingSum',
+        'reviewCount',
         'createdAt',
         'updatedAt'
       ]);
@@ -496,6 +500,38 @@ service cloud.firestore {
             request.resource.data.reviewNote is string
             && request.resource.data.reviewNote.size() <= 1200
           )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['ratingAverage'])
+          || (
+            request.resource.data.ratingAverage is number
+            && request.resource.data.ratingAverage >= 0
+            && request.resource.data.ratingAverage <= 5
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['ratingCount'])
+          || (
+            request.resource.data.ratingCount is int
+            && request.resource.data.ratingCount >= 0
+            && request.resource.data.ratingCount <= 1000000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['ratingSum'])
+          || (
+            request.resource.data.ratingSum is int
+            && request.resource.data.ratingSum >= 0
+            && request.resource.data.ratingSum <= 5000000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['reviewCount'])
+          || (
+            request.resource.data.reviewCount is int
+            && request.resource.data.reviewCount >= 0
+            && request.resource.data.reviewCount <= 1000000
+          )
         );
     }
 
@@ -529,6 +565,17 @@ service cloud.firestore {
           'freePreviewLessonId',
           'updatedAt'
         ]);
+    }
+
+    function teacherCanSubmitOwnedCourseForReview() {
+      return isTeacher()
+        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.status in ['draft', 'needs_changes', 'inactive']
+        && request.resource.data.status == 'in_review'
+        && request.resource.data.reviewNote == null
+        && courseChangedOnly(['status', 'reviewNote', 'updatedAt']);
     }
 
     function teacherCanUpdateOwnedCourseCover() {
@@ -1240,11 +1287,14 @@ service cloud.firestore {
         && validCourseShape()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.status == 'draft';
-      allow update: if validCourseShape()
-        && (
-          isAdmin()
-          || teacherCanSaveOwnedCourse()
-          || teacherCanUpdateOwnedCourseCover()
+      allow update: if teacherCanSubmitOwnedCourseForReview()
+        || (
+          validCourseShape()
+          && (
+            isAdmin()
+            || teacherCanSaveOwnedCourse()
+            || teacherCanUpdateOwnedCourseCover()
+          )
         );
       allow delete: if isAdmin()
         || (
@@ -1293,6 +1343,25 @@ service cloud.firestore {
         allow delete: if isAdmin()
           || (signedIn() && resource.data.authorId == request.auth.uid);
       }
+    }
+
+    match /courseReviews/{reviewId} {
+      allow read: if isAdmin()
+        || (
+          courseExists(resource.data.courseId)
+          && courseData(resource.data.courseId).status == 'published'
+        )
+        || (
+          signedIn()
+          && (
+            resource.data.userId == request.auth.uid
+            || ownsCourse(resource.data.courseId)
+            || hasEnrollmentForCourseSlug(resource.data.courseId)
+          )
+        );
+      // Reviews are written through submitCourseReview so aggregate rating
+      // fields on courses stay consistent and users cannot spoof identities.
+      allow create, update, delete: if false;
     }
 
     match /enrollments/{enrollmentId} {

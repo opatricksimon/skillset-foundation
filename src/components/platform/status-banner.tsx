@@ -19,28 +19,29 @@ type BannerState = {
 export function StatusBanner() {
   const { status, user } = useAuth();
   const pathname = usePathname() ?? "";
+  const userId = user?.uid ?? null;
   const [profileState, setProfileState] = useState<{
     uid: string | null;
     profile: UserProfile | null;
   }>({ uid: null, profile: null });
 
   useEffect(() => {
-    if (status !== "authenticated" || !user) {
+    if (status !== "authenticated" || !userId) {
       return;
     }
 
     return subscribeToUserProfile(
-      user.uid,
+      userId,
       (nextProfile) => {
-        setProfileState({ uid: user.uid, profile: nextProfile });
+        setProfileState({ uid: userId, profile: nextProfile });
       },
       () => {
-        setProfileState({ uid: user.uid, profile: null });
+        setProfileState({ uid: userId, profile: null });
       },
     );
-  }, [status, user]);
+  }, [status, userId]);
 
-  if (status !== "authenticated" || !user || profileState.uid !== user.uid) {
+  if (status !== "authenticated" || !user || profileState.uid !== userId) {
     return null;
   }
 

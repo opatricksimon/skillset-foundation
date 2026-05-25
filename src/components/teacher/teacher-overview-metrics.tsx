@@ -97,6 +97,16 @@ export function TeacherOverviewMetrics() {
     (sum, order) => sum + order.amountMinor,
     0,
   );
+  const ratingCount = courses.reduce(
+    (sum, course) => sum + (course.ratingCount ?? 0),
+    0,
+  );
+  const ratingSum = courses.reduce(
+    (sum, course) =>
+      sum + (course.ratingAverage ?? 0) * (course.ratingCount ?? 0),
+    0,
+  );
+  const averageRating = ratingCount ? ratingSum / ratingCount : null;
   const hasRevenue = grossMinor > 0;
 
   const cards = [
@@ -123,10 +133,12 @@ export function TeacherOverviewMetrics() {
     },
     {
       label: "Avg rating",
-      value: "--",
-      hint: "No published course ratings yet",
-      delta: "0.0",
-      up: false,
+      value: averageRating ? averageRating.toFixed(1) : "--",
+      hint: ratingCount
+        ? `${ratingCount} learner review${ratingCount === 1 ? "" : "s"}`
+        : "No published course ratings yet",
+      delta: ratingCount ? "+0.0" : "0.0",
+      up: true,
     },
   ];
 

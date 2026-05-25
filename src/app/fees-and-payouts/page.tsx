@@ -12,7 +12,7 @@ const policies = [
   ],
   [
     "Stripe processing fee",
-    "Passed through to the creator on every sale: 2.9% + $0.30 for USD card payments, 3.9% + $0.30 for non-USD. Never hidden inside the platform percentage.",
+    "Passed through to the creator on every sale: 2.9% + $0.30 for USD card payments, 5.4% + $0.30 estimated for non-USD. Never hidden inside the platform percentage.",
   ],
   [
     "Refund window",

@@ -130,6 +130,10 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     : null;
   const previewLessonEmbed = getTrustedLessonEmbed(previewLesson?.externalUrl);
   const lockedLessonCount = Math.max(lessons.length - (previewLesson ? 1 : 0), 0);
+  const ratingLabel =
+    course.ratingCount && course.ratingAverage
+      ? `${course.ratingAverage.toFixed(1)} / 5 from ${course.ratingCount} review${course.ratingCount === 1 ? "" : "s"}`
+      : "No learner reviews yet";
 
   async function handleCheckout() {
     if (!course || !canCheckout || !checkoutEnabled) {
@@ -306,6 +310,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
             ["Status", "Published"],
             ["Lessons", String(course.lessonCount)],
             ["Price", priceLabel],
+            ["Rating", ratingLabel],
             [
               "Access",
               courseIsFree

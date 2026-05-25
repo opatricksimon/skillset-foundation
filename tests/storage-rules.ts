@@ -1,0 +1,177 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+  type RulesTestEnvironment,
+} from "@firebase/rules-unit-testing";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+import type firebase from "firebase/compat/app";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  it,
+} from "vitest";
+
+let testEnv: RulesTestEnvironment;
+
+const projectId = "demo-skillset-rules-test";
+const bucketUrl = `gs://${projectId}.appspot.com`;
+const courseId = "course-paid";
+const teacherId = "teacher-1";
+const enrolledStudentId = "student-1";
+const otherStudentId = "student-2";
+const assetPath = `courses/${courseId}/assets/${teacherId}/asset-1/lesson.mp4`;
+
+const verifiedAuth = {
+  email: "learner@example.com",
+  email_verified: true,
+};
+
+beforeAll(async () => {
+  testEnv = await initializeTestEnvironment({
+    projectId,
+    firestore: {
+      rules: readFileSync(resolve("firestore.rules"), "utf8"),
+    },
+    storage: {
+      rules: readFileSync(resolve("storage.rules"), "utf8"),
+    },
+  });
+}, 30000);
+
+beforeEach(async () => {
+  await testEnv.clearFirestore();
+  await testEnv.clearStorage();
+  await seedCourseAccessData();
+});
+
+afterAll(async () => {
+  await testEnv?.cleanup();
+});
+
+describe("Storage course asset rules", () => {
+  it("allows a course owner to upload protected lesson video assets", async () => {
+    const storage = testEnv.authenticatedContext(teacherId, verifiedAuth).storage(bucketUrl);
+
+    await assertSucceeds(uploadVideoAsset(storage.ref(assetPath)));
+  });
+
+  it("blocks a non-owner teacher from uploading into another teacher course", async () => {
+    await seedUser("teacher-2", ["student", "teacher"]);
+    const storage = testEnv.authenticatedContext("teacher-2", verifiedAuth).storage(bucketUrl);
+
+    await assertFails(uploadVideoAsset(storage.ref(assetPath)));
+  });
+
+  it("allows an enrolled learner to read protected lesson video assets", async () => {
+    await seedProtectedAsset();
+    const storage = testEnv
+      .authenticatedContext(enrolledStudentId, verifiedAuth)
+      .storage(bucketUrl);
+
+    await assertSucceeds(storage.ref(assetPath).getMetadata());
+  });
+
+  it("blocks a non-enrolled learner from reading protected lesson video assets", async () => {
+    await seedProtectedAsset();
+    const storage = testEnv
+      .authenticatedContext(otherStudentId, verifiedAuth)
+      .storage(bucketUrl);
+
+    await assertFails(storage.ref(assetPath).getMetadata());
+  });
+});
+
+async function seedProtectedAsset() {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await uploadVideoAsset(context.storage(bucketUrl).ref(assetPath));
+  });
+}
+
+function uploadVideoAsset(reference: firebase.storage.Reference): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    reference.put(new Uint8Array([1, 2, 3]), {
+      contentType: "video/mp4",
+    }).then(resolve, reject);
+  });
+}
+
+async function seedCourseAccessData() {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const adminDb = context.firestore();
+
+    await setDoc(doc(adminDb, `users/${teacherId}`), createUser(teacherId, [
+      "student",
+      "teacher",
+    ]));
+    await setDoc(doc(adminDb, `users/${enrolledStudentId}`), createUser(enrolledStudentId, [
+      "student",
+    ]));
+    await setDoc(doc(adminDb, `users/${otherStudentId}`), createUser(otherStudentId, [
+      "student",
+    ]));
+    await setDoc(doc(adminDb, `courses/${courseId}`), {
+      ownerId: teacherId,
+      title: "Protected Course",
+      summary: "A paid course with protected lesson assets.",
+      category: "Leadership",
+      status: "published",
+      modules: [],
+      lessonCount: 1,
+      priceAmountMinor: 19900,
+      currency: "USD",
+      platformFeeBps: 800,
+      dripStrategy: "instant",
+      dripIntervalDays: 1,
+      freePreviewLessonId: null,
+      coverImageUrl: null,
+      reviewNote: null,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    await setDoc(doc(adminDb, `enrollments/${enrolledStudentId}__${courseId}`), {
+      id: `${enrolledStudentId}__${courseId}`,
+      userId: enrolledStudentId,
+      courseId,
+      courseSlug: courseId,
+      courseTitle: "Protected Course",
+      courseCategory: "Leadership",
+      courseImage: "/brand/logo-mark.png",
+      status: "active",
+      source: "payment",
+      progressPercent: 0,
+      lastLessonId: null,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+  });
+}
+
+async function seedUser(uid: string, roles: string[]) {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), `users/${uid}`), createUser(uid, roles));
+  });
+}
+
+function createUser(uid: string, roles: string[]) {
+  return {
+    uid,
+    email: `${uid}@example.com`,
+    displayName: "Seed User",
+    roles,
+    onboardingCompleted: true,
+    termsAcceptedAt: Timestamp.now(),
+    termsVersion: "2026-05-10",
+    privacyAcceptedAt: Timestamp.now(),
+    privacyVersion: "2026-05-10",
+    marketingConsent: false,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+    lastLoginAt: Timestamp.now(),
+  };
+}

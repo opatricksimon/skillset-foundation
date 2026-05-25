@@ -1,5 +1,31 @@
 # HANDOFF — sessão autônoma 2026-05-19
 
+## 2026-05-25 - Fase 2 / Bloco B - Pagamentos criticos
+
+Feito:
+- Extraido `functions/src/payment-rules.ts` com regras testaveis de pagamento.
+- Payout release alterado de D+7 para D+10, mantendo auto-refund em 7 dias.
+- Estimativa Stripe non-USD alterada para 5.4% + fixo; USD mantido em 2.9% + fixo.
+- Comissao unificada por plano no servidor: Free 800 bps, Starter 400, Pro 100, Plus 0.
+- `createTeacherCourseDraft`, `updateTeacherCourseBuilder` e checkout pago agora resolvem bps pelo plano real do professor no servidor, nao pelo cliente.
+- `requestRefund` passou de busca `userId + limit(50) + filtro em memoria` para query direta `userId + courseId + status paid`.
+- `charge.refunded` agora cria reversal proporcional quando o payout ledger ja foi `released` e existe `transferId`, com idempotency key.
+- Docs existentes de split/fees atualizadas para nao continuar comunicando 15%/3.9% como regra atual.
+
+Validado:
+- `npx tsc --noEmit --pretty false --types vitest/globals` OK.
+- `npm run lint` OK.
+- `npm test` OK: 16 arquivos, 61 testes.
+- `firebase emulators:exec --project demo-skillset --only firestore "npm run test:rules:run"` OK: 7 regras.
+- `npm --prefix functions run build` OK.
+- `npm run build` OK.
+
+Bloqueio registrado:
+- B8 em `BLOCKERS.md`: falta `STRIPE_SECRET_KEY` local para validar os 6 Stripe Price IDs na API real. O codigo manteve os IDs existentes e nao inventou novos.
+
+Proximo bloco:
+- Bloco C: varrer consistencia de UI/dados migrados, sem mockData, garantindo enrollment/autor/status coerentes.
+
 Tratamento normal (sem "senhor"). Padrão de code review sênior aplicado.
 Tudo validado e no GitHub. **Nada foi deployado** (deploy/LIVE = sua decisão).
 
@@ -87,3 +113,72 @@ Detalhe em **`DECISIONS.md`** (D1–D6). Destaques:
 `main` à frente do remoto anterior; pushes: `01e8d5b`, `0a07b33`, `978f63a`,
 `0a48290`, `5071f44` (+ commit destes docs). Sem force push, sem reset,
 nada deletado. Servidor dev pode ainda estar rodando em :3000 (background).
+
+## 2026-05-25 - Fase 2 / Bloco A - Course Builder funcional
+
+Estado: concluido e validado.
+
+Feito:
+- Branch de trabalho criada: `fase-2-builder-backend`.
+- Confirmado que nao existe uso de `window.SkillsetData`, `mockData` ou `data.js`.
+- `CreateCourseModal` deixou de criar draft com resumo padrao hardcoded; agora exige `Course promise` real do professor e envia esse valor para `createTeacherCourseDraft`.
+- `CourseBuilderStudio` separa progresso de etapa (`Builder step X of 4`) de readiness de revisao, evitando o estado confuso tipo "step atual + percentual global".
+- Upload de video/material agora fica bloqueado para aulas criadas apenas no estado local. A aula precisa ser salva no draft primeiro, aparecer no Firestore, e so entao libera `Open lesson studio` para upload via `course-assets.ts`.
+- Fluxo real confirmado: `createTeacherCourseDraft`, `updateTeacherCourseBuilder`, `submitTeacherCourseForReview`, `uploadCourseAsset`, Firebase Storage e subcolecao `courses/{courseId}/assets`.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 15 arquivos / 55 testes passaram.
+- `npm run build`: passou.
+- `npm run test:rules`: 7 testes passaram.
+- `npm --prefix functions run build`: passou.
+
+Proximo bloco:
+- Bloco B: corrigir pagamentos em `functions/src/index.ts`, com testes Vitest.
+
+## 2026-05-25 - Fase 2 / Bloco C - Consistencia de dados da learning UI
+
+Estado: concluido e validado.
+
+Feito:
+- Confirmado que nenhum componente importado do Design V2 le `window.SkillsetData`, `mockData` ou `data.js`.
+- `Continue learning` agora usa apenas enrollments `active`; cursos `completed` continuam abrindo na biblioteca, mas nao aparecem como curso em andamento.
+- Metricas de aluno passaram a contar `Courses in progress` apenas com status `active`.
+- `LearnCommunityHub` deixou de misturar comunidades de catalogo demo; a lista agora deriva somente de enrollments reais do usuario.
+- Rota legada `/learn/community/[slug]` preservada sem importar catalogo demo; ela monta um espaco generico pelo slug real e deixa o gate de enrollment validar acesso.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 16 arquivos / 63 testes passaram.
+- `npm run build`: passou.
+- `firebase emulators:exec --project demo-skillset --only firestore "npm run test:rules:run"`: passou apos rerun isolado; primeira tentativa foi timeout de inicializacao do emulator.
+- `npm --prefix functions run build`: passou.
+
+Proximo bloco:
+- Bloco D: validar gate pos-compra para classroom/video protegido contra `storage.rules`.
+
+## 2026-05-25 - Fase 2 / Bloco D - Gate de acesso pos-compra e Storage
+
+Estado: concluido e validado.
+
+Feito:
+- Adicionado teste automatizado de `storage.rules` para assets protegidos de curso.
+- Validado que professor dono consegue subir video de aula no path real `courses/{courseId}/assets/{ownerId}/{assetId}/{fileName}`.
+- Validado que professor nao-dono nao consegue subir arquivo em curso de outro professor.
+- Validado que aluno com enrollment `active` consegue ler video/material protegido.
+- Validado que aluno sem enrollment nao consegue ler video/material protegido.
+- Script `npm run test:rules` agora sobe Firestore + Storage em projeto demo fixo para que `firestore.get()` dentro de `storage.rules` aponte para o mesmo namespace dos seeds.
+- `vitest.rules.config.ts` roda arquivos de rules sem paralelismo para evitar `clearFirestore()` concorrente entre suites.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 16 arquivos / 63 testes passaram.
+- `npm run test:rules`: 2 arquivos / 11 testes passaram.
+- `npm run build`: passou.
+- `npm --prefix functions run build`: passou.
+
+Estado final:
+- Blocos A, B, C e D concluidos na branch `fase-2-builder-backend`.

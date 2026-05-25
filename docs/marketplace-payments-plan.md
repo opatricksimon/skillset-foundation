@@ -46,17 +46,17 @@ Detailed setup file: `docs/stripe-setup.md`.
 
 Default placeholder:
 
-- Skillset platform fee: 15% (`1500` basis points).
-- Teacher gross share before Stripe/payment fees: 85%.
+- Skillset platform fee comes from the creator plan: Free 8% (`800` bps), Starter 4%, Pro 1%, Plus 0%.
+- Teacher gross share before Stripe/payment fees depends on that plan.
 - Course pricing is stored in minor units, never floats.
 
 Example:
 
 - Course price: `$100.00`
-- Skillset fee at 15%: `$15.00`
-- Teacher gross transfer: `$85.00`
+- Skillset fee on Free at 8%: `$8.00`
+- Teacher gross transfer before Stripe fee: `$92.00`
 
-The exact fee can be changed per course, per teacher, or globally later.
+The exact fee is resolved server-side from the teacher plan at sale time.
 
 ## Required Data Model
 
