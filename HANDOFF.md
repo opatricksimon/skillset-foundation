@@ -182,3 +182,33 @@ Validacao:
 
 Estado final:
 - Blocos A, B, C e D concluidos na branch `fase-2-builder-backend`.
+
+## 2026-05-25 - Main integrado + Stripe go-live prep
+
+Estado: concluido.
+
+Feito:
+- Branch `fase-2-builder-backend` integrada em `main` com merge commit.
+- `main` enviado para GitHub.
+- Validado em `main`: TypeScript, lint, testes unitarios, rules tests, build Next e build Functions.
+- Credenciais locais lidas sem expor valores.
+- `STRIPE_SECRET_KEY` LIVE e `STRIPE_WEBHOOK_SECRET` gravados no Firebase Secret Manager.
+- 6 Price IDs de planos confirmados como ativos no Stripe LIVE.
+- Frontend confirmado com publishable key LIVE em `.env.local` e `.env.production`.
+
+Pendente imediato:
+- Nenhum deploy pendente deste bloco.
+
+Deploy:
+- `firebase deploy --only functions --project skillsetusaofficial`: concluido.
+- `firebase deploy --only "hosting,firestore:rules,storage" --project skillsetusaofficial`: concluido.
+- Hosting publicado em `https://skillsetusaofficial.web.app`.
+- Firestore Rules e Storage Rules publicadas.
+
+Smoke:
+- `/`, `/pricing`, `/teach`, `/account/payments`, `/courses` e `/verify` responderam 200 OK.
+
+Observacoes:
+- Firebase Hosting emitiu aviso de suporte Next.js em preview.
+- Deploy SSR usou Node 24 e mostrou aviso de engine do `firebase-frameworks`, mas concluiu com sucesso.
+- O projeto ainda nao tem Price IDs equivalentes no Stripe TEST para assinatura; LIVE esta validado.

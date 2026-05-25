@@ -75,3 +75,16 @@ _Atualizado conforme a sessão avança._
 
 Nenhum bloqueador novo. O Builder, upload de assets e regras de acesso usam
 Firebase/Firestore/Storage ja configurados no projeto.
+
+## 2026-05-25 - Stripe go-live status
+
+Resolvido:
+- `STRIPE_SECRET_KEY` LIVE encontrada no arquivo local de credenciais e gravada no Firebase Secret Manager.
+- `STRIPE_WEBHOOK_SECRET` encontrado no arquivo local de credenciais e gravado no Firebase Secret Manager.
+- Os 6 Price IDs de planos existem e estao ativos no Stripe LIVE.
+
+Pendente nao-bloqueante para producao:
+- Os mesmos 6 Price IDs nao existem no Stripe TEST. Se quisermos testar assinaturas em modo TEST, precisamos criar Price IDs equivalentes de teste e apontar um ambiente de staging para eles.
+
+Deploy concluido:
+- Functions, Hosting, Firestore Rules e Storage Rules foram publicados em producao em 2026-05-25.

@@ -171,3 +171,11 @@ E a opcao mais conservadora para integridade de dados no MVP.
 (`Builder step X of 4`) e mostra readiness como texto separado.
 **Por que:** readiness e etapa atual sao estados diferentes. Misturar os dois
 gerava a percepcao de bug tipo "Step 1 ... 71%".
+
+# D20 - Stripe LIVE como ambiente de producao atual
+**Decisao:** manter producao apontando para Stripe LIVE, porque `.env.local` e
+`.env.production` ja usam `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` live e os 6 Price
+IDs configurados no servidor existem no Stripe LIVE.
+**Tradeoff:** Stripe TEST ainda nao tem Price IDs equivalentes para planos.
+Teste completo de assinatura em staging exige criar produtos/precos TEST
+separados antes de alternar um ambiente nao-producao para TEST.
