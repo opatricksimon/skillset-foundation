@@ -41,7 +41,11 @@ service firebase.storage {
         && courseData(courseId).status in ['draft', 'needs_changes', 'published', 'inactive'];
     }
 
-    function validUpload() {
+    function validLessonMaterialFallback(fileName) {
+      return fileName.matches('.*\\.(pdf|txt|md|csv|doc|docx|ppt|pptx|xls|xlsx|zip|mp3|m4a|wav|ogg)$');
+    }
+
+    function validUpload(fileName) {
       return request.resource != null
         && request.resource.size > 0
         && request.resource.size <= 500 * 1024 * 1024
@@ -49,7 +53,21 @@ service firebase.storage {
           request.resource.contentType.matches('image/.*')
           || request.resource.contentType.matches('video/.*')
           || request.resource.contentType.matches('text/.*')
+          || request.resource.contentType.matches('audio/.*')
           || request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || request.resource.contentType == 'application/vnd.ms-powerpoint'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+          || request.resource.contentType == 'application/vnd.ms-excel'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          || request.resource.contentType == 'application/vnd.ms-excel.sheet.macroenabled.12'
+          || request.resource.contentType == 'application/zip'
+          || request.resource.contentType == 'application/x-zip-compressed'
+          || (
+            request.resource.contentType == 'application/octet-stream'
+            && validLessonMaterialFallback(fileName)
+          )
         );
     }
 
@@ -72,7 +90,7 @@ service firebase.storage {
       allow write: if signedIn()
         && ownerId == request.auth.uid
         && courseIsEditableByOwner(courseId)
-        && validUpload();
+        && validUpload(fileName);
     }
 
     match /{allPaths=**} {

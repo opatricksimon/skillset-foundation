@@ -64,11 +64,15 @@ const supportedStripeCurrencies = new Set([
 type TeacherCourseRecord = {
   ownerId: string;
   title: string;
+  titleKey?: string;
   summary?: string;
   category: string;
+  categories?: string[];
   status: string;
+  modules?: unknown;
   lessonCount?: number;
   priceAmountMinor?: number | null;
+  paymentType?: string | null;
   currency?: SkillsetCurrency;
   platformFeeBps?: number;
   coverImageUrl?: string | null;
@@ -163,6 +167,258 @@ function timestampToMillis(value: unknown): number | null {
   }
 
   return null;
+}
+
+function normalizeCourseTitleKey(title: string): string {
+  return title
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 140);
+}
+
+function normalizeCourseCategories(categories: unknown): string[] {
+  if (!Array.isArray(categories)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const category of categories) {
+    if (typeof category !== "string") {
+      continue;
+    }
+
+    const value = category.trim();
+    const key = value.toLowerCase();
+
+    if (!value || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    normalized.push(value.slice(0, 80));
+
+    if (normalized.length >= 5) {
+      break;
+    }
+  }
+
+  return normalized;
+}
+
+const builderLessonTypes = new Set([
+  "video",
+  "text",
+  "quiz",
+  "assignment",
+  "live_recording",
+  "download",
+  "external_embed",
+]);
+
+const builderDripStrategies = new Set([
+  "instant",
+  "sequential_progress",
+  "time_drip_lesson",
+  "time_drip_module",
+  "time_drip_custom",
+]);
+
+const builderPaymentTypes = new Set([
+  "one_time",
+  "subscription_monthly",
+  "subscription_yearly",
+  "free",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cleanOptionalText(value: unknown, maxLength = 2000): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const nextValue = value.trim();
+  return nextValue ? nextValue.slice(0, maxLength) : null;
+}
+
+function cleanRequiredText(
+  value: unknown,
+  label: string,
+  minLength: number,
+  maxLength: number,
+): string {
+  if (typeof value !== "string") {
+    throw new HttpsError("invalid-argument", `${label} must be text.`);
+  }
+
+  const nextValue = value.trim();
+
+  if (nextValue.length < minLength || nextValue.length > maxLength) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${label} must be between ${minLength} and ${maxLength} characters.`,
+    );
+  }
+
+  return nextValue;
+}
+
+function cleanOptionalInteger(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return Math.round(value);
+}
+
+function normalizeBuilderModules(input: unknown) {
+  if (!Array.isArray(input)) {
+    throw new HttpsError("invalid-argument", "Course modules must be a list.");
+  }
+
+  if (input.length > 60) {
+    throw new HttpsError("invalid-argument", "Courses can have up to 60 modules.");
+  }
+
+  let lessonCount = 0;
+  const modules = input.map((module, moduleIndex) => {
+    if (!isRecord(module)) {
+      throw new HttpsError("invalid-argument", `Module ${moduleIndex + 1} is invalid.`);
+    }
+
+    const lessonsInput = module.lessons;
+
+    if (!Array.isArray(lessonsInput)) {
+      throw new HttpsError(
+        "invalid-argument",
+        `Module ${moduleIndex + 1} lessons must be a list.`,
+      );
+    }
+
+    if (lessonsInput.length > 200) {
+      throw new HttpsError(
+        "invalid-argument",
+        `Module ${moduleIndex + 1} can have up to 200 lessons.`,
+      );
+    }
+
+    const lessons = lessonsInput.map((lesson, lessonIndex) => {
+      if (!isRecord(lesson)) {
+        throw new HttpsError(
+          "invalid-argument",
+          `Lesson ${lessonIndex + 1} in module ${moduleIndex + 1} is invalid.`,
+        );
+      }
+
+      const type = typeof lesson.type === "string" ? lesson.type : "";
+
+      if (!builderLessonTypes.has(type)) {
+        throw new HttpsError(
+          "invalid-argument",
+          `Lesson ${lessonIndex + 1} has an invalid type.`,
+        );
+      }
+
+      lessonCount += 1;
+
+      if (lessonCount > 500) {
+        throw new HttpsError("invalid-argument", "Courses can have up to 500 lessons.");
+      }
+
+      return {
+        id: cleanRequiredText(lesson.id, "Lesson id", 3, 160),
+        title: cleanRequiredText(lesson.title, "Lesson title", 1, 160),
+        type,
+        description: cleanOptionalText(lesson.description, 1200) ?? "",
+        durationMinutes: cleanOptionalInteger(lesson.durationMinutes),
+        contentText: cleanOptionalText(lesson.contentText, 20000),
+        externalUrl: cleanOptionalText(lesson.externalUrl, 2000),
+        dripDelayDays:
+          typeof lesson.dripDelayDays === "number"
+            ? Math.max(0, Math.round(lesson.dripDelayDays))
+            : null,
+        thumbnailAssetId: cleanOptionalText(lesson.thumbnailAssetId, 160),
+      };
+    });
+
+    return {
+      id: cleanRequiredText(module.id, "Module id", 3, 160),
+      title: cleanRequiredText(module.title, "Module title", 1, 160),
+      summary: cleanOptionalText(module.summary, 1200),
+      coverAssetId: cleanOptionalText(module.coverAssetId, 160),
+      lessons,
+    };
+  });
+
+  return { lessonCount, modules };
+}
+
+function validateCourseReadyForReview(course: TeacherCourseRecord) {
+  const title = cleanRequiredText(course.title, "Course title", 3, 120);
+  const summary = cleanRequiredText(course.summary, "Course summary", 20, 1200);
+  const category = cleanRequiredText(course.category, "Course category", 2, 80);
+  const { lessonCount, modules } = normalizeBuilderModules(course.modules);
+  const paymentType = course.paymentType || "one_time";
+  const allLessonIds = new Set(
+    modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
+  );
+  const freePreviewLessonId = cleanOptionalText(
+    (course as { freePreviewLessonId?: unknown }).freePreviewLessonId,
+    160,
+  );
+
+  if (!title || !summary || !category) {
+    throw new HttpsError("invalid-argument", "Course details are incomplete.");
+  }
+
+  if (modules.length === 0 || lessonCount === 0) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Add at least one module and one lesson before submitting.",
+    );
+  }
+
+  if (!freePreviewLessonId || !allLessonIds.has(freePreviewLessonId)) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Choose one lesson as the free preview before submitting.",
+    );
+  }
+
+  if (paymentType === "free") {
+    return;
+  }
+
+  if (paymentType !== "one_time") {
+    throw new HttpsError(
+      "failed-precondition",
+      "Only free and one-time payment courses can be submitted in this release.",
+    );
+  }
+
+  if (
+    typeof course.priceAmountMinor !== "number"
+    || !Number.isFinite(course.priceAmountMinor)
+    || course.priceAmountMinor <= 0
+  ) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Set a paid price greater than zero or choose Free before submitting.",
+    );
+  }
 }
 
 function getStripeClient() {
@@ -315,6 +571,338 @@ export const requestAccountDeletion = onCall(async (request) =>
   createAccountActionRequest(request, "account_deletion"),
 );
 
+export const createTeacherCourseDraft = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before creating a course.");
+  }
+
+  const uid = request.auth.uid;
+  const input = request.data || {};
+  const title = typeof input.title === "string" ? input.title.trim() : "";
+  const summary = typeof input.summary === "string" ? input.summary.trim() : "";
+  const titleKey = normalizeCourseTitleKey(title);
+  const categories = normalizeCourseCategories(input.categories);
+  const fallbackCategory =
+    typeof input.category === "string" && input.category.trim()
+      ? input.category.trim().slice(0, 80)
+      : "Other";
+  const category = categories[0] ?? fallbackCategory;
+  const paymentType = input.paymentType === "free" ? "free" : "one_time";
+
+  if (title.length < 3 || title.length > 120 || titleKey.length < 3) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Course title must be between 3 and 120 characters.",
+    );
+  }
+
+  if (summary.length < 20 || summary.length > 1200) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Course summary must be between 20 and 1200 characters.",
+    );
+  }
+
+  const userSnapshot = await db.collection("users").doc(uid).get();
+  const profile = userSnapshot.data() as UserProfileRecord | undefined;
+  const roles = Array.isArray(profile?.roles) ? profile.roles : [];
+  const acceptedTeacherTerms = Boolean(userSnapshot.get("teacherTermsAcceptedAt"));
+
+  if (!roles.includes("teacher") || !acceptedTeacherTerms) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Teacher setup must be complete before creating courses.",
+    );
+  }
+
+  const courseRef = db.collection("courses").doc();
+  const titleKeyRef = db.collection("courseTitleKeys").doc(titleKey);
+
+  await db.runTransaction(async (transaction) => {
+    const titleKeySnapshot = await transaction.get(titleKeyRef);
+
+    if (titleKeySnapshot.exists) {
+      throw new HttpsError(
+        "already-exists",
+        "A course with this title already exists. Choose a more specific name.",
+      );
+    }
+
+    transaction.set(titleKeyRef, {
+      id: titleKey,
+      title,
+      ownerId: uid,
+      courseId: courseRef.id,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    transaction.set(courseRef, {
+      ownerId: uid,
+      title,
+      titleKey,
+      summary,
+      category,
+      categories,
+      status: "draft",
+      modules: [],
+      lessonCount: 0,
+      priceAmountMinor: paymentType === "free" ? 0 : null,
+      currency: defaultSkillsetCurrency,
+      paymentType,
+      installmentsEnabled: false,
+      installmentsMax: null,
+      platformFeeBps: 1500,
+      dripStrategy: "instant",
+      dripIntervalDays: 1,
+      freePreviewLessonId: null,
+      coverImageUrl: null,
+      reviewNote: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { courseId: courseRef.id };
+});
+
+export const updateTeacherCourseBuilder = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before saving a course.");
+  }
+
+  const uid = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+  const title = cleanRequiredText(input.title, "Course title", 3, 120);
+  const summary = cleanRequiredText(input.summary, "Course summary", 20, 1200);
+  const titleKey = normalizeCourseTitleKey(title);
+  const categories = normalizeCourseCategories(input.categories);
+  const fallbackCategory =
+    typeof input.category === "string" && input.category.trim()
+      ? input.category.trim().slice(0, 80)
+      : "Other";
+  const category = categories[0] ?? fallbackCategory;
+  const { lessonCount, modules } = normalizeBuilderModules(input.modules);
+  const paymentType =
+    typeof input.paymentType === "string" && builderPaymentTypes.has(input.paymentType)
+      ? input.paymentType
+      : "one_time";
+  const priceAmountMinor =
+    paymentType === "free" ? 0 : cleanOptionalInteger(input.priceAmountMinor);
+  const currency =
+    typeof input.currency === "string"
+      && supportedStripeCurrencies.has(input.currency.toUpperCase())
+      ? input.currency.toUpperCase()
+      : defaultSkillsetCurrency;
+  const installmentsEnabled =
+    paymentType === "one_time" && input.installmentsEnabled === true;
+  const installmentsMax = installmentsEnabled
+    ? Math.min(36, Math.max(1, cleanOptionalInteger(input.installmentsMax) ?? 12))
+    : null;
+  const dripStrategy =
+    typeof input.dripStrategy === "string" && builderDripStrategies.has(input.dripStrategy)
+      ? input.dripStrategy
+      : "instant";
+  const dripIntervalDays = Math.max(
+    1,
+    cleanOptionalInteger(input.dripIntervalDays) ?? 1,
+  );
+  const freePreviewLessonId = cleanOptionalText(input.freePreviewLessonId, 160);
+  const allLessonIds = new Set(
+    modules.flatMap((module) => module.lessons.map((lesson) => lesson.id)),
+  );
+
+  if (titleKey.length < 3) {
+    throw new HttpsError("invalid-argument", "Course title is not specific enough.");
+  }
+
+  if (category.length < 2 || category.length > 80) {
+    throw new HttpsError("invalid-argument", "Choose a valid course category.");
+  }
+
+  if (typeof priceAmountMinor === "number" && priceAmountMinor < 0) {
+    throw new HttpsError("invalid-argument", "Price cannot be negative.");
+  }
+
+  if (
+    freePreviewLessonId
+    && !allLessonIds.has(freePreviewLessonId)
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Free preview lesson must belong to this course.",
+    );
+  }
+
+  const userSnapshot = await db.collection("users").doc(uid).get();
+  const profile = userSnapshot.data() as UserProfileRecord | undefined;
+  const roles = Array.isArray(profile?.roles) ? profile.roles : [];
+  const acceptedTeacherTerms = Boolean(userSnapshot.get("teacherTermsAcceptedAt"));
+
+  if (!roles.includes("teacher") || !acceptedTeacherTerms) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Teacher setup must be complete before saving courses.",
+    );
+  }
+
+  const courseRef = db.collection("courses").doc(courseId);
+  const nextTitleKeyRef = db.collection("courseTitleKeys").doc(titleKey);
+
+  await db.runTransaction(async (transaction) => {
+    const courseSnapshot = await transaction.get(courseRef);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.ownerId !== uid) {
+      throw new HttpsError("permission-denied", "Only the course owner can save it.");
+    }
+
+    if (!["draft", "needs_changes", "published", "inactive"].includes(course.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This course status cannot be edited from the builder.",
+      );
+    }
+
+    const currentTitleKey = course.titleKey || normalizeCourseTitleKey(course.title);
+
+    if (titleKey !== currentTitleKey) {
+      const previousTitleKeyRef = currentTitleKey
+        ? db.collection("courseTitleKeys").doc(currentTitleKey)
+        : null;
+      const [nextTitleKeySnapshot, previousTitleKeySnapshot] = await Promise.all([
+        transaction.get(nextTitleKeyRef),
+        previousTitleKeyRef ? transaction.get(previousTitleKeyRef) : Promise.resolve(null),
+      ]);
+
+      if (
+        nextTitleKeySnapshot.exists
+        && nextTitleKeySnapshot.get("courseId") !== courseId
+      ) {
+        throw new HttpsError(
+          "already-exists",
+          "A course with this title already exists. Choose a more specific name.",
+        );
+      }
+
+      transaction.set(nextTitleKeyRef, {
+        id: titleKey,
+        title,
+        ownerId: uid,
+        courseId,
+        createdAt: nextTitleKeySnapshot.exists
+          ? nextTitleKeySnapshot.get("createdAt") || FieldValue.serverTimestamp()
+          : FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+
+      if (previousTitleKeyRef && previousTitleKeySnapshot) {
+        if (
+          previousTitleKeySnapshot.exists
+          && previousTitleKeySnapshot.get("courseId") === courseId
+        ) {
+          transaction.delete(previousTitleKeyRef);
+        }
+      }
+    } else {
+      transaction.set(
+        nextTitleKeyRef,
+        {
+          id: titleKey,
+          title,
+          ownerId: uid,
+          courseId,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+
+    transaction.update(courseRef, {
+      title,
+      titleKey,
+      summary,
+      category,
+      categories,
+      modules,
+      lessonCount,
+      priceAmountMinor,
+      currency,
+      paymentType,
+      installmentsEnabled,
+      installmentsMax,
+      platformFeeBps: course.platformFeeBps ?? 1500,
+      dripStrategy,
+      dripIntervalDays,
+      freePreviewLessonId,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true };
+});
+
+export const submitTeacherCourseForReview = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before submitting a course.");
+  }
+
+  const uid = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+
+  const userSnapshot = await db.collection("users").doc(uid).get();
+  const profile = userSnapshot.data() as UserProfileRecord | undefined;
+  const roles = Array.isArray(profile?.roles) ? profile.roles : [];
+  const acceptedTeacherTerms = Boolean(userSnapshot.get("teacherTermsAcceptedAt"));
+
+  if (!roles.includes("teacher") || !acceptedTeacherTerms) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Teacher setup must be complete before submitting courses.",
+    );
+  }
+
+  const courseRef = db.collection("courses").doc(courseId);
+
+  await db.runTransaction(async (transaction) => {
+    const courseSnapshot = await transaction.get(courseRef);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.ownerId !== uid) {
+      throw new HttpsError("permission-denied", "Only the course owner can submit it.");
+    }
+
+    if (!["draft", "needs_changes", "inactive"].includes(course.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only draft, inactive, or needs-changes courses can be submitted for review.",
+      );
+    }
+
+    validateCourseReadyForReview(course);
+
+    transaction.update(courseRef, {
+      status: "in_review",
+      reviewNote: null,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true };
+});
+
 export const createCheckoutSession = onCall(
   { secrets: [stripeSecretKey] },
   async (request) => {
@@ -450,7 +1038,7 @@ export const createCheckoutSession = onCall(
           userId,
         },
       },
-      success_url: `${appUrl}/learn/courses/creator?courseId=${encodeURIComponent(courseId)}&checkout=success`,
+      success_url: `${appUrl}/learn/courses/${encodeURIComponent(courseId)}?checkout=success`,
       cancel_url: `${appUrl}/courses/creator?courseId=${encodeURIComponent(courseId)}&checkout=cancelled`,
     };
 
@@ -470,6 +1058,82 @@ export const createCheckoutSession = onCall(
     return { url: session.url };
   },
 );
+
+export const createFreeCourseEnrollment = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before enrolling.");
+  }
+
+  const courseId = String(request.data?.courseId || "").trim();
+  const userId = request.auth.uid;
+
+  if (!courseId || courseId.length > 160) {
+    throw new HttpsError("invalid-argument", "A valid courseId is required.");
+  }
+
+  await enforceRateLimit(`free_enroll_${userId}`, 20, 60 * 60 * 1000);
+
+  const courseRef = db.collection("courses").doc(courseId);
+  const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
+
+  await db.runTransaction(async (transaction) => {
+    const [courseSnapshot, enrollmentSnapshot] = await Promise.all([
+      transaction.get(courseRef),
+      transaction.get(enrollmentRef),
+    ]);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.status !== "published") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only published courses can be enrolled.",
+      );
+    }
+
+    const isFreeCourse =
+      course.paymentType === "free" ||
+      (typeof course.priceAmountMinor === "number" && course.priceAmountMinor === 0);
+
+    if (!isFreeCourse) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This course requires checkout before enrollment.",
+      );
+    }
+
+    if (
+      enrollmentSnapshot.exists &&
+      ["active", "completed"].includes(String(enrollmentSnapshot.data()?.status))
+    ) {
+      return;
+    }
+
+    transaction.set(enrollmentRef, {
+      id: enrollmentRef.id,
+      userId,
+      courseId,
+      courseSlug: courseId,
+      courseTitle: course.title,
+      courseCategory: course.category,
+      courseImage: course.coverImageUrl || "/brand/logo-mark.png",
+      status: "active",
+      source: "free_course",
+      progressPercent: 0,
+      lastLessonId: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return {
+    enrollmentId: enrollmentRef.id,
+  };
+});
 
 export const createTeacherStripeAccountLink = onCall(
   { secrets: [stripeSecretKey] },
@@ -537,8 +1201,8 @@ export const createTeacherStripeAccountLink = onCall(
     const appUrl = getAppUrl();
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${appUrl}/teach?stripe=refresh`,
-      return_url: `${appUrl}/teach?stripe=return`,
+      refresh_url: `${appUrl}/account/payments?stripe=refresh#stripe-connect`,
+      return_url: `${appUrl}/account/payments?stripe=return`,
       type: "account_onboarding",
     });
 
@@ -1278,9 +1942,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         courseSlug: courseId,
         courseTitle: course.title,
         courseCategory: course.category,
-        courseImage:
-          course.coverImageUrl
-          || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+        courseImage: course.coverImageUrl || "/brand/logo-mark.png",
         status: "active",
         source: "payment",
         progressPercent: 0,
@@ -1826,9 +2488,6 @@ export const createConnectAccountSession = onCall(
       account: accountId,
       components: {
         account_onboarding: { enabled: true },
-        payouts: { enabled: true },
-        balances: { enabled: true },
-        notification_banner: { enabled: true },
       },
     });
 

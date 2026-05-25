@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { ProtectedSurface } from "@/components/auth/protected-surface";
+import { CreatorCourseWorkspace } from "@/components/learn/creator-course-workspace";
 import { EnrolledCourseWorkspace } from "@/components/learn/enrolled-course-workspace";
 import { PlatformShell } from "@/components/platform/platform-shell";
 import { getCourseBySlug, getCourseSlugs } from "@/lib/data/catalog";
@@ -18,7 +19,27 @@ export default async function LearnCoursePage({
   const course = getCourseBySlug(slug);
 
   if (!course) {
-    notFound();
+    return (
+      <ProtectedSurface permissions={["courses.viewLearning"]}>
+        <PlatformShell
+          eyebrow="Private creator course"
+          title="Teacher-published course workspace."
+          description="This workspace loads a real Firestore course directly from its course URL after enrollment is confirmed."
+        >
+          <Suspense
+            fallback={
+              <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
+                <p className="text-sm text-[var(--color-ink-soft)]">
+                  Loading creator course...
+                </p>
+              </section>
+            }
+          >
+            <CreatorCourseWorkspace initialCourseId={slug} />
+          </Suspense>
+        </PlatformShell>
+      </ProtectedSurface>
+    );
   }
 
   return (

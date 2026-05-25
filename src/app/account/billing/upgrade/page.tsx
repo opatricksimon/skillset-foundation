@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 
-import { AccountPanel } from "@/components/account/account-panel";
 import { EmbeddedCheckoutPanel } from "@/components/account/embedded-checkout-panel";
 import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { PlatformShell } from "@/components/platform/platform-shell";
@@ -36,8 +35,7 @@ export default async function BillingUpgradePage({
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
       <PlatformShell title="Upgrade your plan" compact>
-        <AccountPanel active="Billing">
-          {planId ? (
+        {planId ? (
             <Suspense
               fallback={
                 <div className="rounded-[4px] border fine-rule bg-white p-8 text-sm text-[var(--color-ink-soft)] shadow-[var(--shadow-soft)]">
@@ -47,10 +45,9 @@ export default async function BillingUpgradePage({
             >
               <EmbeddedCheckoutPanel planId={planId} cycle={cycle} />
             </Suspense>
-          ) : (
-            <MissingPlanState />
-          )}
-        </AccountPanel>
+        ) : (
+          <MissingPlanState />
+        )}
       </PlatformShell>
     </ProtectedSurface>
   );

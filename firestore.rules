@@ -300,8 +300,10 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'ownerId',
         'title',
+        'titleKey',
         'summary',
         'category',
+        'categories',
         'status',
         'modules',
         'lessonCount',
@@ -342,10 +344,25 @@ service cloud.firestore {
         && request.resource.data.lessonCount is int
         && request.resource.data.title.size() >= 3
         && request.resource.data.title.size() <= 120
+        && (
+          !request.resource.data.keys().hasAny(['titleKey'])
+          || (
+            request.resource.data.titleKey is string
+            && request.resource.data.titleKey.size() >= 3
+            && request.resource.data.titleKey.size() <= 140
+          )
+        )
         && request.resource.data.summary.size() >= 20
         && request.resource.data.summary.size() <= 1200
         && request.resource.data.category.size() >= 2
         && request.resource.data.category.size() <= 80
+        && (
+          !request.resource.data.keys().hasAny(['categories'])
+          || (
+            request.resource.data.categories is list
+            && request.resource.data.categories.size() <= 5
+          )
+        )
         && request.resource.data.modules.size() <= 30
         && request.resource.data.lessonCount >= 0
         && request.resource.data.lessonCount <= 300
@@ -493,10 +510,12 @@ service cloud.firestore {
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
         && request.resource.data.status == resource.data.status
+        && request.resource.data.title == resource.data.title
+        && request.resource.data.titleKey == resource.data.titleKey
         && courseChangedOnly([
-          'title',
           'summary',
           'category',
+          'categories',
           'modules',
           'lessonCount',
           'priceAmountMinor',
@@ -520,17 +539,6 @@ service cloud.firestore {
         && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
         && request.resource.data.status == resource.data.status
         && courseChangedOnly(['coverImageUrl', 'updatedAt']);
-    }
-
-    function teacherCanSubmitOwnedDraft() {
-      return isTeacher()
-        && (isAdmin() || currentUserHasAcceptedTeacherTerms())
-        && resource.data.ownerId == request.auth.uid
-        && request.resource.data.ownerId == resource.data.ownerId
-        && resource.data.status in ['draft', 'needs_changes', 'inactive']
-        && request.resource.data.status == 'in_review'
-        && request.resource.data.reviewNote == null
-        && courseChangedOnly(['status', 'reviewNote', 'updatedAt']);
     }
 
     function hasOnlyAllowedEnrollmentKeys() {
@@ -562,7 +570,7 @@ service cloud.firestore {
     }
 
     function validEnrollmentSource() {
-      return request.resource.data.source in ['manual_demo', 'payment', 'admin'];
+      return request.resource.data.source in ['manual_demo', 'free_course', 'payment', 'admin'];
     }
 
     function validEnrollmentShape(enrollmentId) {
@@ -729,6 +737,34 @@ service cloud.firestore {
         && request.resource.data.authorRole.size() <= 40
         && request.resource.data.body.size() >= 3
         && request.resource.data.body.size() <= 3000;
+    }
+
+    function hasOnlyAllowedLessonCommentKeys() {
+      return request.resource.data.keys().hasOnly([
+        'courseId',
+        'lessonId',
+        'authorId',
+        'authorName',
+        'body',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validLessonCommentShape(courseId) {
+      return hasOnlyAllowedLessonCommentKeys()
+        && request.resource.data.courseId == courseId
+        && request.resource.data.lessonId is string
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.body is string
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.lessonId.size() >= 3
+        && request.resource.data.lessonId.size() <= 160
+        && request.resource.data.authorName.size() >= 1
+        && request.resource.data.authorName.size() <= 120
+        && request.resource.data.body.size() >= 3
+        && request.resource.data.body.size() <= 2000;
     }
 
     function hasOnlyAllowedCourseEventKeys() {
@@ -1106,6 +1142,7 @@ service cloud.firestore {
         'downloadUrl',
         'isPreview',
         'lessonId',
+        'moduleId',
         'createdAt',
         'updatedAt'
       ]);
@@ -1130,6 +1167,11 @@ service cloud.firestore {
         && (
           request.resource.data.lessonId == null
           || request.resource.data.lessonId is string
+        )
+        && (
+          !request.resource.data.keys().hasAny(['moduleId'])
+          || request.resource.data.moduleId == null
+          || request.resource.data.moduleId is string
         )
         && request.resource.data.fileName.size() >= 1
         && request.resource.data.fileName.size() <= 180
@@ -1202,7 +1244,6 @@ service cloud.firestore {
         && (
           isAdmin()
           || teacherCanSaveOwnedCourse()
-          || teacherCanSubmitOwnedDraft()
           || teacherCanUpdateOwnedCourseCover()
         );
       allow delete: if isAdmin()
@@ -1231,6 +1272,26 @@ service cloud.firestore {
             teacherCanManageCourseAssets(courseId)
             && resource.data.ownerId == request.auth.uid
           );
+      }
+
+      match /lessonComments/{commentId} {
+        allow read: if isAdmin()
+          || ownsCourse(courseId)
+          || hasEnrollmentForCourseSlug(courseId);
+        allow create: if signedIn()
+          && hasEnrollmentForCourseSlug(courseId)
+          && validLessonCommentShape(courseId);
+        allow update: if isAdmin()
+          || (
+            signedIn()
+            && resource.data.authorId == request.auth.uid
+            && request.resource.data.authorId == resource.data.authorId
+            && request.resource.data.courseId == resource.data.courseId
+            && request.resource.data.lessonId == resource.data.lessonId
+            && validLessonCommentShape(courseId)
+          );
+        allow delete: if isAdmin()
+          || (signedIn() && resource.data.authorId == request.auth.uid);
       }
     }
 

@@ -1,14 +1,10 @@
 import Link from "next/link";
 
 export function MarketingHero() {
-  // Negative top margin pulls the hero UP behind the floating SiteNav pill
-  // so the navy bg becomes the canvas the nav sits on (matches the
-  // user-cited preference for nav-over-navy at scroll=0). The inner
-  // container's pt-* compensates so the hero copy lands just below the
-  // nav with a small breathing gap — earlier values left too much empty
-  // navy between nav and badge (per audit). Only renders on the home page.
+  // Keep the hero behind the floating nav while fitting the primary CTA
+  // inside the first viewport on standard desktop screens.
   return (
-    <section className="relative -mt-24 overflow-hidden bg-[var(--color-primary)] text-white lg:-mt-32">
+    <section className="relative -mt-24 flex min-h-[100svh] items-center overflow-hidden bg-[var(--color-primary)] text-white lg:-mt-32">
       <div className="absolute inset-0 bg-gradient-to-br from-[#07172a] via-[#102944] to-[#1a365d]" />
       <div
         className="absolute inset-0 opacity-[0.12]"
@@ -17,45 +13,56 @@ export function MarketingHero() {
             "radial-gradient(circle at 18% 28%, rgba(255,255,255,0.45), transparent 32%), radial-gradient(circle at 86% 64%, rgba(178,34,52,0.46), transparent 34%)",
         }}
       />
-      <div className="mx-auto w-full max-w-7xl px-5 pb-10 pt-32 sm:px-8 sm:pb-14 lg:pb-16 lg:pt-40">
+      <div className="mx-auto w-full max-w-7xl px-5 pb-8 pt-28 sm:px-8 sm:pb-10 sm:pt-32 lg:pb-12 lg:pt-36">
         <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center lg:mx-0 lg:items-start lg:text-left">
           <div className="inline-flex w-fit rounded-[8px] border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
             For independent experts who want to teach for a living
           </div>
-          <div className="mt-5 space-y-4 sm:mt-8 lg:mt-10">
-            {/* Hook + outcome (Hormozi value equation: dream outcome ÷
-                perceived effort). Old copy described WHAT we are; new copy
-                names WHO they become + WHAT they get to skip. */}
-            <h1 className="display-title text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98] text-white">
+          <div className="mt-4 space-y-3 sm:mt-5 lg:mt-6">
+            {/* Split the second sentence so the value prop stays readable without making the fold too tall. */}
+            <h1 className="display-title text-[clamp(2.5rem,5vw,4rem)] leading-[1.08] text-white">
               Turn your expertise into a global course business.
-              <span className="block text-white/58">
+              <span className="mt-2 block text-[clamp(1.7rem,3.2vw,2.8rem)] leading-[1.12] text-white/62">
                 Without building a website, hiring a developer, or
                 stitching tools together.
               </span>
             </h1>
-            <p className="max-w-2xl text-[17px] leading-[1.7] text-white/84">
+            <p className="max-w-[38rem] text-[15px] leading-[1.6] text-white/82 sm:text-base">
               Publish a reviewed program in days. Skillset handles checkout
               in 30+ currencies, the student workspace, the course community,
-              and your payouts — so you can spend your week teaching, not
+              and your payouts - so you can spend your week teaching, not
               configuring software.
             </p>
             <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-              <Link href="/auth?mode=signup&path=teacher" className="button-solid-light px-5 py-3 text-sm">
+              <Link
+                href="/auth?mode=signup&path=teacher"
+                className="button-solid-light px-5 py-3 text-sm"
+              >
                 Start teaching free
               </Link>
-              <Link href="/pricing" className="button-outline-light px-5 py-3 text-sm">
+              <Link
+                href="/pricing"
+                className="button-outline-light px-5 py-3 text-sm"
+              >
                 See how you get paid
               </Link>
             </div>
           </div>
-          {/* Trust strip — visible on mobile too (single column). Was
-              previously 'hidden sm:grid' which hid the only social-proof
-              above the fold for phone users. */}
-          <dl className="mt-10 grid w-full max-w-2xl gap-4 border-t border-white/20 pt-5 text-left sm:mt-12 sm:grid-cols-3">
+          {/* Keep trust signals below the CTA on tablet/desktop; mobile prioritizes the primary action. */}
+          <dl className="mt-7 hidden w-full max-w-2xl gap-4 border-t border-white/20 pt-4 text-left sm:grid sm:grid-cols-3 lg:mt-8">
             {[
-              ["Reviewed", "Every program goes through Skillset review before publishing."],
-              ["Global", "Multi-currency checkout in 30+ currencies via Stripe."],
-              ["Verifiable", "Every certificate has a public verification URL."],
+              [
+                "Reviewed",
+                "Every program goes through Skillset review before publishing.",
+              ],
+              [
+                "Global",
+                "Multi-currency checkout in 30+ currencies via Stripe.",
+              ],
+              [
+                "Verifiable",
+                "Every certificate has a public verification URL.",
+              ],
             ].map(([value, label]) => (
               <div key={label}>
                 <dt className="text-sm font-bold text-white">{value}</dt>

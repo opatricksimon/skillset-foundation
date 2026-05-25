@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-05-22
+
+- `[P6-fix][frontend]` Fixed the collapsed sidebar active state so the active icon remains visible inside a white chip instead of becoming a blank square.
+- `[P6-fix][frontend]` Removed the duplicate header `+` course CTA and routed the single `New course` action to the Teacher Studio create-course modal.
+- `[P6-fix][frontend]` Reworked account navigation copy and grouping so Settings contains profile/email/security/notifications while Billing and creator Payouts are separated.
+- `[P6-fix][frontend]` Added stronger dashboard visual hierarchy with a shaped hero card, stronger metric cards, and clearer Billing/Payouts callouts to reduce the all-white workspace feel.
+- `[P6-fix][payments]` Tightened the setup banner so Stripe setup only clears after both charges and payouts are enabled, and added manual Stripe status refresh in Payouts.
+- `[P6-fix][courses]` Added free creator-course enrollment through a callable Function, updated course detail CTAs for free courses, and redirected legacy learner course URLs to creator-course workspaces.
+- `[P6-fix][courses]` Blocked Course Builder submit and admin publish actions unless the course has structure plus either a free enrollment model or a paid price greater than zero.
+- `[P6-fix][courses]` Expanded lesson material uploads to support Office documents, slides, spreadsheets, ZIP files, and audio, and added trusted YouTube/Vimeo embeds inside public previews and learner workspaces.
+- `[P6-fix][build]` Fixed Next/Turbopack root detection for this Windows workspace and excluded visual reference exports from ESLint.
+- `[P6-reference][design]` Imported Skillset DESIGN V2 reference files into `docs/design-reference/skillset-design-v2-2` for page-by-page implementation guidance.
+- `[deploy][firebase]` Published Firestore rules, Functions, and Hosting to `skillsetusaofficial`; confirmed `createFreeCourseEnrollment`, `createCheckoutSession`, `refreshTeacherStripeAccount`, `stripeWebhook`, and `ssrskillsetusaofficial` are deployed.
+- `[deploy][stripe]` Verified the live Stripe webhook endpoint for `stripeWebhook`, restricted it to the 8 event types handled by the backend, updated the Firebase `STRIPE_WEBHOOK_SECRET`, and redeployed the webhook function.
+- `[P6-MVP][courses]` Moved teacher course creation to a transactional callable Function with normalized `titleKey` claims so duplicate course names are blocked before draft creation.
+- `[P6-MVP][courses]` Expanded Course Builder to support up to five course categories, module descriptions, module-targeted cover uploads, trusted YouTube/Vimeo embeds, and broader lesson material formats.
+- `[P6-MVP][learn]` Made real teacher-published courses open at canonical `/learn/courses/{courseId}` URLs, added protected course-level file opening, and added enrolled-only lesson comments with delete-own-comment support.
+
 ## 2026-05-11
 
 - `[P6-HM-1][frontend]` Refined the home page copy around verified capabilities, added the Skillset Promise preview band, added reveal-on-view motion for marketing sections, and removed unused mock marketing components.

@@ -1,0 +1,239 @@
+/* ============================================================
+   Skillset — Core Visual Foundations
+   Authoritative source for color + typography tokens.
+   Mirrors src/app/globals.css in skillset-foundation.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  /* ---------- BRAND ---------- */
+  --color-brand:           #1a365d;   /* institutional navy — the signature */
+  --color-primary:         #1a365d;
+  --color-primary-dark:    #0f2744;   /* hover / active for solid */
+  --color-primary-light:   #2c5282;   /* secondary navy, focus borders */
+
+  /* ---------- ACCENT (restrained red) ---------- */
+  --color-accent:          #b22234;   /* US flag red, used for emphasis */
+  --color-accent-hover:    #9e1f2f;
+  --color-accent-soft:     #f3d6dc;   /* tinted backgrounds, headings on dark */
+
+  /* ---------- SURFACES ---------- */
+  --color-base:            #ffffff;
+  --color-surface:         #ffffff;
+  --color-surface-soft:    #f5f9ff;   /* page tint, input bg, hover fill */
+  --color-surface-strong:  #ebf3fb;   /* stronger fill */
+
+  /* ---------- INK (text) ---------- */
+  --color-ink:             #163252;   /* default body — high-contrast navy */
+  --color-ink-soft:        #4d6785;   /* meta, subdued copy */
+  --color-ink-muted:       #7a8fae;   /* disabled / placeholder */
+  --color-on-primary:      #ffffff;
+  --color-on-accent:       #ffffff;
+
+  /* ---------- LINE / DIVIDERS ---------- */
+  --color-line:            rgba(26, 54, 93, 0.12);
+  --color-line-strong:     rgba(26, 54, 93, 0.18);
+
+  /* ---------- SEMANTIC ---------- */
+  --color-success:         #1f8a5b;
+  --color-success-soft:    #e4f3eb;
+  --color-warning:         #c07b0a;
+  --color-warning-soft:    #fcefd2;
+  --color-danger:          #b22234;
+  --color-danger-soft:     rgba(178, 34, 52, 0.06);
+  --color-info:            #2c5282;
+  --color-info-soft:       #ebf3fb;
+
+  /* ---------- SHADOWS ---------- */
+  --shadow-soft:           0 12px 28px rgba(26, 54, 93, 0.06);
+  --shadow-strong:         0 18px 44px rgba(15, 39, 68, 0.14);
+  --shadow-button:         0 10px 22px rgba(26, 54, 93, 0.14);
+  --shadow-button-strong:  0 14px 28px rgba(15, 39, 68, 0.28);
+  --shadow-avatar:         0 8px 18px rgba(26, 54, 93, 0.14);
+
+  /* ---------- RADII (moderate, never pill) ---------- */
+  --radius-xs:  6px;   /* badges, micro-pills */
+  --radius-sm:  8px;   /* buttons, chips, inputs (small) */
+  --radius-md: 10px;   /* inputs, dropdowns */
+  --radius-lg: 12px;   /* cards (compact), dropdown panels */
+  --radius-xl: 14px;   /* dashboard panels, header card */
+  --radius-2xl: 16px;  /* feature panels */
+  --radius-3xl: 18px;  /* hero cards, course cards */
+  --radius-4xl: 22px;  /* full-bleed CTA banners */
+
+  /* ---------- SPACING SCALE (4-px base) ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  /* ---------- LAYOUT ---------- */
+  --container-max: 1280px;          /* max-w-7xl */
+  --container-pad-mobile: 20px;     /* px-5 */
+  --container-pad-desktop: 32px;    /* px-8 */
+  --sidebar-width: 252px;
+
+  /* ---------- TYPOGRAPHY — FAMILIES ---------- */
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---------- TYPOGRAPHY — RAW SCALE ---------- */
+  --fs-10:   10px;  /* eyebrow micro */
+  --fs-11:   11px;  /* uppercase eyebrow */
+  --fs-12:   12px;  /* meta / fine print */
+  --fs-13:   13px;  /* nav link */
+  --fs-14:   14px;  /* body small */
+  --fs-15:   15px;
+  --fs-16:   16px;  /* body */
+  --fs-18:   18px;  /* lead */
+  --fs-20:   20px;
+  --fs-24:   24px;  /* h4 */
+  --fs-30:   30px;  /* h3 */
+  --fs-36:   36px;  /* h2 small */
+  --fs-48:   48px;  /* h2 display */
+  --fs-60:   60px;  /* h1 mid */
+  --fs-72:   72px;  /* h1 hero */
+
+  /* ---------- WEIGHTS ---------- */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-extra:    800;
+
+  /* ---------- TRACKING ---------- */
+  --tracking-eyebrow:  0.22em;  /* "Programs", "About" */
+  --tracking-label:    0.18em;  /* card labels */
+  --tracking-tight:    0.14em;  /* small status chips */
+  --tracking-normal:   0;
+
+  /* ---------- LINE HEIGHTS ---------- */
+  --leading-tight:    1.05;
+  --leading-snug:     1.2;
+  --leading-normal:   1.5;
+  --leading-relaxed:  1.75;
+  --leading-7:        1.75;  /* prose body */
+}
+
+/* ============================================================
+   SEMANTIC TEXT STYLES — apply directly to elements
+   ============================================================ */
+
+.h-display {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(48px, 6vw, 72px);
+  line-height: 0.98;
+  letter-spacing: 0;
+  color: var(--color-primary);
+}
+
+.h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(36px, 4.2vw, 60px);
+  line-height: 1.02;
+  color: var(--color-primary);
+}
+
+.h2 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: clamp(30px, 3vw, 48px);
+  line-height: 1.05;
+  color: var(--color-ink);
+}
+
+.h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 30px;
+  line-height: 1.05;
+  color: var(--color-ink);
+}
+
+.h4 {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-bold);
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--color-primary);
+}
+
+.lead {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-regular);
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--color-ink-soft);
+}
+
+.p, .body {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-regular);
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--color-ink-soft);
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semibold);
+  font-size: 12px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.eyebrow-brand {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semibold);
+  font-size: 12px;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-bold);
+  font-size: 10px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-regular);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-ink);
+}
+
+/* ============================================================
+   MOTION TOKENS
+   ============================================================ */
+:root {
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-out: ease-out;
+  --duration-fast:    120ms;
+  --duration-base:    180ms;
+  --duration-slow:    280ms;
+}

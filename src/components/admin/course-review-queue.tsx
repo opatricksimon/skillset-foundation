@@ -24,6 +24,13 @@ const defaultReviewNotes: Record<ReviewAction, string> = {
 };
 
 function formatTeacherCoursePrice(course: TeacherCourse): string {
+  if (
+    course.paymentType === "free"
+    || (typeof course.priceAmountMinor === "number" && course.priceAmountMinor === 0)
+  ) {
+    return "Free";
+  }
+
   if (typeof course.priceAmountMinor !== "number") {
     return "Pricing pending";
   }
@@ -37,14 +44,23 @@ function formatTeacherCoursePrice(course: TeacherCourse): string {
 function getReviewReadiness(course: TeacherCourse) {
   const hasStructure = (course.modules?.length ?? 0) > 0 && (course.lessonCount ?? 0) > 0;
   const hasPreview = Boolean(course.freePreviewLessonId);
-  const hasPrice = typeof course.priceAmountMinor === "number";
+  const isFreeCourse =
+    course.paymentType === "free"
+    || (typeof course.priceAmountMinor === "number" && course.priceAmountMinor === 0);
+  const hasPaidPrice =
+    course.paymentType !== "free"
+    && typeof course.priceAmountMinor === "number"
+    && course.priceAmountMinor > 0;
+  const hasEnrollmentModel = isFreeCourse || hasPaidPrice;
 
   return {
-    canApprove: hasStructure,
+    canApprove: hasStructure && hasEnrollmentModel,
     checks: [
       hasStructure ? "Course structure ready" : "Missing course structure",
       hasPreview ? "Free preview selected" : "No preview selected",
-      hasPrice ? `Price set: ${formatTeacherCoursePrice(course)}` : "Pricing pending",
+      hasEnrollmentModel
+        ? `Enrollment model: ${formatTeacherCoursePrice(course)}`
+        : "Set a paid price greater than $0, or mark the course as Free",
     ],
   };
 }

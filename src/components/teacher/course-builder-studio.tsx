@@ -1,7 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, CreditCard, ExternalLink, Gift, Repeat } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  Eye,
+  FileText,
+  Gift,
+  Layers3,
+  PlayCircle,
+  Repeat,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -13,6 +24,7 @@ import {
 import { InlineHelp } from "@/components/shared/inline-help";
 import { StatusChip } from "@/components/shared/status-chip";
 import { CourseAssetUploader } from "@/components/teacher/course-asset-uploader";
+import { LessonContentModal } from "@/components/teacher/lesson-content-modal";
 import type { DripStrategy } from "@/domain/drip-policy";
 import type {
   LessonType,
@@ -23,7 +35,10 @@ import type {
 } from "@/domain/teacher-course";
 import {
   countCourseLessons,
+  normalizeCourseCategories,
   normalizeInstallmentsMax,
+  normalizeTeacherCourseModules,
+  skillsetCourseCategories,
   teacherCanEditCourse,
   teacherCanSubmitCourse,
 } from "@/domain/teacher-course";
@@ -39,18 +54,21 @@ import {
   topSkillsetCurrencies,
 } from "@/lib/payments/currencies";
 
-const categories = ["Psychology", "Management", "Health", "Soft Skills"];
 const secondaryCurrencies = supportedStripeCurrencies.filter(
   (currency) => !(topSkillsetCurrencies as readonly string[]).includes(currency),
 );
 const builderTabs = [
-  { value: "details", label: "Details" },
-  { value: "content", label: "Content" },
-  { value: "pricing", label: "Pricing" },
-  { value: "review", label: "Review" },
+  { value: "details", label: "Details", sub: "Title, categories, promise" },
+  { value: "content", label: "Curriculum", sub: "Modules, lessons, uploads" },
+  { value: "pricing", label: "Pricing", sub: "Payment, drip, preview" },
+  { value: "review", label: "Review", sub: "Readiness and submission" },
 ] as const;
 
 type BuilderTab = (typeof builderTabs)[number]["value"];
+type ActiveLessonStudio = {
+  moduleId: string;
+  lessonId: string;
+} | null;
 
 const lessonTypes: { value: LessonType; label: string }[] = [
   { value: "video", label: "Video lesson" },
@@ -215,21 +233,7 @@ function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
 }
 
 function sanitizeModules(modules: TeacherCourseModule[]): TeacherCourseModule[] {
-  return modules.map((module) => ({
-    ...module,
-    title: module.title.trim(),
-    lessons: module.lessons.map((lesson) => ({
-      ...lesson,
-      title: lesson.title.trim(),
-      description: lesson.description.trim(),
-      contentText: lesson.contentText?.trim() || null,
-      externalUrl: lesson.externalUrl?.trim() || null,
-      dripDelayDays:
-        typeof lesson.dripDelayDays === "number"
-          ? Math.max(0, Math.round(lesson.dripDelayDays))
-          : null,
-    })),
-  }));
+  return normalizeTeacherCourseModules(modules);
 }
 
 function getCourseStructureError(modules: TeacherCourseModule[]): string {
@@ -255,7 +259,10 @@ export function CourseBuilderStudio() {
   const [course, setCourse] = useState<TeacherCourse | null>(null);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState<string>(skillsetCourseCategories[0]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([
+    skillsetCourseCategories[0],
+  ]);
   const [modules, setModules] = useState<TeacherCourseModule[]>([]);
   const [priceAmount, setPriceAmount] = useState("");
   const [currency, setCurrency] = useState(defaultSkillsetCurrency);
@@ -267,6 +274,7 @@ export function CourseBuilderStudio() {
   const [dripIntervalDays, setDripIntervalDays] = useState("1");
   const [freePreviewLessonId, setFreePreviewLessonId] = useState("");
   const [moduleTitle, setModuleTitle] = useState("");
+  const [moduleSummary, setModuleSummary] = useState("");
   const [lessonModuleId, setLessonModuleId] = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonType, setLessonType] = useState<LessonType>("video");
@@ -282,6 +290,8 @@ export function CourseBuilderStudio() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeLessonStudio, setActiveLessonStudio] =
+    useState<ActiveLessonStudio>(null);
 
   useEffect(() => {
     if (!courseId) {
@@ -302,6 +312,12 @@ export function CourseBuilderStudio() {
         setTitle(nextCourse.title);
         setSummary(nextCourse.summary);
         setCategory(nextCourse.category);
+        setSelectedCategories(
+          normalizeCourseCategories([
+            ...(nextCourse.categories ?? []),
+            nextCourse.category,
+          ]),
+        );
         setModules(nextCourse.modules ?? []);
         setPriceAmount(
           typeof nextCourse.priceAmountMinor === "number"
@@ -340,8 +356,16 @@ export function CourseBuilderStudio() {
       moduleTitle: module.title,
     })),
   );
+  const parsedPriceAmountMinor = parsePriceAmountMinor(priceAmount);
   const priceFieldIsValid =
     paymentType === "free" || !hasInvalidPriceAmount(priceAmount);
+  const pricingModelIsReady =
+    paymentType === "free"
+    || (
+      paymentType === "one_time"
+      && typeof parsedPriceAmountMinor === "number"
+      && parsedPriceAmountMinor > 0
+    );
   const installmentsAreValid =
     paymentType !== "one_time" ||
     !installmentsEnabled ||
@@ -367,11 +391,19 @@ export function CourseBuilderStudio() {
       ready: lessonCount > 0,
     },
     {
+      label: freePreviewLessonId
+        ? "Free preview lesson is selected."
+        : "Choose one lesson as the free preview.",
+      ready: Boolean(freePreviewLessonId),
+    },
+    {
       label:
-        priceFieldIsValid
-          ? "Pricing field is valid."
-          : "Fix the pricing field.",
-      ready: priceFieldIsValid,
+        pricingModelIsReady
+          ? paymentType === "free"
+            ? "Free enrollment model is ready."
+            : "Paid price is ready."
+          : "Set a paid price greater than $0, or choose Free.",
+      ready: pricingModelIsReady && priceFieldIsValid,
     },
     {
       label:
@@ -381,6 +413,55 @@ export function CourseBuilderStudio() {
       ready: installmentsAreValid,
     },
   ];
+  const readyItemCount = readinessItems.filter((item) => item.ready).length;
+  const readinessProgress = Math.round(
+    (readyItemCount / readinessItems.length) * 100,
+  );
+  const nextReadinessItem = readinessItems.find((item) => !item.ready);
+  const selectedPreviewLesson = allLessons.find(
+    (lesson) => lesson.id === freePreviewLessonId,
+  );
+  const activeLessonStudioModule = activeLessonStudio
+    ? modules.find((module) => module.id === activeLessonStudio.moduleId) ?? null
+    : null;
+  const activeLessonStudioLesson =
+    activeLessonStudio && activeLessonStudioModule
+      ? activeLessonStudioModule.lessons.find(
+          (lesson) => lesson.id === activeLessonStudio.lessonId,
+        ) ?? null
+      : null;
+  const activeLessonStudioModuleIndex = activeLessonStudioModule
+    ? modules.findIndex((module) => module.id === activeLessonStudioModule.id)
+    : -1;
+  const activeLessonStudioLessonIndex =
+    activeLessonStudioModule && activeLessonStudioLesson
+      ? activeLessonStudioModule.lessons.findIndex(
+          (lesson) => lesson.id === activeLessonStudioLesson.id,
+        )
+      : -1;
+  const selectedTabIndex = builderTabs.findIndex(
+    (tab) => tab.value === activeTab,
+  );
+  const formattedPrice =
+    paymentType === "free"
+      ? "Free"
+      : parsedPriceAmountMinor
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: currency.toUpperCase(),
+            maximumFractionDigits: 0,
+          }).format(parsedPriceAmountMinor / 100)
+        : "Set price";
+  const tabCompletion: Record<BuilderTab, boolean> = {
+    details: Boolean(title.trim() && summary.trim().length >= 20),
+    content: modules.length > 0 && lessonCount > 0,
+    pricing:
+      pricingModelIsReady &&
+      priceFieldIsValid &&
+      installmentsAreValid &&
+      Boolean(freePreviewLessonId),
+    review: readinessProgress === 100,
+  };
 
   function handlePaymentTypeChange(nextPaymentType: TeacherCoursePaymentType) {
     if (!isEditable) {
@@ -401,6 +482,23 @@ export function CourseBuilderStudio() {
     setSuccess("");
   }
 
+  function toggleCategory(nextCategory: string) {
+    if (!isEditable) {
+      return;
+    }
+
+    setSelectedCategories((current) => {
+      const nextCategories = current.includes(nextCategory)
+        ? current.filter((categoryItem) => categoryItem !== nextCategory)
+        : [...current, nextCategory];
+      const normalizedCategories = normalizeCourseCategories(nextCategories);
+
+      setCategory(normalizedCategories[0] ?? "Other");
+      return normalizedCategories;
+    });
+    setSuccess("");
+  }
+
   function handleAddModule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -418,12 +516,15 @@ export function CourseBuilderStudio() {
     const nextModule = {
       id: createLocalId("module"),
       title: nextTitle,
+      summary: moduleSummary.trim() || null,
+      coverAssetId: null,
       lessons: [],
     };
 
     setModules((current) => [...current, nextModule]);
     setLessonModuleId(nextModule.id);
     setModuleTitle("");
+    setModuleSummary("");
     setError("");
     setSuccess("");
   }
@@ -480,6 +581,7 @@ export function CourseBuilderStudio() {
     if (lessonIsFreePreview) {
       setFreePreviewLessonId(nextLessonId);
     }
+    setActiveLessonStudio({ moduleId: lessonModuleId, lessonId: nextLessonId });
     setLessonTitle("");
     setLessonDescription("");
     setLessonDurationMinutes("");
@@ -499,6 +601,19 @@ export function CourseBuilderStudio() {
     setModules((currentModules) =>
       currentModules.map((module) =>
         module.id === moduleId ? { ...module, title: nextTitle } : module,
+      ),
+    );
+    setSuccess("");
+  }
+
+  function updateModuleSummary(moduleId: string, nextSummary: string) {
+    if (!isEditable) {
+      return;
+    }
+
+    setModules((currentModules) =>
+      currentModules.map((module) =>
+        module.id === moduleId ? { ...module, summary: nextSummary } : module,
       ),
     );
     setSuccess("");
@@ -608,6 +723,13 @@ export function CourseBuilderStudio() {
       setFreePreviewLessonId("");
     }
 
+    if (
+      activeLessonStudio?.moduleId === moduleId
+      && activeLessonStudio.lessonId === lessonId
+    ) {
+      setActiveLessonStudio(null);
+    }
+
     setSuccess("");
   }
 
@@ -632,6 +754,11 @@ export function CourseBuilderStudio() {
     );
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
+    const nextCategories = normalizeCourseCategories([
+      ...selectedCategories,
+      category,
+    ]);
+    const nextCategory = nextCategories[0] ?? "Other";
 
     if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
@@ -655,7 +782,8 @@ export function CourseBuilderStudio() {
       await updateTeacherCourseBuilder(courseId, {
         title,
         summary,
-        category,
+        category: nextCategory,
+        categories: nextCategories,
         modules: nextModules,
         priceAmountMinor: nextPriceAmountMinor,
         currency,
@@ -696,9 +824,20 @@ export function CourseBuilderStudio() {
     );
     const nextModules = sanitizeModules(modules);
     const structureError = getCourseStructureError(nextModules);
+    const nextCategories = normalizeCourseCategories([
+      ...selectedCategories,
+      category,
+    ]);
+    const nextCategory = nextCategories[0] ?? "Other";
 
     if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!pricingModelIsReady) {
+      setError("Set a paid price greater than $0, or choose Free as the payment model before submitting.");
       setIsSubmitting(false);
       return;
     }
@@ -715,11 +854,18 @@ export function CourseBuilderStudio() {
       return;
     }
 
+    if (!freePreviewLessonId) {
+      setError("Choose one lesson as the free preview before submitting.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await updateTeacherCourseBuilder(courseId, {
         title,
         summary,
-        category,
+        category: nextCategory,
+        categories: nextCategories,
         modules: nextModules,
         priceAmountMinor: nextPriceAmountMinor,
         currency,
@@ -733,8 +879,18 @@ export function CourseBuilderStudio() {
       });
       await submitTeacherCourseForReview(courseId);
       setSuccess("Course submitted for Skillset review.");
-    } catch {
-      setError("We could not submit this course for review. Please try again.");
+    } catch (caughtError) {
+      const message = caughtError instanceof Error ? caughtError.message : "";
+      setError(
+        message.toLowerCase().includes("preview")
+          ? "Choose one lesson as the free preview before submitting."
+          : message.toLowerCase().includes("teacher setup")
+          ? "Teacher setup must be complete before submitting courses."
+          : message.toLowerCase().includes("payment")
+          || message.toLowerCase().includes("price")
+          ? "Set a valid payment model before submitting."
+          : "We could not submit this course for review. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -775,31 +931,135 @@ export function CourseBuilderStudio() {
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1fr_0.78fr]">
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-              Course builder
-            </p>
-            <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-              Shape the learner path
-            </h3>
-          </div>
+    <div className="course-builder-shell">
+      <section className="course-builder-hero">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            {courseId ? (
-              <Link
-                href={`/teach/builder/${courseId}/preview`}
-                target="_blank"
-                className="button-outline px-4 py-2 text-xs"
-              >
-                <ExternalLink aria-hidden="true" size={14} strokeWidth={1.8} />
-                Preview
-              </Link>
-            ) : null}
             <StatusChip status={course?.status ?? "draft"} />
+            <span className="rounded-[8px] border border-[var(--color-line)] bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+              {readinessProgress}% ready
+            </span>
+            <span className="text-xs font-semibold text-[var(--color-ink-muted)]">
+              Save draft before leaving this screen
+            </span>
           </div>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+            Course builder
+          </p>
+          <h2 className="display-title mt-3 text-[clamp(2rem,4vw,3.2rem)] leading-[1.02] text-[var(--color-primary)]">
+            {title.trim() || "Untitled course"}
+          </h2>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            Build the course students will actually experience: details, modules,
+            lessons, media, pricing, drip rules, and the review checklist in one
+            guided workspace.
+          </p>
         </div>
+        <div className="course-builder-hero__actions">
+          <Link
+            href={`/teach/builder/${courseId}/preview`}
+            target="_blank"
+            className="button-outline px-4 py-3 text-sm"
+          >
+            <ExternalLink aria-hidden="true" size={14} strokeWidth={1.8} />
+            Preview
+          </Link>
+          <button
+            type="button"
+            onClick={saveDraft}
+            disabled={!isEditable || isSaving}
+            className="button-solid px-4 py-3 text-sm disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save draft"}
+          </button>
+        </div>
+      </section>
+
+      <div className="course-builder-grid">
+        <aside className="course-builder-rail">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-brand)]">
+              Course creation
+            </p>
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-strong)]">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent))] transition-[width] duration-300"
+                style={{ width: `${readinessProgress}%` }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+              <span>Step {selectedTabIndex + 1} of {builderTabs.length}</span>
+              <span className="text-[var(--color-primary)]">{readinessProgress}%</span>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-2">
+            {builderTabs.map((tab, index) => {
+              const isActive = activeTab === tab.value;
+              const isDone = tabCompletion[tab.value];
+
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`course-builder-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
+                >
+                  <span className="course-builder-step__num">
+                    {isDone ? (
+                      <CheckCircle2 aria-hidden="true" size={13} strokeWidth={2} />
+                    ) : (
+                      String(index + 1).padStart(2, "0")
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="course-builder-step__label">{tab.label}</span>
+                    <span className="course-builder-step__sub">{tab.sub}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="course-builder-tip">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+              Next best action
+            </p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-white">
+              {nextReadinessItem?.label ?? "Course is ready to submit."}
+            </p>
+          </div>
+        </aside>
+
+        <section className="course-builder-panel">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                {builderTabs[selectedTabIndex]?.label ?? "Builder"}
+              </p>
+              <h3 className="display-title mt-3 text-4xl leading-tight text-[var(--color-primary)]">
+                {activeTab === "details"
+                  ? "Set the course foundation."
+                  : activeTab === "content"
+                    ? "Build the curriculum."
+                    : activeTab === "pricing"
+                      ? "Package the offer."
+                      : "Prepare for Skillset review."}
+              </h3>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+                {activeTab === "details"
+                  ? "This is the information learners and reviewers use to understand the promise of the course."
+                  : activeTab === "content"
+                    ? "Create the modules, lessons, links, text content, and upload targets that power the members area."
+                    : activeTab === "pricing"
+                      ? "Set access, price, release timing, and the free preview lesson before publishing."
+                      : "Skillset checks structure, pricing, preview access, and quality before the course goes public."}
+              </p>
+            </div>
+            <div className="grid gap-2 text-right text-xs font-semibold text-[var(--color-ink-soft)]">
+              <span>{modules.length} modules</span>
+              <span>{lessonCount} lessons</span>
+              <span>{formattedPrice}</span>
+            </div>
+          </div>
 
         {course?.status === "in_review" ? (
           <p className="mt-5 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
@@ -823,23 +1083,6 @@ export function CourseBuilderStudio() {
           </div>
         ) : null}
 
-        <div className="mt-6 flex flex-wrap gap-2 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-2">
-          {builderTabs.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setActiveTab(tab.value)}
-              className={`rounded-[9px] px-4 py-2 text-sm font-semibold transition-colors ${
-                activeTab === tab.value
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-ink)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         {activeTab === "details" ? (
         <div className="mt-6 grid gap-4">
           <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
@@ -851,19 +1094,35 @@ export function CourseBuilderStudio() {
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
             />
           </label>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Category
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              disabled={!isEditable}
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
-            >
-              {categories.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Categories
+            <p className="text-xs font-normal leading-5 text-[var(--color-ink-soft)]">
+              Optional. Select up to five. The first selected category becomes
+              the primary marketplace category.
+            </p>
+            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3 sm:grid-cols-2 lg:grid-cols-3">
+              {skillsetCourseCategories.map((item) => {
+                const selected = selectedCategories.includes(item);
+
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => toggleCategory(item)}
+                    disabled={!isEditable}
+                    className={`rounded-[8px] border px-3 py-2 text-left text-xs font-semibold transition-colors disabled:opacity-60 ${
+                      selected
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                        : "border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:border-[var(--color-primary-light)]"
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
             Course summary
             <textarea
@@ -1046,7 +1305,7 @@ export function CourseBuilderStudio() {
             <h4 className="text-sm font-semibold text-[var(--color-ink)]">
               Add module
             </h4>
-            <form className="mt-3 flex flex-col gap-3 sm:flex-row" onSubmit={handleAddModule}>
+            <form className="mt-3 grid gap-3" onSubmit={handleAddModule}>
               <input
                 value={moduleTitle}
                 onChange={(event) => setModuleTitle(event.target.value)}
@@ -1054,10 +1313,18 @@ export function CourseBuilderStudio() {
                 placeholder="Example: Foundations"
                 className="min-w-0 flex-1 rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
               />
+              <textarea
+                value={moduleSummary}
+                onChange={(event) => setModuleSummary(event.target.value)}
+                disabled={!isEditable}
+                rows={2}
+                placeholder="Optional module description. Example: Set up the concepts students need before the practical lessons."
+                className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+              />
               <button
                 type="submit"
                 disabled={!isEditable}
-                className="button-outline px-4 py-3 text-sm disabled:opacity-60"
+                className="button-outline w-fit px-4 py-3 text-sm disabled:opacity-60"
               >
                 Add module
               </button>
@@ -1209,6 +1476,16 @@ export function CourseBuilderStudio() {
                           }
                           disabled={!isEditable}
                           className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                        />
+                        <textarea
+                          value={module.summary ?? ""}
+                          onChange={(event) =>
+                            updateModuleSummary(module.id, event.target.value)
+                          }
+                          disabled={!isEditable}
+                          rows={2}
+                          placeholder="Optional module description"
+                          className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
                         />
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -1375,24 +1652,38 @@ export function CourseBuilderStudio() {
                             />
 
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setFreePreviewLessonId(
-                                    freePreviewLessonId === lesson.id ? "" : lesson.id,
-                                  )
-                                }
-                                disabled={!isEditable}
-                                className={`rounded-[8px] border px-3 py-2 text-xs font-semibold disabled:opacity-50 ${
-                                  freePreviewLessonId === lesson.id
-                                    ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)] text-[var(--color-primary)]"
-                                    : "border-[var(--color-line)] bg-white text-[var(--color-ink-soft)]"
-                                }`}
-                              >
-                                {freePreviewLessonId === lesson.id
-                                  ? "Free preview selected"
-                                  : "Mark free preview"}
-                              </button>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActiveLessonStudio({
+                                      moduleId: module.id,
+                                      lessonId: lesson.id,
+                                    })
+                                  }
+                                  className="button-solid px-3 py-2 text-xs"
+                                >
+                                  Open lesson studio
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setFreePreviewLessonId(
+                                      freePreviewLessonId === lesson.id ? "" : lesson.id,
+                                    )
+                                  }
+                                  disabled={!isEditable}
+                                  className={`rounded-[8px] border px-3 py-2 text-xs font-semibold disabled:opacity-50 ${
+                                    freePreviewLessonId === lesson.id
+                                      ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)] text-[var(--color-primary)]"
+                                      : "border-[var(--color-line)] bg-white text-[var(--color-ink-soft)]"
+                                  }`}
+                                >
+                                  {freePreviewLessonId === lesson.id
+                                    ? "Free preview selected"
+                                    : "Mark free preview"}
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => deleteLesson(module.id, lesson.id)}
@@ -1450,7 +1741,68 @@ export function CourseBuilderStudio() {
         ) : null}
       </section>
 
-      <aside className="space-y-5">
+      <aside className="course-builder-preview">
+        <section className="overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-soft)]">
+          <div className="relative min-h-52 bg-[linear-gradient(135deg,var(--color-primary-light),var(--color-primary)_58%,var(--color-primary-dark))] p-5 text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(243,214,220,0.34),transparent_38%),radial-gradient(circle_at_20%_85%,rgba(255,255,255,0.18),transparent_35%)]" />
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <span className="rounded-[8px] bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                Live preview
+              </span>
+              <Eye aria-hidden="true" size={17} strokeWidth={1.8} />
+            </div>
+            <div className="relative z-10 mt-16">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                {category}
+              </p>
+              <h3 className="display-title mt-2 text-3xl leading-[1.05]">
+                {title.trim() || "Untitled course"}
+              </h3>
+            </div>
+          </div>
+          <div className="grid gap-4 p-5">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
+                <Layers3 aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
+                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
+                  {modules.length}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  Modules
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
+                <PlayCircle aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
+                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
+                  {lessonCount}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  Lessons
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
+                <FileText aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
+                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
+                  {formattedPrice}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+                  Access
+                </p>
+              </div>
+            </div>
+            <div className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                Student preview
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-[var(--color-ink)]">
+                {selectedPreviewLesson
+                  ? `${selectedPreviewLesson.moduleTitle} - ${selectedPreviewLesson.title}`
+                  : "Choose one free preview lesson before review."}
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Course structure
@@ -1531,6 +1883,7 @@ export function CourseBuilderStudio() {
             <p>{summary.trim().length >= 20 ? "Summary is ready." : "Add a clearer summary."}</p>
             <p>{modules.length > 0 ? "At least one module exists." : "Add at least one module."}</p>
             <p>{lessonCount > 0 ? "At least one lesson exists." : "Add at least one lesson."}</p>
+            <p>{pricingModelIsReady ? "Enrollment model is ready." : "Set price or mark the course as Free."}</p>
           </div>
           {error ? (
             <p className="mt-4 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
@@ -1554,7 +1907,18 @@ export function CourseBuilderStudio() {
             <button
               type="button"
               onClick={submitForReview}
-              disabled={!canSubmitForReview || isSubmitting || !title.trim() || summary.trim().length < 20 || modules.length === 0 || lessonCount === 0}
+              disabled={
+                !canSubmitForReview
+                || isSubmitting
+                || !title.trim()
+                || summary.trim().length < 20
+                || modules.length === 0
+                || lessonCount === 0
+                || !freePreviewLessonId
+                || !priceFieldIsValid
+                || !pricingModelIsReady
+                || !installmentsAreValid
+              }
               className="button-solid px-4 py-3 text-sm disabled:opacity-60"
             >
               {isSubmitting ? "Submitting..." : "Submit for review"}
@@ -1569,6 +1933,33 @@ export function CourseBuilderStudio() {
           <CourseAssetUploader course={course} isEditable={isEditable} />
         ) : null}
       </aside>
+      </div>
+      {course && activeLessonStudioModule && activeLessonStudioLesson ? (
+        <LessonContentModal
+          course={course}
+          module={activeLessonStudioModule}
+          moduleIndex={activeLessonStudioModuleIndex}
+          lesson={activeLessonStudioLesson}
+          lessonIndex={activeLessonStudioLessonIndex}
+          isEditable={isEditable}
+          isFreePreview={freePreviewLessonId === activeLessonStudioLesson.id}
+          onClose={() => setActiveLessonStudio(null)}
+          onSetFreePreview={() =>
+            setFreePreviewLessonId(
+              freePreviewLessonId === activeLessonStudioLesson.id
+                ? ""
+                : activeLessonStudioLesson.id,
+            )
+          }
+          onUpdateLesson={(patch) =>
+            updateLesson(
+              activeLessonStudioModule.id,
+              activeLessonStudioLesson.id,
+              patch,
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }

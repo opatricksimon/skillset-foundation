@@ -76,15 +76,88 @@ export function listenToAuthState(callback: (session: AuthSession) => void) {
   });
 }
 
+// Forces the Firebase Auth ID token to propagate to Firestore rules before
+// we attempt any privileged writes. Without this, the first setDoc after
+// createUserWithEmailAndPassword can race ahead of request.auth being set,
+// surfacing as a permission-denied that looks like a rules bug.
+async function waitForIdTokenReady(user: User): Promise<void> {
+  try {
+    await user.getIdToken(true);
+  } catch (error) {
+    console.error(
+      "waitForIdTokenReady: getIdToken failed",
+      { uid: user.uid },
+      error,
+    );
+  }
+}
+
+async function runUpsertWithRetry(
+  input: Parameters<typeof upsertUserProfile>[0],
+  context: string,
+): Promise<void> {
+  const maxAttempts = 3;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await upsertUserProfile(input);
+      if (attempt > 1) {
+        console.info(
+          `${context}: upsertUserProfile succeeded on retry`,
+          { uid: input.uid, attempt },
+        );
+      }
+      return;
+    } catch (error) {
+      lastError = error;
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String((error as { code?: unknown }).code)
+          : "";
+      const isPermissionDenied = code.includes("permission-denied");
+      const isLastAttempt = attempt === maxAttempts;
+
+      console.error(
+        `${context}: upsertUserProfile failed (attempt ${attempt}/${maxAttempts})`,
+        {
+          uid: input.uid,
+          email: input.email,
+          hasDisplayName: Boolean(input.displayName),
+          hasPhotoURL: Boolean(input.photoURL),
+          code,
+          isPermissionDenied,
+        },
+        error,
+      );
+
+      if (isLastAttempt) {
+        break;
+      }
+
+      // Backoff before retrying. Permission-denied is most often a token
+      // propagation race, so give Firestore a moment to catch up.
+      const delayMs = 250 * Math.pow(2, attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw lastError;
+}
+
 export async function signInWithEmail({ email, password }: EmailPasswordCredentials) {
   const auth = getFirebaseAuth();
   const credential = await signInWithEmailAndPassword(auth, email, password);
-  await upsertUserProfile({
-    uid: credential.user.uid,
-    email: credential.user.email,
-    displayName: credential.user.displayName,
-    photoURL: credential.user.photoURL,
-  });
+  await waitForIdTokenReady(credential.user);
+  await runUpsertWithRetry(
+    {
+      uid: credential.user.uid,
+      email: credential.user.email,
+      displayName: credential.user.displayName,
+      photoURL: credential.user.photoURL,
+    },
+    "signInWithEmail",
+  );
 
   return mapFirebaseUser(credential.user);
 }
@@ -98,15 +171,29 @@ export async function signUpWithEmail({
   const credential = await createUserWithEmailAndPassword(auth, email, password);
 
   if (displayName.trim()) {
-    await updateProfile(credential.user, { displayName: displayName.trim() });
+    try {
+      await updateProfile(credential.user, { displayName: displayName.trim() });
+    } catch (error) {
+      // Non-fatal: profile metadata can be retried from the onboarding screen.
+      // Keep the signup moving so the user still lands inside the app.
+      console.error(
+        "signUpWithEmail: updateProfile failed (non-fatal)",
+        { uid: credential.user.uid },
+        error,
+      );
+    }
   }
 
-  await upsertUserProfile({
-    uid: credential.user.uid,
-    email: credential.user.email,
-    displayName: displayName.trim() || credential.user.displayName,
-    photoURL: credential.user.photoURL,
-  });
+  await waitForIdTokenReady(credential.user);
+  await runUpsertWithRetry(
+    {
+      uid: credential.user.uid,
+      email: credential.user.email,
+      displayName: displayName.trim() || credential.user.displayName,
+      photoURL: credential.user.photoURL,
+    },
+    "signUpWithEmail",
+  );
   try {
     await sendEmailVerification(credential.user);
   } catch (error) {
@@ -126,12 +213,16 @@ export async function signInWithGoogle() {
   const auth = getFirebaseAuth();
   const provider = new GoogleAuthProvider();
   const credential = await signInWithPopup(auth, provider);
-  await upsertUserProfile({
-    uid: credential.user.uid,
-    email: credential.user.email,
-    displayName: credential.user.displayName,
-    photoURL: credential.user.photoURL,
-  });
+  await waitForIdTokenReady(credential.user);
+  await runUpsertWithRetry(
+    {
+      uid: credential.user.uid,
+      email: credential.user.email,
+      displayName: credential.user.displayName,
+      photoURL: credential.user.photoURL,
+    },
+    "signInWithGoogle",
+  );
 
   return mapFirebaseUser(credential.user);
 }

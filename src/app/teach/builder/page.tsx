@@ -2,15 +2,15 @@ import { Suspense } from "react";
 
 import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { CourseBuilderStudio } from "@/components/teacher/course-builder-studio";
+import { TeacherBuilderHub } from "@/components/teacher/teacher-builder-hub";
 
 export default function TeacherBuilderPage() {
   return (
     <ProtectedSurface permissions={["teacherStudio.manageCourses"]}>
       <PlatformShell
         eyebrow="Course builder"
-        title="Build the course outline."
-        description="Add the basics, structure modules, create lessons, and submit the course when it is ready for Skillset review."
+        title="Course Builder."
+        description="Create courses, manage drafts, configure modules, upload lessons and materials, and submit for Skillset review."
       >
         <Suspense
           fallback={
@@ -21,7 +21,7 @@ export default function TeacherBuilderPage() {
             </section>
           }
         >
-          <CourseBuilderStudio />
+          <TeacherBuilderHub />
         </Suspense>
       </PlatformShell>
     </ProtectedSurface>

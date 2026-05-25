@@ -1,16 +1,61 @@
+"use client";
+
+import {
+  Bell,
+  Mail,
+  Shield,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 const accountLinks = [
-  ["Profile", "/account/profile"],
-  ["Email", "/account/email"],
-  ["Security", "/account/security"],
-  ["Payments", "/account/payments"],
-  ["Billing", "/account/billing"],
-  ["Notifications", "/account/notifications"],
+  "Profile",
+  "Email",
+  "Security",
+  "Notifications",
 ] as const;
 
-type AccountLink = (typeof accountLinks)[number][0];
+type AccountLink = (typeof accountLinks)[number];
+
+const accountSections: Array<{
+  eyebrow: string;
+  description: string;
+  links: readonly AccountLink[];
+}> = [
+  {
+    eyebrow: "Settings",
+    description: "Profile, login email, password, verification, and alerts.",
+    links: ["Profile", "Email", "Security", "Notifications"],
+  },
+];
+
+const accountLinkMeta: Record<
+  AccountLink,
+  { href: string; icon: LucideIcon; helper: string }
+> = {
+  Profile: {
+    href: "/account/profile",
+    icon: UserRound,
+    helper: "Name, username, avatar, bio, phone, timezone.",
+  },
+  Email: {
+    href: "/account/email",
+    icon: Mail,
+    helper: "Login email, email change, and verification.",
+  },
+  Security: {
+    href: "/account/security",
+    icon: Shield,
+    helper: "Password, account protection, and data actions.",
+  },
+  Notifications: {
+    href: "/account/notifications",
+    icon: Bell,
+    helper: "Course, billing, and support alerts.",
+  },
+};
 
 export function AccountPanel({
   active,
@@ -20,24 +65,42 @@ export function AccountPanel({
   children: ReactNode;
 }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
-      {/* Mobile: horizontal-scroll tab strip (snap, single row). Keeps the
-          6-item nav out of the way so content stays in the first scroll.
-          Desktop (lg+): vertical sidebar — same items, more breathing room
-          when there's space to spare. */}
+    <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
       <AccountNavMobile active={active} />
-      <aside className="dash-card dash-card--strong hidden h-fit p-3 lg:block">
-        <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-          Account
+      <aside className="dash-card dash-card--strong hidden h-fit p-4 lg:block">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          Settings
         </p>
-        <nav className="mt-3 grid gap-1" aria-label="Account settings">
-          {accountLinks.map(([label, href]) => (
-            <AccountNavLink
-              key={href}
-              label={label}
-              href={href}
-              isActive={label === active}
-            />
+        <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
+          Profile, login email, password, verification, and alerts stay here.
+          Billing and creator payouts live in their own money sections.
+        </p>
+        <nav className="mt-5 grid gap-5" aria-label="Account center">
+          {accountSections.map((section) => (
+            <div key={section.eyebrow}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+                {section.eyebrow}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-[var(--color-ink-soft)]">
+                {section.description}
+              </p>
+              <div className="mt-2 grid gap-1">
+                {section.links.map((label) => {
+                  const meta = accountLinkMeta[label];
+
+                  return (
+                    <AccountNavLink
+                      key={meta.href}
+                      label={label}
+                      href={meta.href}
+                      icon={meta.icon}
+                      helper={meta.helper}
+                      isActive={label === active}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </nav>
       </aside>
@@ -46,26 +109,34 @@ export function AccountPanel({
   );
 }
 
-function AccountNavMobile({ active }: { active: AccountLink }) {
+function AccountNavMobile({
+  active,
+}: {
+  active: AccountLink;
+}) {
   return (
     <nav
-      aria-label="Account settings"
+      aria-label="Account center"
       className="dash-card dash-card--strong overflow-x-auto px-2 py-2 lg:hidden"
     >
       <div className="flex min-w-max gap-1">
-        {accountLinks.map(([label, href]) => {
+        {accountLinks.map((label) => {
           const isActive = label === active;
+          const meta = accountLinkMeta[label];
+          const Icon = meta.icon;
+
           return (
             <Link
-              key={href}
-              href={href}
+              key={meta.href}
+              href={meta.href}
               aria-current={isActive ? "page" : undefined}
-              className={`whitespace-nowrap rounded-[3px] px-3 py-1.5 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-[8px] px-3 py-2 text-xs font-semibold transition ${
                 isActive
-                  ? "platform-nav-active bg-[var(--color-primary)]"
+                  ? "bg-[var(--color-primary)] text-white"
                   : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-ink)]"
               }`}
             >
+              <Icon aria-hidden="true" size={14} strokeWidth={2} />
               {label}
             </Link>
           );
@@ -78,40 +149,47 @@ function AccountNavMobile({ active }: { active: AccountLink }) {
 function AccountNavLink({
   label,
   href,
+  icon: Icon,
+  helper,
   isActive,
 }: {
   label: AccountLink;
   href: string;
+  icon: LucideIcon;
+  helper: string;
   isActive: boolean;
 }) {
-  const short =
-    label === "Payments"
-      ? "Pa"
-      : label === "Notifications"
-        ? "No"
-        : label.slice(0, 2);
-
   return (
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`flex items-center gap-3 rounded-[3px] px-2 py-2 text-sm font-semibold transition ${
+      className={`flex items-start gap-3 rounded-[10px] px-3 py-3 text-sm font-semibold transition ${
         isActive
-          ? "platform-nav-active bg-[var(--color-primary)]"
+          ? "bg-[var(--color-primary)] text-white shadow-[0_10px_22px_rgba(26,54,93,0.14)]"
           : "text-[var(--color-ink-soft)] hover:bg-white hover:text-[var(--color-ink)]"
       }`}
     >
       <span
-        className={`grid size-7 place-items-center rounded-[2px] text-[11px] font-bold ${
+        className={`grid size-8 shrink-0 place-items-center rounded-[8px] ${
           isActive
-            ? "bg-[var(--color-base)]"
+            ? "bg-white text-[var(--color-primary)]"
             : "bg-[var(--color-surface-soft)] text-[var(--color-primary)]"
         }`}
-        style={isActive ? { color: "var(--color-primary)" } : undefined}
       >
-        {short}
+        <Icon aria-hidden="true" size={16} strokeWidth={2} />
       </span>
-      {label}
+      <span>
+        <span className="block">{label}</span>
+        <span
+          className={`mt-1 block text-[11px] font-medium leading-4 ${
+            isActive
+              ? "text-[rgba(255,255,255,0.78)]"
+              : "text-[var(--color-ink-muted)]"
+          }`}
+        >
+          {helper}
+        </span>
+      </span>
     </Link>
   );
 }

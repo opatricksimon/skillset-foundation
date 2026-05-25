@@ -2,6 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -17,7 +18,11 @@ type BannerState = {
 
 export function StatusBanner() {
   const { status, user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const pathname = usePathname() ?? "";
+  const [profileState, setProfileState] = useState<{
+    uid: string | null;
+    profile: UserProfile | null;
+  }>({ uid: null, profile: null });
 
   useEffect(() => {
     if (status !== "authenticated" || !user) {
@@ -26,16 +31,20 @@ export function StatusBanner() {
 
     return subscribeToUserProfile(
       user.uid,
-      setProfile,
-      () => setProfile(null),
+      (nextProfile) => {
+        setProfileState({ uid: user.uid, profile: nextProfile });
+      },
+      () => {
+        setProfileState({ uid: user.uid, profile: null });
+      },
     );
   }, [status, user]);
 
-  if (status !== "authenticated" || !user) {
+  if (status !== "authenticated" || !user || profileState.uid !== user.uid) {
     return null;
   }
 
-  const banner = getAccountBanner(user, profile);
+  const banner = getAccountBanner(user, profileState.profile, pathname);
 
   if (!banner) {
     return null;
@@ -60,32 +69,41 @@ export function StatusBanner() {
 function getAccountBanner(
   user: SkillsetUser,
   profile: UserProfile | null,
+  pathname: string,
 ): BannerState | null {
+  const roles = profile?.roles?.length ? profile.roles : user.roles;
+
   if (user.emailVerified === false) {
     return {
       message: "Verify your email to unlock all features.",
       ctaLabel: "Resend verification",
-      ctaHref: "/account/security",
+      ctaHref: "/account?tab=security",
     };
   }
 
-  if (user.roles.includes("teacher") && !profile?.teacherTermsAcceptedAt) {
+  if (roles.includes("teacher") && !profile?.teacherTermsAcceptedAt) {
     return {
-      // Route to the activation flow that actually records acceptance
-      // (sets teacherTermsAcceptedAt and clears this banner). The
-      // /legal/teacher-terms page is read-only text with no accept
-      // action, so it could never clear the banner.
-      message: "Finish your creator setup to start selling.",
-      ctaLabel: "Complete setup",
+      message: "Accept Teacher Terms to unlock course publishing.",
+      ctaLabel: "Accept terms",
       ctaHref: "/onboarding?path=teacher",
     };
   }
 
-  if (user.roles.includes("teacher") && !profile?.stripeConnectChargesEnabled) {
+  const teacherNeedsStripeSetup =
+    roles.includes("teacher")
+    && (
+      !profile?.stripeConnectChargesEnabled
+      || !profile?.stripeConnectPayoutsEnabled
+    );
+
+  const payoutContext =
+    pathname.startsWith("/teach") || pathname.startsWith("/account/payments");
+
+  if (teacherNeedsStripeSetup && payoutContext) {
     return {
-      message: "Connect payouts to make your first sale.",
-      ctaLabel: "Complete setup",
-      ctaHref: "/account/payments",
+      message: "Connect payouts before selling paid courses. Free and draft courses do not need this yet.",
+      ctaLabel: "Connect payouts",
+      ctaHref: "/account/payments#stripe-connect",
     };
   }
 

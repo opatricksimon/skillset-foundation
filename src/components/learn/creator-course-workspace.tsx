@@ -13,9 +13,13 @@ import { teacherCourseToLearningCourse } from "@/lib/data/published-courses";
 import { subscribeToTeacherCourse } from "@/lib/data/teacher-courses";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
 
-export function CreatorCourseWorkspace() {
+export function CreatorCourseWorkspace({
+  initialCourseId,
+}: {
+  initialCourseId?: string;
+}) {
   const searchParams = useSearchParams();
-  const courseId = searchParams.get("courseId") ?? "";
+  const courseId = initialCourseId ?? searchParams.get("courseId") ?? "";
   const hasFirebaseConfig = Boolean(getFirebaseClientConfig());
   const { user } = useAuth();
   const [enrollmentState, setEnrollmentState] = useState<{

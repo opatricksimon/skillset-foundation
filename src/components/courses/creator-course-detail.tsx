@@ -1,15 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { subscribeToPublishedTeacherCourse } from "@/lib/data/published-courses";
 import { isPublicFeatureEnabled } from "@/lib/feature-flags";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
-import { startCourseCheckout } from "@/lib/payments/checkout";
+import {
+  enrollInFreeCreatorCourse,
+  startCourseCheckout,
+} from "@/lib/payments/checkout";
 
 type CreatorCourseDetailProps = {
   courseIdOverride?: string;
@@ -17,6 +21,7 @@ type CreatorCourseDetailProps = {
 
 export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailProps = {}) {
   const { status: authStatus, user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = courseIdOverride ?? searchParams.get("courseId") ?? "";
   const checkoutStatus = searchParams.get("checkout");
@@ -27,6 +32,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
   const [error, setError] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isEnrollingFree, setIsEnrollingFree] = useState(false);
 
   useEffect(() => {
     if (!courseId || !hasFirebaseConfig) {
@@ -86,8 +92,13 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     );
   }
 
+  const courseIsFree =
+    course.paymentType === "free"
+    || (typeof course.priceAmountMinor === "number" && course.priceAmountMinor === 0);
   const priceLabel =
-    typeof course.priceAmountMinor === "number"
+    courseIsFree
+      ? "Free"
+      : typeof course.priceAmountMinor === "number"
       ? new Intl.NumberFormat("en", {
           style: "currency",
           currency: course.currency ?? "USD",
@@ -104,6 +115,10 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     && Boolean(user)
     && typeof course.priceAmountMinor === "number"
     && course.priceAmountMinor > 0;
+  const canEnrollFree =
+    authStatus === "authenticated"
+    && Boolean(user)
+    && courseIsFree;
   const lessons = course.modules.flatMap((module) =>
     module.lessons.map((lesson) => ({
       ...lesson,
@@ -113,6 +128,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
   const previewLesson = course.freePreviewLessonId
     ? lessons.find((lesson) => lesson.id === course.freePreviewLessonId)
     : null;
+  const previewLessonEmbed = getTrustedLessonEmbed(previewLesson?.externalUrl);
   const lockedLessonCount = Math.max(lessons.length - (previewLesson ? 1 : 0), 0);
 
   async function handleCheckout() {
@@ -133,6 +149,27 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
           : "We could not start secure checkout. Try again or contact support.",
       );
       setIsCheckingOut(false);
+    }
+  }
+
+  async function handleFreeEnrollment() {
+    if (!course || !canEnrollFree) {
+      return;
+    }
+
+    setCheckoutError("");
+    setIsEnrollingFree(true);
+
+    try {
+      await enrollInFreeCreatorCourse(course.id);
+      router.push(`/learn/courses/${encodeURIComponent(course.id)}`);
+    } catch (enrollmentError) {
+      setCheckoutError(
+        enrollmentError instanceof Error && enrollmentError.message
+          ? enrollmentError.message
+          : "We could not attach this free course to your learning workspace.",
+      );
+      setIsEnrollingFree(false);
     }
   }
 
@@ -177,7 +214,18 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
                   {previewLesson.contentText}
                 </div>
               ) : null}
-              {previewLesson.externalUrl ? (
+              {previewLessonEmbed ? (
+                <div className="overflow-hidden rounded-[12px] border border-[var(--color-line)] bg-[var(--color-primary)]">
+                  <iframe
+                    src={previewLessonEmbed.embedUrl}
+                    title={previewLesson.title}
+                    className="aspect-video w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              ) : null}
+              {previewLesson.externalUrl && !previewLessonEmbed ? (
                 <a
                   href={previewLesson.externalUrl}
                   target="_blank"
@@ -186,12 +234,13 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
                 >
                   Open preview resource
                 </a>
-              ) : (
+              ) : null}
+              {!previewLesson.externalUrl ? (
                 <p className="rounded-[12px] bg-white p-4 text-xs leading-6 text-[var(--color-ink-soft)]">
                   Preview media can be attached by the educator as a video,
                   external lesson link, or text resource.
                 </p>
-              )}
+              ) : null}
             </div>
           ) : (
             <p className="mt-5 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
@@ -257,7 +306,14 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
             ["Status", "Published"],
             ["Lessons", String(course.lessonCount)],
             ["Price", priceLabel],
-            ["Access", checkoutEnabled ? "Stripe Checkout" : "Checkout pending"],
+            [
+              "Access",
+              courseIsFree
+                ? "Free enrollment"
+                : checkoutEnabled
+                  ? "Stripe Checkout"
+                  : "Checkout pending",
+            ],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -302,18 +358,29 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={!canCheckout || isCheckingOut}
-              className="button-solid mt-6 w-full px-5 py-3 text-sm disabled:opacity-60"
-            >
-              {isCheckingOut
-                ? "Opening secure checkout..."
-                : checkoutEnabled && hasPaidPrice
-                  ? `Enroll for ${priceLabel}`
-                  : "Secure checkout coming next"}
-            </button>
+            {canEnrollFree ? (
+              <button
+                type="button"
+                onClick={handleFreeEnrollment}
+                disabled={isEnrollingFree}
+                className="button-solid mt-6 w-full px-5 py-3 text-sm disabled:opacity-60"
+              >
+                {isEnrollingFree ? "Adding to your workspace..." : "Enroll free"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={!canCheckout || isCheckingOut}
+                className="button-solid mt-6 w-full px-5 py-3 text-sm disabled:opacity-60"
+              >
+                {isCheckingOut
+                  ? "Opening secure checkout..."
+                  : checkoutEnabled && hasPaidPrice
+                    ? `Enroll for ${priceLabel}`
+                    : "Secure checkout coming next"}
+              </button>
+            )}
             {!checkoutEnabled ? (
               <p className="mt-3 rounded-[10px] border border-[rgba(24,58,94,0.12)] bg-[var(--color-surface-soft)] px-4 py-3 text-xs leading-6 text-[var(--color-ink-soft)]">
                 Checkout is feature-flagged off until Firebase Functions and
@@ -324,8 +391,9 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
         )}
 
         <p className="mt-3 text-xs leading-6 text-[var(--color-ink-soft)]">
-          Paid access opens only after the Stripe webhook confirms payment and
-          creates your enrollment.
+          {courseIsFree
+            ? "Free enrollment attaches this course to your learning workspace immediately."
+            : "Paid access opens only after the Stripe webhook confirms payment and creates your enrollment."}
         </p>
         <Link
           href="/courses"

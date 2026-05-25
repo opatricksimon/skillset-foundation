@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     ".firebase/**",
     "out/**",
     "build/**",
+    "docs/design-reference/**",
     "docs/design-system/**",
     "functions/lib/**",
     "functions/node_modules/**",

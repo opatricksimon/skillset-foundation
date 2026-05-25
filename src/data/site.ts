@@ -49,10 +49,6 @@ export const marketplaceHighlights = [
   "Designed for international learners and educators",
 ];
 
-// One compact list per workspace context. The learner <-> teacher switch
-// lives in the top-right account menu, so the sidebar never stacks both at
-// once. Groups draw a subtle divider between them; account/help links are
-// intentionally omitted here because they live in the account menu.
 export const platformNav: PlatformNavItem[] = [
   // --- Learner workspace ---
   {
@@ -90,26 +86,26 @@ export const platformNav: PlatformNavItem[] = [
   // --- Teacher workspace ---
   {
     href: "/teach",
-    label: "Dashboard",
+    label: "Studio",
     icon: "LayoutDashboard",
     contexts: ["teacher"],
-    section: "Studio",
+    section: "Teach",
     permission: "teacherStudio.access",
   },
   {
     href: "/teach/builder",
-    label: "Courses",
+    label: "Course Builder",
     icon: "BookOpen",
     contexts: ["teacher"],
-    section: "Studio",
+    section: "Teach",
     permission: "teacherStudio.manageCourses",
   },
   {
     href: "/teach/media",
-    label: "Media Library",
+    label: "Media library",
     icon: "Image",
     contexts: ["teacher"],
-    section: "Studio",
+    section: "Teach",
     permission: "teacherStudio.manageCourses",
   },
   {
@@ -117,7 +113,7 @@ export const platformNav: PlatformNavItem[] = [
     label: "Coupons",
     icon: "Tag",
     contexts: ["teacher"],
-    section: "Studio",
+    section: "Growth",
     permission: "teacherStudio.manageCourses",
   },
   {
@@ -177,9 +173,24 @@ export const platformNav: PlatformNavItem[] = [
     section: "Account",
   },
   {
+    href: "/account/plans",
+    label: "Plans & fees",
+    icon: "Receipt",
+    contexts: ["learner", "teacher", "ops"],
+    section: "Account",
+  },
+  {
+    href: "/account/payments",
+    label: "Payouts & tax",
+    icon: "CreditCard",
+    contexts: ["teacher", "ops"],
+    section: "Account",
+    permission: "teacherStudio.access",
+  },
+  {
     href: "/account/billing",
     label: "Billing",
-    icon: "CreditCard",
+    icon: "Receipt",
     contexts: ["learner", "teacher", "ops"],
     section: "Account",
   },

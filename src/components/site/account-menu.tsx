@@ -1,17 +1,13 @@
 "use client";
 
 import {
+  Award,
+  Bookmark,
   ChevronDown,
-  CircleHelp,
-  CreditCard,
-  GraduationCap,
-  LayoutDashboard,
+  FileText,
   LogOut,
-  Mail,
-  Presentation,
-  Receipt,
-  Shield,
-  UserRound,
+  Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +15,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { planById, type PlanId } from "@/data/plans";
 import { formatPrimaryRole, type SkillsetUser } from "@/domain/auth";
+import { subscribeToUserProfile } from "@/lib/data/user-profiles";
 import { hasPermission } from "@/lib/permissions";
 
 type AccountMenuProps = {
@@ -74,12 +72,31 @@ function useDismissableLayer(
 export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
   const pathname = usePathname() ?? "";
   const [isOpen, setIsOpen] = useState(false);
+  const [currentPlanId, setCurrentPlanId] = useState<PlanId>("free");
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const workspaceHref = getPrimaryWorkspaceHref(user);
   const canTeach = hasPermission({ roles: user.roles }, "teacherStudio.access");
-  const activeContext = pathname.startsWith("/teach") ? "teacher" : "learner";
+  const isTeacherView = pathname.startsWith("/teach");
+  const moneyHref = user.roles.includes("teacher")
+    ? "/account/payments"
+    : "/account/billing";
+  const moneyLabel = user.roles.includes("teacher") ? "Payouts & tax" : "Billing";
+  const switchHref = isTeacherView ? "/learn" : "/teach";
+  const switchLabel = isTeacherView ? "Switch to Learner view" : "Switch to Creator view";
+  const currentPlanName = planById(currentPlanId).name;
 
   useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
+
+  useEffect(() => {
+    return subscribeToUserProfile(
+      user.uid,
+      (profile) => {
+        setCurrentPlanId(profile?.currentPlanId ?? "free");
+      },
+      () => {
+        setCurrentPlanId("free");
+      },
+    );
+  }, [user.uid]);
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -88,7 +105,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
         aria-expanded={isOpen}
         aria-controls="account-menu-panel"
         aria-label="Open account menu"
-        className="flex cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-left transition hover:bg-[var(--color-surface-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
+        className="account-menu-trigger"
         onClick={() => setIsOpen((current) => !current)}
       >
         <UserAvatar
@@ -96,11 +113,11 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
           photoURL={user.photoURL}
           size="sm"
         />
-        <span className="hidden text-left sm:grid">
-          <span className="max-w-32 truncate text-xs font-bold text-[var(--color-ink)]">
+        <span className="account-menu-trigger__who">
+          <span className="account-menu-trigger__name">
             {user.displayName || user.email || "Skillset member"}
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+          <span className="account-menu-trigger__role">
             {formatPrimaryRole(user.roles)}
           </span>
         </span>
@@ -114,7 +131,7 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
 
       {isOpen ? (
         <div id="account-menu-panel" className="account-menu-panel">
-          <div className="flex items-center gap-3 border-b border-[var(--color-line)] px-2 py-3">
+          <div className="account-menu-head">
             <UserAvatar
               name={user.displayName || user.email}
               photoURL={user.photoURL}
@@ -124,118 +141,92 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
               <p className="truncate text-sm font-bold text-[var(--color-ink)]">
                 {user.displayName || "Skillset member"}
               </p>
-              <p className="truncate text-xs text-[var(--color-ink-soft)]">
+              <p className="mt-0.5 truncate text-xs text-[var(--color-ink-soft)]">
                 {user.email}
               </p>
-              <span className="mt-2 inline-flex rounded-[8px] border border-[rgba(178,34,52,0.18)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-                {formatPrimaryRole(user.roles)}
-              </span>
             </div>
+          </div>
+
+          <div className="py-1">
+            <MenuLink
+              href="/account/plans"
+              icon={Award}
+              label="Plan"
+              chip={currentPlanName}
+              onNavigate={() => setIsOpen(false)}
+            />
+            <MenuLink
+              href="/account"
+              icon={Settings}
+              label="Settings"
+              onNavigate={() => setIsOpen(false)}
+            />
+            <MenuLink
+              href={moneyHref}
+              icon={FileText}
+              label={moneyLabel}
+              onNavigate={() => setIsOpen(false)}
+            />
+            <MenuLink
+              href="/learn/credentials"
+              icon={Bookmark}
+              label="My credentials"
+              onNavigate={() => setIsOpen(false)}
+            />
           </div>
 
           {canTeach ? (
-            <div className="border-b border-[var(--color-line)] px-1 py-3">
-              <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
-                Switch view
-              </p>
-              <ContextSwitch
-                active={activeContext === "teacher"}
-                href="/teach"
-                icon={Presentation}
-                label="Manage my teaching"
-                description="Studio, courses, wallet, payouts"
+            <>
+              <div className="account-menu-separator" />
+              <MenuLink
+                href={switchHref}
+                icon={Users}
+                label={switchLabel}
+                onNavigate={() => setIsOpen(false)}
               />
-              <ContextSwitch
-                active={activeContext === "learner"}
-                href="/learn"
-                icon={GraduationCap}
-                label="My learning"
-                description="Courses, community, certificates"
-              />
-            </div>
+            </>
           ) : null}
 
-          <div className="py-1">
-            <MenuLink href={workspaceHref} icon={LayoutDashboard} label="Open workspace" />
-            <MenuLink href="/account/profile" icon={UserRound} label="Profile settings" />
-            <MenuLink href="/account/email" icon={Mail} label="Email and password" />
-            <MenuLink href="/account/security" icon={Shield} label="Security" />
-            {user.roles.includes("teacher") ? (
-              <MenuLink href="/account/payments" icon={CreditCard} label="Payments and payouts" />
-            ) : null}
-            <MenuLink href="/account/billing" icon={Receipt} label="Billing" />
-          </div>
-
-          <div className="mt-1 border-t border-[var(--color-line)] pt-1">
-            <MenuLink href="/help" icon={CircleHelp} label="Help" />
-            <button
-              type="button"
-              onClick={() => {
-                void onSignOut();
-              }}
-              className="account-menu-item text-[var(--color-accent)] hover:bg-[rgba(178,34,52,0.06)] hover:text-[var(--color-accent)]"
-            >
-              <LogOut aria-hidden="true" size={16} strokeWidth={1.8} />
-              Sign out
-            </button>
-          </div>
+          <div className="account-menu-separator" />
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              void onSignOut();
+            }}
+            className="account-menu-item account-menu-item--danger"
+          >
+            <span className="account-menu-icon account-menu-icon--danger">
+              <LogOut aria-hidden="true" size={14} strokeWidth={1.8} />
+            </span>
+            Sign out
+          </button>
         </div>
       ) : null}
     </div>
   );
 }
 
-function ContextSwitch({
-  active,
-  description,
-  href,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  description: string;
-  href: string;
-  icon: LucideIcon;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="mt-2 flex items-center gap-3 rounded-[10px] px-3 py-3 transition hover:bg-[var(--color-surface-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
-    >
-      <span className="grid size-9 place-items-center rounded-[10px] bg-[var(--color-surface-strong)] text-[var(--color-primary)]">
-        <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-[var(--color-ink)]">
-          {label}
-        </span>
-        <span className="mt-1 block text-[11px] font-medium text-[var(--color-ink-soft)]">
-          {description}
-        </span>
-      </span>
-      {active ? (
-        <span className="rounded-[8px] border border-[rgba(178,34,52,0.18)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-          Active
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
 function MenuLink({
+  chip,
   href,
   icon: Icon,
   label,
+  onNavigate,
 }: {
+  chip?: string;
   href: string;
   icon: LucideIcon;
   label: string;
+  onNavigate: () => void;
 }) {
   return (
-    <Link href={href} className="account-menu-item">
-      <Icon aria-hidden="true" size={16} strokeWidth={1.8} />
-      {label}
+    <Link href={href} className="account-menu-item" onClick={onNavigate}>
+      <span className="account-menu-icon">
+        <Icon aria-hidden="true" size={14} strokeWidth={1.9} />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {chip ? <span className="account-menu-chip">{chip}</span> : null}
     </Link>
   );
 }

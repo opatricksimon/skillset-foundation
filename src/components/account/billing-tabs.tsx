@@ -29,6 +29,16 @@ export function BillingTabs() {
 
   return (
     <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+      <div className="mb-5 rounded-[4px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          Billing is not payouts
+        </p>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+          Use Billing for purchases, subscriptions, invoices, and receipts tied
+          to this account. Use Payouts when you are a creator connecting Stripe
+          or checking money owed to you.
+        </p>
+      </div>
       <HorizontalTabs
         tabs={billingTabs}
         activeValue={activeTab}

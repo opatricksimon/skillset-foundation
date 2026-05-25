@@ -1,0 +1,624 @@
+"use client";
+
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  CheckCircle2,
+  FileText,
+  Film,
+  Image as ImageIcon,
+  Link2,
+  Settings,
+  UploadCloud,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { CourseAsset, CourseAssetKind } from "@/domain/course-asset";
+import {
+  courseAssetAcceptTypes,
+  courseAssetKindLabels,
+  courseAssetMaxBytes,
+  formatCourseAssetSize,
+  isAllowedCourseAssetFile,
+} from "@/domain/course-asset";
+import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
+import type {
+  LessonType,
+  TeacherCourse,
+  TeacherCourseModule,
+  TeacherLesson,
+} from "@/domain/teacher-course";
+import {
+  subscribeToCourseAssets,
+  uploadCourseAsset,
+  type UploadCourseAssetProgress,
+} from "@/lib/data/course-assets";
+
+type LessonContentModalProps = {
+  course: TeacherCourse;
+  module: TeacherCourseModule;
+  moduleIndex: number;
+  lesson: TeacherLesson;
+  lessonIndex: number;
+  isEditable: boolean;
+  isFreePreview: boolean;
+  onClose: () => void;
+  onSetFreePreview: () => void;
+  onUpdateLesson: (patch: Partial<TeacherLesson>) => void;
+};
+
+type LessonModalTab = "video" | "description" | "materials" | "settings";
+
+const lessonModalTabs: Array<{
+  value: LessonModalTab;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { value: "video", label: "Video", icon: Film },
+  { value: "description", label: "Description", icon: FileText },
+  { value: "materials", label: "Materials", icon: UploadCloud },
+  { value: "settings", label: "Settings", icon: Settings },
+];
+
+const editableLessonTypes: Array<{ value: LessonType; label: string }> = [
+  { value: "video", label: "Video lesson" },
+  { value: "text", label: "Text lesson" },
+  { value: "quiz", label: "Quiz" },
+  { value: "assignment", label: "Assignment" },
+  { value: "live_recording", label: "Live recording" },
+  { value: "download", label: "Download" },
+  { value: "external_embed", label: "External embed" },
+];
+
+function getAssetStatusLabel(assets: CourseAsset[], lesson: TeacherLesson) {
+  const hasVideo = assets.some(
+    (asset) => asset.kind === "lesson_video" || asset.kind === "live_recording",
+  );
+
+  if (hasVideo) {
+    return "Uploaded";
+  }
+
+  if (getTrustedLessonEmbed(lesson.externalUrl)) {
+    return "Embedded";
+  }
+
+  return "Empty";
+}
+
+function formatProgress(progress: UploadCourseAssetProgress | null) {
+  if (!progress) {
+    return "";
+  }
+
+  return `${progress.percent}% - ${formatCourseAssetSize(progress.bytesTransferred)} of ${formatCourseAssetSize(progress.totalBytes)}`;
+}
+
+export function LessonContentModal({
+  course,
+  module,
+  moduleIndex,
+  lesson,
+  lessonIndex,
+  isEditable,
+  isFreePreview,
+  onClose,
+  onSetFreePreview,
+  onUpdateLesson,
+}: LessonContentModalProps) {
+  const [tab, setTab] = useState<LessonModalTab>("video");
+  const [assets, setAssets] = useState<CourseAsset[]>([]);
+  const [uploadKind, setUploadKind] = useState<CourseAssetKind>("lesson_video");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [isPreviewAsset, setIsPreviewAsset] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadCourseAssetProgress | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const lessonAssets = assets.filter((asset) => asset.lessonId === lesson.id);
+  const videoAssets = lessonAssets.filter(
+    (asset) => asset.kind === "lesson_video" || asset.kind === "live_recording",
+  );
+  const materialAssets = lessonAssets.filter((asset) => asset.kind === "lesson_material");
+  const thumbnailAssets = lessonAssets.filter((asset) => asset.kind === "lesson_thumbnail");
+  const trustedEmbed = getTrustedLessonEmbed(lesson.externalUrl);
+  const videoStatus = getAssetStatusLabel(lessonAssets, lesson);
+
+  useEffect(() => {
+    return subscribeToCourseAssets(
+      course.id,
+      setAssets,
+      () => setError("We could not load lesson assets."),
+    );
+  }, [course.id]);
+
+  function resetUploadState(nextKind: CourseAssetKind) {
+    setUploadKind(nextKind);
+    setSelectedFile(null);
+    setUploadProgress(null);
+    setSuccess("");
+    setError("");
+    setFileInputKey((current) => current + 1);
+  }
+
+  function handleTabChange(nextTab: LessonModalTab) {
+    setTab(nextTab);
+
+    if (nextTab === "video") {
+      resetUploadState("lesson_video");
+    }
+
+    if (nextTab === "materials") {
+      resetUploadState("lesson_material");
+    }
+
+    if (nextTab === "settings") {
+      resetUploadState("lesson_thumbnail");
+    }
+  }
+
+  async function handleUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!isEditable || !selectedFile) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+
+    if (!isAllowedCourseAssetFile(selectedFile, uploadKind)) {
+      setError(
+        `Use a valid ${courseAssetKindLabels[uploadKind].toLowerCase()} file under ${formatCourseAssetSize(courseAssetMaxBytes)}.`,
+      );
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      await uploadCourseAsset({
+        courseId: course.id,
+        ownerId: course.ownerId,
+        kind: uploadKind,
+        file: selectedFile,
+        isPreview: isPreviewAsset,
+        lessonId: lesson.id,
+        onProgress: setUploadProgress,
+      });
+      setSuccess("File uploaded to this lesson.");
+      setSelectedFile(null);
+      setUploadProgress(null);
+      setIsPreviewAsset(false);
+      setFileInputKey((current) => current + 1);
+    } catch {
+      setError("We could not upload this file. Check the file type and course permissions.");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div className="lesson-modal-overlay" role="presentation" onMouseDown={onClose}>
+      <section
+        aria-modal="true"
+        className="lesson-modal"
+        role="dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="lesson-modal__header">
+          <div className="min-w-0">
+            <p className="lesson-modal__crumb">
+              Module {moduleIndex + 1} - {module.title} / Lesson {lessonIndex + 1}
+            </p>
+            <h3>{lesson.title || "Untitled lesson"}</h3>
+            <p>
+              Configure the exact lesson students will watch, read, download, and discuss.
+            </p>
+          </div>
+          <button type="button" className="lesson-modal__close" onClick={onClose}>
+            <X aria-hidden="true" size={18} />
+            <span className="sr-only">Close lesson studio</span>
+          </button>
+        </header>
+
+        <nav className="lesson-modal__tabs" aria-label="Lesson setup">
+          {lessonModalTabs.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.value;
+            const badge =
+              item.value === "video"
+                ? videoStatus
+                : item.value === "description"
+                  ? lesson.description.trim().length > 0 || lesson.contentText?.trim()
+                    ? "Done"
+                    : "Empty"
+                  : item.value === "materials"
+                    ? String(materialAssets.length)
+                    : isFreePreview
+                      ? "Preview"
+                      : "Private";
+
+            return (
+              <button
+                key={item.value}
+                type="button"
+                className={active ? "is-active" : ""}
+                onClick={() => handleTabChange(item.value)}
+              >
+                <Icon aria-hidden="true" size={14} />
+                {item.label}
+                <span>{badge}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="lesson-modal__body">
+          {tab === "video" ? (
+            <div className="grid gap-5">
+              <div className="lesson-modal-video">
+                <div>
+                  <p className="lesson-modal__eyebrow">Primary lesson media</p>
+                  <h4>{videoStatus === "Empty" ? "Add a video or embed." : "Media is connected."}</h4>
+                  <p>
+                    Upload directly to Skillset Storage or paste a YouTube/Vimeo URL.
+                    The student classroom already knows how to play both paths.
+                  </p>
+                </div>
+                <span>{videoStatus}</span>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <button
+                  type="button"
+                  className={`lesson-modal-choice ${uploadKind === "lesson_video" ? "is-active" : ""}`}
+                  onClick={() => resetUploadState("lesson_video")}
+                  disabled={!isEditable || isUploading}
+                >
+                  <Film aria-hidden="true" size={18} />
+                  <strong>Upload lesson video</strong>
+                  <small>MP4, MOV, WebM or any browser-supported video file.</small>
+                </button>
+                <button
+                  type="button"
+                  className={`lesson-modal-choice ${uploadKind === "live_recording" ? "is-active" : ""}`}
+                  onClick={() => resetUploadState("live_recording")}
+                  disabled={!isEditable || isUploading}
+                >
+                  <UploadCloud aria-hidden="true" size={18} />
+                  <strong>Upload live recording</strong>
+                  <small>Replay from cohort classes, mentorships or webinars.</small>
+                </button>
+              </div>
+
+              <LessonUploadForm
+                error={error}
+                isEditable={isEditable}
+                isPreviewAsset={isPreviewAsset}
+                isUploading={isUploading}
+                onChangePreview={setIsPreviewAsset}
+                onFileChange={(file) => {
+                  setSelectedFile(file);
+                  setUploadProgress(null);
+                  setSuccess("");
+                  setError("");
+                }}
+                onSubmit={handleUpload}
+                progressLabel={formatProgress(uploadProgress)}
+                selectedFile={selectedFile}
+                fileInputKey={fileInputKey}
+                success={success}
+                uploadKind={uploadKind}
+              />
+
+              <label className="lesson-modal-field">
+                <span>
+                  YouTube or Vimeo URL
+                  <small>Use this when the video already lives outside Skillset.</small>
+                </span>
+                <input
+                  value={lesson.externalUrl ?? ""}
+                  onChange={(event) => onUpdateLesson({ externalUrl: event.target.value || null })}
+                  disabled={!isEditable}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </label>
+              <div className="lesson-modal-inline-status">
+                <Link2 aria-hidden="true" size={15} />
+                {trustedEmbed
+                  ? `${trustedEmbed.provider === "youtube" ? "YouTube" : "Vimeo"} embed detected.`
+                  : lesson.externalUrl
+                    ? "External link saved, but it is not a trusted embeddable YouTube/Vimeo URL."
+                    : "No external embed URL yet."}
+              </div>
+
+              <LessonAssetList assets={videoAssets} emptyLabel="No uploaded video file yet." />
+            </div>
+          ) : null}
+
+          {tab === "description" ? (
+            <div className="grid gap-4">
+              <label className="lesson-modal-field">
+                <span>Lesson title</span>
+                <input
+                  value={lesson.title}
+                  onChange={(event) => onUpdateLesson({ title: event.target.value })}
+                  disabled={!isEditable}
+                />
+              </label>
+              <label className="lesson-modal-field">
+                <span>
+                  Lesson description
+                  <small>Shown below the video in the members area.</small>
+                </span>
+                <textarea
+                  value={lesson.description}
+                  onChange={(event) => onUpdateLesson({ description: event.target.value })}
+                  disabled={!isEditable}
+                  rows={5}
+                  placeholder="Explain what the student is about to learn and why it matters."
+                />
+              </label>
+              <label className="lesson-modal-field">
+                <span>
+                  Text content, prompt, or notes
+                  <small>Use this for text lessons, assignments, scripts or key takeaways.</small>
+                </span>
+                <textarea
+                  value={lesson.contentText ?? ""}
+                  onChange={(event) => onUpdateLesson({ contentText: event.target.value || null })}
+                  disabled={!isEditable}
+                  rows={7}
+                  placeholder="Add the lesson outline, assignment instructions, checklist, or supporting notes."
+                />
+              </label>
+            </div>
+          ) : null}
+
+          {tab === "materials" ? (
+            <div className="grid gap-5">
+              <div className="lesson-modal-note">
+                <FileText aria-hidden="true" size={17} />
+                <p>
+                  Complementary files are attached to this lesson and become
+                  downloadable inside the student classroom.
+                </p>
+              </div>
+              <LessonUploadForm
+                error={error}
+                isEditable={isEditable}
+                isPreviewAsset={isPreviewAsset}
+                isUploading={isUploading}
+                onChangePreview={setIsPreviewAsset}
+                onFileChange={(file) => {
+                  resetUploadState("lesson_material");
+                  setSelectedFile(file);
+                }}
+                onSubmit={(event) => {
+                  setUploadKind("lesson_material");
+                  void handleUpload(event);
+                }}
+                progressLabel={formatProgress(uploadProgress)}
+                selectedFile={selectedFile}
+                fileInputKey={fileInputKey}
+                success={success}
+                uploadKind="lesson_material"
+              />
+              <LessonAssetList assets={materialAssets} emptyLabel="No complementary materials yet." />
+            </div>
+          ) : null}
+
+          {tab === "settings" ? (
+            <div className="grid gap-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="lesson-modal-field">
+                  <span>Lesson type</span>
+                  <select
+                    value={lesson.type}
+                    onChange={(event) => onUpdateLesson({ type: event.target.value as LessonType })}
+                    disabled={!isEditable}
+                  >
+                    {editableLessonTypes.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="lesson-modal-field">
+                  <span>Duration minutes</span>
+                  <input
+                    value={lesson.durationMinutes ?? ""}
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      const parsedValue = Number(event.target.value);
+                      onUpdateLesson({
+                        durationMinutes:
+                          Number.isFinite(parsedValue) && parsedValue > 0
+                            ? Math.round(parsedValue)
+                            : null,
+                      });
+                    }}
+                    disabled={!isEditable}
+                    placeholder="12"
+                  />
+                </label>
+              </div>
+              <div className="lesson-modal-setting">
+                <div>
+                  <strong>Free preview</strong>
+                  <p>Make this lesson visible before purchase. Skillset recommends one strong preview lesson.</p>
+                </div>
+                <button
+                  type="button"
+                  className={isFreePreview ? "is-on" : ""}
+                  onClick={onSetFreePreview}
+                  disabled={!isEditable}
+                  aria-pressed={isFreePreview}
+                />
+              </div>
+              <label className="lesson-modal-field">
+                <span>
+                  Drip delay days
+                  <small>Leave blank for immediate release, or set D+ days after enrollment.</small>
+                </span>
+                <input
+                  value={lesson.dripDelayDays ?? ""}
+                  inputMode="numeric"
+                  onChange={(event) => {
+                    const parsedValue = Number(event.target.value);
+                    onUpdateLesson({
+                      dripDelayDays:
+                        event.target.value.trim() && Number.isFinite(parsedValue) && parsedValue >= 0
+                          ? Math.round(parsedValue)
+                          : null,
+                    });
+                  }}
+                  disabled={!isEditable}
+                  placeholder="7"
+                />
+              </label>
+              <div className="lesson-modal-note">
+                <ImageIcon aria-hidden="true" size={17} />
+                <p>
+                  Optional thumbnail upload. It is used by the members area when
+                  students browse lessons.
+                </p>
+              </div>
+              <LessonUploadForm
+                error={error}
+                isEditable={isEditable}
+                isPreviewAsset={isPreviewAsset}
+                isUploading={isUploading}
+                onChangePreview={setIsPreviewAsset}
+                onFileChange={(file) => {
+                  resetUploadState("lesson_thumbnail");
+                  setSelectedFile(file);
+                }}
+                onSubmit={(event) => {
+                  setUploadKind("lesson_thumbnail");
+                  void handleUpload(event);
+                }}
+                progressLabel={formatProgress(uploadProgress)}
+                selectedFile={selectedFile}
+                fileInputKey={fileInputKey}
+                success={success}
+                uploadKind="lesson_thumbnail"
+              />
+              <LessonAssetList assets={thumbnailAssets} emptyLabel="No lesson thumbnail yet." />
+            </div>
+          ) : null}
+        </div>
+
+        <footer className="lesson-modal__footer">
+          <p>
+            <CheckCircle2 aria-hidden="true" size={14} />
+            Uploads save immediately. Text and settings save with the course draft.
+          </p>
+          <button type="button" className="button-solid px-4 py-3 text-sm" onClick={onClose}>
+            Done
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function LessonUploadForm({
+  error,
+  fileInputKey,
+  isEditable,
+  isPreviewAsset,
+  isUploading,
+  onChangePreview,
+  onFileChange,
+  onSubmit,
+  progressLabel,
+  selectedFile,
+  success,
+  uploadKind,
+}: {
+  error: string;
+  fileInputKey: number;
+  isEditable: boolean;
+  isPreviewAsset: boolean;
+  isUploading: boolean;
+  onChangePreview: (nextValue: boolean) => void;
+  onFileChange: (file: File | null) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  progressLabel: string;
+  selectedFile: File | null;
+  success: string;
+  uploadKind: CourseAssetKind;
+}) {
+  return (
+    <form className="lesson-modal-upload" onSubmit={onSubmit}>
+      <label>
+        <span>{courseAssetKindLabels[uploadKind]}</span>
+        <input
+          key={`${fileInputKey}-${uploadKind}`}
+          type="file"
+          accept={courseAssetAcceptTypes[uploadKind]}
+          disabled={!isEditable || isUploading}
+          onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+        />
+      </label>
+      <label className="lesson-modal-upload__preview">
+        <input
+          type="checkbox"
+          checked={isPreviewAsset}
+          disabled={!isEditable || isUploading}
+          onChange={(event) => onChangePreview(event.target.checked)}
+        />
+        Allow this file in the public preview when it is safe.
+      </label>
+      {selectedFile ? (
+        <p className="lesson-modal-upload__file">
+          {selectedFile.name} - {formatCourseAssetSize(selectedFile.size)}
+        </p>
+      ) : null}
+      {progressLabel ? (
+        <p className="lesson-modal-upload__file">{progressLabel}</p>
+      ) : null}
+      {error ? <p className="lesson-modal-upload__error">{error}</p> : null}
+      {success ? <p className="lesson-modal-upload__success">{success}</p> : null}
+      <button
+        type="submit"
+        disabled={!isEditable || isUploading || !selectedFile}
+        className="button-outline px-4 py-3 text-sm disabled:opacity-60"
+      >
+        {isUploading ? "Uploading..." : "Upload file"}
+      </button>
+    </form>
+  );
+}
+
+function LessonAssetList({
+  assets,
+  emptyLabel,
+}: {
+  assets: CourseAsset[];
+  emptyLabel: string;
+}) {
+  if (assets.length === 0) {
+    return <p className="lesson-modal-empty">{emptyLabel}</p>;
+  }
+
+  return (
+    <div className="lesson-modal-assets">
+      {assets.map((asset) => (
+        <article key={asset.id}>
+          <div>
+            <strong>{asset.fileName}</strong>
+            <span>
+              {courseAssetKindLabels[asset.kind]} - {formatCourseAssetSize(asset.size)}
+            </span>
+          </div>
+          <small>{asset.isPreview ? "Preview" : "Enrolled only"}</small>
+        </article>
+      ))}
+    </div>
+  );
+}

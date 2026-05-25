@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
-import { MobileSidebarDrawer } from "@/components/platform/mobile-sidebar-drawer";
 import { HelpBubble } from "@/components/platform/help-bubble";
-import { LogoWordmark } from "@/components/shared/logo-wordmark";
+import { MobileSidebarDrawer } from "@/components/platform/mobile-sidebar-drawer";
 import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
@@ -13,7 +14,7 @@ import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
 type PlatformShellProps = {
-  /** Title is always required — it's the page identity in the sidebar grid. */
+  /** Title is always required: it is the page identity in the sidebar grid. */
   title: string;
   /** Small uppercase label above the title. Optional. */
   eyebrow?: string;
@@ -21,10 +22,11 @@ type PlatformShellProps = {
   description?: string;
   /**
    * Compact variant: smaller title, tighter padding. Use for inner pages
-   * where a tab/breadcrumb already gives context (e.g. /account/billing).
-   * Default = false (full hero, fine for workspace landings like /teach).
+   * where a tab/breadcrumb already gives context.
    */
   compact?: boolean;
+  /** Some surfaces, like Studio and Builder, own their own richer header. */
+  hideHeader?: boolean;
   children: ReactNode;
 };
 
@@ -33,82 +35,151 @@ export function PlatformShell({
   title,
   description,
   compact = false,
+  hideHeader = false,
   children,
 }: PlatformShellProps) {
   const { isCollapsed, persistentState, toggle } = useSidebarState();
+  const pathname = usePathname() ?? "";
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <ThemeProvider>
-      <main className="page-shell min-h-screen">
-      <StatusBanner />
-      <PlatformHeader />
-      <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
-        <div className={`platform-grid gap-6 ${isCollapsed ? "platform-grid--collapsed" : ""}`}>
-          <aside
-            className={`platform-sidebar platform-sidebar-panel h-fit rounded-[4px] border border-[var(--color-line-strong)] bg-[var(--color-surface-strong)] p-2 shadow-[0_1px_0_rgba(15,39,68,0.06)] ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}
+      <main className="page-shell platform-shell-root">
+        <StatusBanner />
+        <PlatformHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
+        <div className="platform-shell-body">
+        <div className="platform-shell-inner w-full">
+          <div
+            className={`platform-grid ${
+              isCollapsed ? "platform-grid--collapsed" : ""
+            }`}
           >
-            <SidebarToggle
-              state={persistentState}
-              isCollapsed={isCollapsed}
-              onToggle={toggle}
-            />
-            {isCollapsed ? (
-              <div className="mt-1 px-1">
-                <LinkLogo />
-              </div>
-            ) : (
-              <div className="mt-1 flex items-center justify-between gap-3 px-1">
-                <LogoWordmark nav href="/" />
-                <span className="platform-sidebar-label rounded-[6px] border border-[rgba(178,34,52,0.18)] bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-                  beta
-                </span>
-              </div>
-            )}
-            <PlatformNav collapsed={isCollapsed} />
-            {/* The sidebar footer used to host the theme toggle and a
-                profile card — both moved to the top-right cluster in the
-                PlatformHeader (cleaner mental model: identity + global
-                controls live in one place). Sidebar is now nav-only. */}
-          </aside>
-          <section className={`platform-content ${compact ? "space-y-4" : "space-y-6"}`}>
-            <div
-              className={`dash-card ${compact ? "px-4 py-4 sm:px-5" : "p-4 sm:p-5"}`}
+            <aside
+              className={`platform-sidebar platform-sidebar-panel border-r border-[var(--color-line)] bg-white p-3 ${
+                isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
+              }`}
             >
-              {eyebrow ? (
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                  {eyebrow}
-                </p>
-              ) : null}
-              <h1
-                className={
-                  compact
-                    ? "display-title max-w-4xl text-xl leading-tight text-[var(--color-primary)] sm:text-2xl lg:text-3xl"
-                    : `display-title ${eyebrow ? "mt-3" : ""} max-w-4xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl lg:text-5xl`
-                }
-              >
-                {title}
-              </h1>
-              {description ? (
-                <p
-                  className={`max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)] ${compact ? "mt-2" : "mt-3"}`}
+              <SidebarToggle
+                state={persistentState}
+                isCollapsed={isCollapsed}
+                onToggle={toggle}
+              />
+              {!isCollapsed ? <PlatformSidebarSearch pathname={pathname} /> : null}
+              <PlatformNav collapsed={isCollapsed} />
+            </aside>
+
+            <section
+              className={`platform-content ${
+                compact ? "space-y-4" : "space-y-6"
+              }`}
+            >
+              {hideHeader ? null : (
+                <div
+                  className={`platform-page-heading ${
+                    compact ? "platform-page-heading--compact" : ""
+                  }`}
                 >
-                  {description}
-                </p>
-              ) : null}
-            </div>
-            {children}
-          </section>
+                  {eyebrow ? (
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                      {eyebrow}
+                    </p>
+                  ) : null}
+                  <h1
+                    className={
+                      compact
+                        ? "display-title max-w-4xl text-xl leading-tight text-[var(--color-primary)] sm:text-2xl lg:text-3xl"
+                        : `display-title ${
+                            eyebrow ? "mt-3" : ""
+                          } max-w-4xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl lg:text-5xl`
+                    }
+                  >
+                    {title}
+                  </h1>
+                  {description ? (
+                    <p
+                      className={`max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)] ${
+                        compact ? "mt-2" : "mt-3"
+                      }`}
+                    >
+                      {description}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+              {children}
+            </section>
+          </div>
         </div>
-      </div>
-      <MobileSidebarDrawer />
-      <HelpBubble />
+        </div>
+        <MobileSidebarDrawer
+          open={mobileNavOpen}
+          onOpen={() => setMobileNavOpen(true)}
+          onClose={() => setMobileNavOpen(false)}
+        />
+        <HelpBubble />
       </main>
     </ThemeProvider>
   );
 }
 
-function LinkLogo() {
-  // Collapsed sidebar: show the round emblem (theme-agnostic) instead of a
-  // plain "S". LogoWordmark already provides the link wrapper.
-  return <LogoWordmark variant="mark" className="mx-auto" />;
+function PlatformSidebarSearch({ pathname }: { pathname: string }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const placeholder = getSearchPlaceholder(pathname);
+
+  function submitSearch() {
+    const query = inputRef.current?.value.trim();
+
+    if (!query) {
+      return;
+    }
+
+    const target = pathname.startsWith("/ops")
+      ? `/ops?q=${encodeURIComponent(query)}`
+      : pathname.startsWith("/teach")
+        ? `/teach?query=${encodeURIComponent(query)}`
+        : `/courses?q=${encodeURIComponent(query)}`;
+
+    router.push(target);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      submitSearch();
+    }
+
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      inputRef.current?.focus();
+    }
+  }
+
+  return (
+    <label className="platform-sidebar-search mt-4">
+      <Search aria-hidden="true" size={15} strokeWidth={2} />
+      <input
+        ref={inputRef}
+        type="search"
+        placeholder={placeholder}
+        onKeyDown={handleKeyDown}
+      />
+      <span aria-hidden="true">Ctrl K</span>
+    </label>
+  );
+}
+
+function getSearchPlaceholder(pathname: string) {
+  if (pathname.startsWith("/teach")) {
+    return "Search courses, students...";
+  }
+
+  if (pathname.startsWith("/learn")) {
+    return "Search lessons, courses...";
+  }
+
+  if (pathname.startsWith("/ops")) {
+    return "Search users, reviews...";
+  }
+
+  return "Search Skillset...";
 }

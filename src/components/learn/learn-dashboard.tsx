@@ -120,7 +120,7 @@ export function LearnDashboard() {
             const nextLesson = course?.modules[0]?.lessons[0];
             const workspaceHref = course
               ? `/learn/courses/${enrollment.courseSlug}`
-              : `/learn/courses/creator?courseId=${enrollment.courseId}`;
+              : `/learn/courses/${enrollment.courseId}`;
             const canOpenWorkspace = canOpenEnrollment(enrollment.status);
 
             return (

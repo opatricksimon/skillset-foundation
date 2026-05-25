@@ -9,6 +9,7 @@ export default function TeachPage() {
         eyebrow="Teacher Studio"
         title="Build, ship, get paid."
         description="Draft a course, prepare the learner experience, and submit when ready. Skillset reviews every submission before publication."
+        hideHeader
       >
         <TeacherStudioDashboard />
       </PlatformShell>

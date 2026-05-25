@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  Download,
+  FileText,
+  LockKeyhole,
+  MessageCircle,
+  PlayCircle,
+} from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { WatermarkedVideoPlayer } from "@/components/learn/watermarked-video-player";
@@ -18,6 +28,7 @@ import {
   getLastCompletedCourseLesson,
   getNextCourseLesson,
 } from "@/domain/lesson-progress";
+import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
 import { subscribeToEnrollment } from "@/lib/data/enrollments";
 import { updateEnrollmentProgress } from "@/lib/data/enrollments";
 import {
@@ -30,6 +41,12 @@ import {
   subscribeToCourseAssets,
 } from "@/lib/data/course-assets";
 import { issueSkillsetCertificate } from "@/lib/data/certificates";
+import {
+  addLessonComment,
+  deleteLessonComment,
+  subscribeToLessonComments,
+  type LessonComment,
+} from "@/lib/data/lesson-comments";
 
 type EnrolledCourseWorkspaceProps = {
   course: Course;
@@ -230,9 +247,26 @@ export function EnrolledCourseWorkspace({
       : [];
   const courseLevelAssets =
     assetsState.key === course.id
-      ? assetsState.assets.filter((asset) => !asset.lessonId)
+      ? assetsState.assets.filter(
+          (asset) =>
+            !asset.lessonId
+            && !asset.moduleId
+            && asset.kind !== "course_cover",
+        )
       : [];
   const assetCountByLessonId = new Map<string, number>();
+  const thumbnailByLessonId = new Map<string, CourseAsset>();
+  const coverByModuleId = new Map<string, CourseAsset>();
+  const totalLessonCount = allLessons.length;
+  const completedLessonCount = completedLessonIds.length;
+  const selectedModule = selectedLesson
+    ? course.modules.find((module) =>
+        module.lessons.some((lesson) => lesson.id === selectedLesson.id),
+      ) ?? null
+    : null;
+  const selectedLessonNumber = selectedLesson
+    ? allLessons.findIndex((lesson) => lesson.id === selectedLesson.id) + 1
+    : 0;
 
   if (assetsState.key === course.id) {
     for (const asset of assetsState.assets) {
@@ -241,6 +275,14 @@ export function EnrolledCourseWorkspace({
           asset.lessonId,
           (assetCountByLessonId.get(asset.lessonId) ?? 0) + 1,
         );
+      }
+
+      if (asset.kind === "lesson_thumbnail" && asset.lessonId) {
+        thumbnailByLessonId.set(asset.lessonId, asset);
+      }
+
+      if (asset.kind === "module_cover" && asset.moduleId) {
+        coverByModuleId.set(asset.moduleId, asset);
       }
     }
   }
@@ -297,9 +339,9 @@ export function EnrolledCourseWorkspace({
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
+    <div className="member-classroom">
       {previewMode ? (
-        <section className="xl:col-span-2 rounded-[4px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 shadow-[var(--shadow-soft)]">
+        <section className="member-preview-banner">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-[var(--color-primary)]">
               Preview mode - this is how students will see your course.
@@ -312,44 +354,59 @@ export function EnrolledCourseWorkspace({
           </div>
         </section>
       ) : null}
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Course workspace
-        </p>
-        <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-          {course.title}
-        </h3>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-          {course.summary}
-        </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-              Progress
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--color-primary)]">
-              {progressPercent}%
-            </p>
+
+      <section className="member-classroom-hero">
+        <div className="member-classroom-hero__copy">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+            Members area
+          </p>
+          <h3 className="display-title mt-3 text-4xl text-[var(--color-ink)]">
+            {course.title}
+          </h3>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)]">
+            {course.summary}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <span className="member-meta-chip">
+              <BookOpen size={14} aria-hidden />
+              {course.modules.length} module{course.modules.length === 1 ? "" : "s"}
+            </span>
+            <span className="member-meta-chip">
+              <PlayCircle size={14} aria-hidden />
+              {totalLessonCount} lesson{totalLessonCount === 1 ? "" : "s"}
+            </span>
+            <span className="member-meta-chip">
+              <Clock size={14} aria-hidden />
+              {course.durationLabel}
+            </span>
           </div>
-          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-              Status
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--color-primary)]">
-              {progressPercent === 100 ? "completed" : workspaceEnrollment.status}
-            </p>
-          </div>
-          <div className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-              Next lesson
-            </p>
-            <p className="mt-2 text-sm font-semibold text-[var(--color-primary)]">
-              {nextLesson?.title ?? "Course completed"}
-            </p>
+          <div className="member-progress mt-7">
+            <div className="flex items-center justify-between gap-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+              <span>{completedLessonCount} of {totalLessonCount} lessons complete</span>
+              <span>{progressPercent}%</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(26,54,93,0.12)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
         </div>
+        <div className="member-classroom-hero__cover">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={course.image} alt={course.title} />
+          <div className="member-classroom-hero__coverOverlay">
+            <span>{progressPercent === 100 ? "Completed" : workspaceEnrollment.status}</span>
+            <strong>{nextLesson?.title ?? "Course completed"}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div className="member-classroom-layout">
+        <section className="member-classroom-player">
         {error ? (
-          <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          <p className="mb-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
             {error}
           </p>
         ) : null}
@@ -357,6 +414,7 @@ export function EnrolledCourseWorkspace({
           <LessonContentPanel
             assets={selectedLessonAssets}
             completed={completedLessonIds.includes(selectedLesson.id)}
+            courseId={course.id}
             enableFirestoreAssets={enableFirestoreAssets}
             isLoadingAssets={Boolean(
               enableFirestoreAssets
@@ -374,127 +432,233 @@ export function EnrolledCourseWorkspace({
             }
           />
         ) : null}
-        {enableFirestoreAssets ? (
-          <CourseAssetResourceList
-            assets={courseLevelAssets}
-            isLoading={Boolean(
-              enableFirestoreAssets
-                && (!assetsState.ready || assetsState.key !== course.id),
-            )}
-          />
-        ) : null}
-      </section>
+        </section>
 
-      <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-          Modules and lessons
-        </p>
-        <div className="mt-5 grid gap-4">
-          {course.modules.map((module, moduleIndex) => (
-            <article
-              key={module.id}
-              className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                Module {moduleIndex + 1}
-              </p>
-              <h4 className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-                {module.title}
-              </h4>
-              <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
-                {module.summary}
-              </p>
-              <div className="mt-4 grid gap-2">
-                {module.lessons.map((lesson) => (
-                  (() => {
+        <aside className="member-classroom-sidebar">
+          <div className="member-sidebar-card member-sidebar-card--dark">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/70">
+              Now playing
+            </p>
+            <h4 className="mt-3 text-xl font-semibold text-white">
+              {selectedLesson?.title ?? "No lesson selected"}
+            </h4>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              {selectedModule
+                ? `Module: ${selectedModule.title}`
+                : "Select a lesson from the curriculum below."}
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="member-dark-stat">
+                <span>Lesson</span>
+                <strong>{selectedLessonNumber || "-"}/{totalLessonCount || "-"}</strong>
+              </div>
+              <div className="member-dark-stat">
+                <span>Files</span>
+                <strong>{selectedLesson ? assetCountByLessonId.get(selectedLesson.id) ?? 0 : 0}</strong>
+              </div>
+            </div>
+          </div>
+          <div className="member-sidebar-card">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Continue learning
+            </p>
+            <h4 className="mt-2 text-lg font-semibold text-[var(--color-primary)]">
+              {nextLesson?.title ?? "All lessons complete"}
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+              Progress is saved against this enrollment and resumes from the next incomplete lesson.
+            </p>
+            {nextLesson ? (
+              <button
+                type="button"
+                onClick={() => setSelectedLessonId(nextLesson.id)}
+                className="button-solid mt-4 px-4 py-3 text-sm"
+              >
+                Continue
+              </button>
+            ) : (
+              <Link href="/learn/credentials" className="button-solid mt-4 px-4 py-3 text-sm">
+                View credential
+              </Link>
+            )}
+          </div>
+          <div className="member-sidebar-card">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Workspace links
+            </p>
+            <div className="mt-4 grid gap-2">
+              <Link href="/learn" className="member-sidebar-link">
+                Back to My Learning
+              </Link>
+              <Link href={`/courses/${course.slug}`} className="member-sidebar-link">
+                Public course page
+              </Link>
+              {progressPercent === 100 ? (
+                <Link href="/learn/credentials" className="member-sidebar-link">
+                  Credential status
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section className="member-module-deck">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Curriculum
+            </p>
+            <h3 className="display-title mt-2 text-3xl text-[var(--color-ink)]">
+              Modules and lessons
+            </h3>
+          </div>
+          <p className="text-sm font-semibold text-[var(--color-ink-soft)]">
+            Select any available lesson to open it in the player above.
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-5">
+          {course.modules.map((module, moduleIndex) => {
+            const moduleCompletedCount = module.lessons.filter((lesson) =>
+              completedLessonIds.includes(lesson.id),
+            ).length;
+
+            return (
+              <article key={module.id} className="member-module-row">
+                <div className="member-module-row__head">
+                  <div className="member-module-row__cover">
+                    <ProtectedAssetCover
+                      asset={coverByModuleId.get(module.id)}
+                      fallbackLabel={module.title}
+                      compact
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      Module {moduleIndex + 1}
+                    </p>
+                    <h4 className="mt-2 text-lg font-semibold text-[var(--color-primary)]">
+                      {module.title}
+                    </h4>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
+                      {module.summary}
+                    </p>
+                  </div>
+                  <span className="member-module-progress">
+                    {moduleCompletedCount}/{module.lessons.length} complete
+                  </span>
+                </div>
+
+                <div className="member-lesson-strip">
+                  {module.lessons.map((lesson) => {
                     const unlockState =
                       lessonUnlockStateById.get(lesson.id)
                       ?? { unlocked: true, unlocksAt: null, reason: "available" };
                     const isCompleted = completedLessonIds.includes(lesson.id);
+                    const selected = selectedLesson?.id === lesson.id;
+                    const fileCount = assetCountByLessonId.get(lesson.id) ?? 0;
 
                     return (
-                  <div
-                    key={lesson.id}
-                    className="grid gap-3 rounded-[10px] bg-white px-3 py-3 text-xs sm:grid-cols-[1fr_auto]"
-                  >
-                    <div>
-                      <p className="font-semibold text-[var(--color-ink)]">{lesson.title}</p>
-                      <p className="mt-1 uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
-                        {lessonTypeLabels[lesson.type]}
-                      </p>
-                      {!unlockState.unlocked ? (
-                        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-accent)]">
-                          {formatUnlockMessage(unlockState)}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      {assetCountByLessonId.get(lesson.id) ? (
-                        <span className="shrink-0 rounded-[8px] bg-[rgba(26,54,93,0.08)] px-3 py-1 font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
-                          {assetCountByLessonId.get(lesson.id)} file
-                          {assetCountByLessonId.get(lesson.id) === 1 ? "" : "s"}
-                        </span>
-                      ) : null}
-                      <span className="shrink-0 rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-1 font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
-                        {lesson.duration}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedLessonId(lesson.id)}
-                        className="button-outline px-3 py-2 text-[11px]"
+                      <article
+                        key={lesson.id}
+                        className={`member-lesson-card ${selected ? "member-lesson-card--active" : ""}`}
                       >
-                        {unlockState.unlocked ? "Open" : "Preview lock"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleLessonCompletion(
-                            lesson.id,
-                            isCompleted,
-                          )
-                        }
-                        disabled={
-                          previewMode
-                          ||
-                          !unlockState.unlocked
-                          || isProgressLoading
-                          || activeLessonId === lesson.id
-                        }
-                        className="button-outline px-3 py-2 text-[11px] disabled:opacity-60"
-                      >
-                        {activeLessonId === lesson.id
-                          ? "Saving..."
-                            : previewMode
-                              ? "Preview only"
-                              : isCompleted
-                            ? "Completed"
-                            : !unlockState.unlocked
-                              ? "Locked"
-                            : "Mark complete"}
-                      </button>
-                    </div>
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLessonId(lesson.id)}
+                          className="block w-full text-left"
+                        >
+                          <div className="relative">
+                            <ProtectedAssetCover
+                              asset={thumbnailByLessonId.get(lesson.id)}
+                              fallbackLabel={lesson.title}
+                              compact
+                            />
+                            <span className="member-play-badge">
+                              {unlockState.unlocked ? (
+                                <PlayCircle size={16} aria-hidden />
+                              ) : (
+                                <LockKeyhole size={15} aria-hidden />
+                              )}
+                            </span>
+                          </div>
+                          <p className="mt-3 line-clamp-2 font-semibold text-[var(--color-ink)]">
+                            {lesson.title}
+                          </p>
+                          <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+                            {lessonTypeLabels[lesson.type]}
+                          </p>
+                          {!unlockState.unlocked ? (
+                            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-accent)]">
+                              {formatUnlockMessage(unlockState)}
+                            </p>
+                          ) : null}
+                        </button>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="member-lesson-chip">
+                            <Clock size={12} aria-hidden />
+                            {lesson.duration}
+                          </span>
+                          {fileCount ? (
+                            <span className="member-lesson-chip">
+                              <Download size={12} aria-hidden />
+                              {fileCount} file{fileCount === 1 ? "" : "s"}
+                            </span>
+                          ) : null}
+                          {isCompleted ? (
+                            <span className="member-lesson-chip member-lesson-chip--done">
+                              <CheckCircle2 size={12} aria-hidden />
+                              Done
+                            </span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleLessonCompletion(
+                              lesson.id,
+                              isCompleted,
+                            )
+                          }
+                          disabled={
+                            previewMode
+                            ||
+                            !unlockState.unlocked
+                            || isProgressLoading
+                            || activeLessonId === lesson.id
+                          }
+                          className="button-outline mt-3 w-full px-3 py-2 text-[11px] disabled:opacity-60"
+                        >
+                          {activeLessonId === lesson.id
+                            ? "Saving..."
+                              : previewMode
+                                ? "Preview only"
+                                : isCompleted
+                              ? "Mark incomplete"
+                              : !unlockState.unlocked
+                                ? "Locked"
+                              : "Mark complete"}
+                        </button>
+                      </article>
                     );
-                  })()
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link href="/learn" className="button-outline px-4 py-3 text-sm">
-            Back to My Learning
-          </Link>
-          {progressPercent === 100 ? (
-            <Link href="/learn/credentials" className="button-solid px-4 py-3 text-sm">
-              View credential status
-            </Link>
-          ) : null}
-          <Link href={`/courses/${course.slug}`} className="button-outline px-4 py-3 text-sm">
-            View public course page
-          </Link>
+                  })}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
+
+      {enableFirestoreAssets ? (
+        <CourseAssetResourceList
+          assets={courseLevelAssets}
+          isLoading={Boolean(
+            enableFirestoreAssets
+              && (!assetsState.ready || assetsState.key !== course.id),
+          )}
+        />
+      ) : null}
     </div>
   );
 }
@@ -547,13 +711,21 @@ function CourseAssetResourceList({
   isLoading: boolean;
 }) {
   return (
-    <div className="mt-5 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-        Course resources
-      </p>
-      <h4 className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-        General files and visuals attached to this course
-      </h4>
+    <section className="member-resource-panel">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Course resources
+          </p>
+          <h4 className="mt-2 text-lg font-semibold text-[var(--color-primary)]">
+            General files and visuals attached to this course
+          </h4>
+        </div>
+        <span className="member-meta-chip">
+          <FileText size={14} aria-hidden />
+          {assets.length} file{assets.length === 1 ? "" : "s"}
+        </span>
+      </div>
       {isLoading ? (
         <p className="mt-4 rounded-[10px] bg-white px-3 py-2 text-sm text-[var(--color-ink-soft)]">
           Loading course resources...
@@ -582,17 +754,19 @@ function CourseAssetResourceList({
                   {asset.isPreview ? "Preview" : "Enrolled"}
                 </span>
               </div>
+              <ProtectedAssetPreview asset={asset} />
             </div>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
 function LessonContentPanel({
   assets,
   completed,
+  courseId,
   enableFirestoreAssets,
   isLoadingAssets,
   isSaving,
@@ -603,6 +777,7 @@ function LessonContentPanel({
 }: {
   assets: CourseAsset[];
   completed: boolean;
+  courseId: string;
   enableFirestoreAssets: boolean;
   isLoadingAssets: boolean;
   isSaving: boolean;
@@ -612,32 +787,80 @@ function LessonContentPanel({
   onToggleComplete: () => void;
 }) {
   const locked = Boolean(unlockState && !unlockState.unlocked);
+  const primaryHostedVideo = locked
+    ? null
+    : assets.find(
+        (asset) =>
+          (asset.kind === "lesson_video" || asset.kind === "live_recording")
+          && asset.contentType.startsWith("video/"),
+      ) ?? null;
+  const supportingAssets = assets.filter(
+    (asset) =>
+      asset.kind !== "lesson_thumbnail"
+      && (!primaryHostedVideo || asset.id !== primaryHostedVideo.id),
+  );
+  const trustedEmbed = locked || primaryHostedVideo
+    ? null
+    : getTrustedLessonEmbed(lesson.externalUrl);
 
   return (
-    <div className="mt-6 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="member-lesson-panel">
+      <div className="member-lesson-panel__head">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             {lessonTypeLabels[lesson.type]}
           </p>
-          <h4 className="display-title mt-2 text-2xl text-[var(--color-ink)]">
+          <h4 className="display-title mt-2 text-3xl text-[var(--color-ink)]">
             {lesson.title}
           </h4>
         </div>
-        <span className="rounded-[8px] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+        <span className="member-meta-chip">
+          <Clock size={14} aria-hidden />
           {lesson.duration}
         </span>
       </div>
 
-      <div className="mt-5 rounded-[4px] border border-[var(--color-line)] bg-white p-5">
-        <p className="text-sm font-semibold text-[var(--color-ink)]">
-          Lesson content
-        </p>
+      <div className="member-video-stage">
         {locked ? (
-          <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.18)] bg-[rgba(178,34,52,0.05)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">
-            {unlockState ? formatUnlockMessage(unlockState) : "Locked"}
+          <div className="member-video-empty">
+            <LockKeyhole size={28} aria-hidden />
+            <h5>Lesson locked</h5>
+            <p>{unlockState ? formatUnlockMessage(unlockState) : "Locked"}</p>
+          </div>
+        ) : primaryHostedVideo ? (
+          <ProtectedAssetPreview asset={primaryHostedVideo} />
+        ) : trustedEmbed ? (
+          <iframe
+            src={trustedEmbed.embedUrl}
+            title={lesson.title}
+            className="aspect-video w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : (
+          <div className="member-video-empty">
+            <PlayCircle size={34} aria-hidden />
+            <h5>{lesson.type === "text" ? "Text-first lesson" : "Media not attached yet"}</h5>
+            <p>
+              {lesson.type === "text"
+                ? "Read the lesson notes below and use the discussion area if you need context."
+                : "When the instructor uploads a video or connects an embed, it plays here."}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="member-lesson-body">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">
+            Lesson content
           </p>
-        ) : null}
+          {lesson.isPreview ? (
+            <span className="rounded-[8px] border border-[rgba(178,34,52,0.18)] bg-[rgba(178,34,52,0.05)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-accent)]">
+              Free preview
+            </span>
+          ) : null}
+        </div>
         {!locked && lesson.description ? (
           <p className="mt-3 text-sm leading-7 text-[var(--color-ink)]">
             {lesson.description}
@@ -648,7 +871,7 @@ function LessonContentPanel({
             {lesson.contentText}
           </div>
         ) : null}
-        {!locked && lesson.externalUrl ? (
+        {!locked && lesson.externalUrl && !trustedEmbed ? (
           <a
             href={lesson.externalUrl}
             target="_blank"
@@ -662,12 +885,14 @@ function LessonContentPanel({
           {lessonTypeDescriptions[lesson.type]}
         </p>
         {!locked && enableFirestoreAssets ? (
-          <LessonAssetList assets={assets} isLoading={isLoadingAssets} />
+          <LessonAssetList assets={supportingAssets} isLoading={isLoadingAssets} />
         ) : null}
-        {lesson.isPreview ? (
-          <p className="mt-4 rounded-[10px] border border-[rgba(178,34,52,0.18)] bg-[rgba(178,34,52,0.05)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">
-            This lesson is marked as a free preview on the public course page.
-          </p>
+        {!locked ? (
+          <LessonDiscussion
+            courseId={courseId}
+            lessonId={lesson.id}
+            previewMode={previewMode}
+          />
         ) : null}
       </div>
 
@@ -687,6 +912,170 @@ function LessonContentPanel({
               ? "Mark as incomplete"
               : "Mark complete"}
       </button>
+    </div>
+  );
+}
+
+function LessonDiscussion({
+  courseId,
+  lessonId,
+  previewMode,
+}: {
+  courseId: string;
+  lessonId: string;
+  previewMode: boolean;
+}) {
+  const { user } = useAuth();
+  const [comments, setComments] = useState<LessonComment[]>([]);
+  const [commentsKey, setCommentsKey] = useState("");
+  const [body, setBody] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const currentKey = `${courseId}:${lessonId}`;
+  const isReady = previewMode || commentsKey === currentKey;
+
+  useEffect(() => {
+    if (previewMode) {
+      return undefined;
+    }
+
+    return subscribeToLessonComments(
+      courseId,
+      lessonId,
+      (nextComments) => {
+        setComments(nextComments);
+        setCommentsKey(`${courseId}:${lessonId}`);
+      },
+      () => {
+        setError("We could not load this lesson discussion.");
+        setCommentsKey(`${courseId}:${lessonId}`);
+      },
+    );
+  }, [courseId, lessonId, previewMode]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user || previewMode || body.trim().length < 3) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      await addLessonComment({
+        courseId,
+        lessonId,
+        authorId: user.uid,
+        authorName: user.displayName || user.email || "Skillset learner",
+        body,
+      });
+      setBody("");
+    } catch {
+      setError("We could not publish your comment.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!user || previewMode) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      await deleteLessonComment(courseId, commentId);
+    } catch {
+      setError("We could not delete that comment.");
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-[3px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <MessageCircle size={15} className="text-[var(--color-accent)]" aria-hidden />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Lesson discussion
+            </p>
+          </div>
+          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+            Ask questions or leave context tied to this specific lesson.
+          </p>
+        </div>
+        <span className="rounded-[8px] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+          {comments.length} comment{comments.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {!isReady ? (
+          <p className="rounded-[10px] bg-white px-3 py-2 text-sm text-[var(--color-ink-soft)]">
+            Loading comments...
+          </p>
+        ) : comments.length === 0 ? (
+          <p className="rounded-[10px] bg-white px-3 py-2 text-sm text-[var(--color-ink-soft)]">
+            No comments yet. Start the discussion for this lesson.
+          </p>
+        ) : (
+          comments.map((comment) => (
+            <article
+              key={comment.id}
+              className="rounded-[10px] border border-[var(--color-line)] bg-white p-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+                  {comment.authorName}
+                </p>
+                {user?.uid === comment.authorId ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="text-xs font-semibold text-[var(--color-accent)] hover:text-[var(--color-primary)]"
+                  >
+                    Delete
+                  </button>
+                ) : null}
+              </div>
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[var(--color-ink)]">
+                {comment.body}
+              </p>
+            </article>
+          ))
+        )}
+      </div>
+
+      {error ? (
+        <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">
+          {error}
+        </p>
+      ) : null}
+
+      <form className="mt-4 grid gap-3" onSubmit={handleSubmit}>
+        <textarea
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          disabled={previewMode || isSaving}
+          rows={3}
+          placeholder={
+            previewMode
+              ? "Preview mode does not publish comments."
+              : "Write a question, note, or useful comment..."
+          }
+          className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+        />
+        <button
+          type="submit"
+          disabled={previewMode || isSaving || body.trim().length < 3}
+          className="button-outline w-fit px-4 py-2 text-sm disabled:opacity-60"
+        >
+          {isSaving ? "Publishing..." : "Publish comment"}
+        </button>
+      </form>
     </div>
   );
 }
@@ -724,11 +1113,12 @@ function LessonAssetList({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-[var(--color-ink)]">
-                {asset.fileName}
-              </p>
-              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
-                {courseAssetKindLabels[asset.kind]} - {formatCourseAssetSize(asset.size)}
-              </p>
+                  {asset.fileName}
+                </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+                <FileText size={13} aria-hidden />
+                <span>{courseAssetKindLabels[asset.kind]} - {formatCourseAssetSize(asset.size)}</span>
+              </div>
             </div>
             <span className="rounded-[8px] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-primary)]">
               {asset.isPreview ? "Preview" : "Enrolled"}
@@ -738,6 +1128,78 @@ function LessonAssetList({
           <ProtectedAssetPreview asset={asset} />
         </div>
       ))}
+    </div>
+  );
+}
+
+function ProtectedAssetCover({
+  asset,
+  compact = false,
+  fallbackLabel,
+}: {
+  asset?: CourseAsset;
+  compact?: boolean;
+  fallbackLabel: string;
+}) {
+  const [objectUrlState, setObjectUrlState] = useState<{
+    assetId: string;
+    url: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!asset || !asset.contentType.startsWith("image/")) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let nextObjectUrl: string | null = null;
+
+    getProtectedCourseAssetObjectUrl(asset)
+      .then((url) => {
+        nextObjectUrl = url;
+
+        if (isMounted) {
+          setObjectUrlState({
+            assetId: asset.id,
+            url,
+          });
+        }
+      })
+      .catch(() => {
+        return undefined;
+      });
+
+    return () => {
+      isMounted = false;
+
+      if (nextObjectUrl) {
+        URL.revokeObjectURL(nextObjectUrl);
+      }
+    };
+  }, [asset]);
+
+  const sizeClass = compact ? "aspect-video" : "aspect-[16/10]";
+  const objectUrl =
+    asset && objectUrlState?.assetId === asset.id ? objectUrlState.url : null;
+
+  if (objectUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={objectUrl}
+        alt={fallbackLabel}
+        className={`${sizeClass} w-full rounded-[10px] object-cover`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClass} grid w-full place-items-center rounded-[10px] border border-[rgba(26,54,93,0.10)] bg-[linear-gradient(135deg,rgba(26,54,93,0.12),rgba(178,34,52,0.08))] px-3 text-center`}
+    >
+      <span className="line-clamp-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+        {fallbackLabel}
+      </span>
     </div>
   );
 }
@@ -806,23 +1268,58 @@ function ProtectedAssetPreview({ asset }: { asset: CourseAsset }) {
 
   if (asset.contentType.startsWith("image/")) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={objectUrl}
-        alt={asset.fileName}
-        className="mt-3 max-h-72 w-full rounded-[10px] object-cover"
-      />
+      <div className="mt-3 grid gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={objectUrl}
+          alt={asset.fileName}
+          className="max-h-72 w-full rounded-[10px] object-cover"
+        />
+        <ProtectedAssetActions asset={asset} objectUrl={objectUrl} />
+      </div>
     );
   }
 
+  if (asset.contentType === "application/pdf") {
+    return (
+      <div className="mt-3 grid gap-3">
+        <iframe
+          src={objectUrl}
+          title={asset.fileName}
+          className="h-80 w-full rounded-[10px] border border-[var(--color-line)] bg-white"
+        />
+        <ProtectedAssetActions asset={asset} objectUrl={objectUrl} />
+      </div>
+    );
+  }
+
+  return <ProtectedAssetActions asset={asset} objectUrl={objectUrl} />;
+}
+
+function ProtectedAssetActions({
+  asset,
+  objectUrl,
+}: {
+  asset: CourseAsset;
+  objectUrl: string;
+}) {
   return (
-    <a
-      href={objectUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="mt-3 inline-flex text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)]"
-    >
-      Open protected asset
-    </a>
+    <div className="mt-3 flex flex-wrap gap-2">
+      <a
+        href={objectUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="button-outline px-4 py-2 text-xs"
+      >
+        Open file
+      </a>
+      <a
+        href={objectUrl}
+        download={asset.fileName}
+        className="button-solid px-4 py-2 text-xs"
+      >
+        Download
+      </a>
+    </div>
   );
 }

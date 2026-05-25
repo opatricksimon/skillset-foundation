@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   PenTool,
   Plug,
+  Receipt,
   RefreshCw,
   Settings,
   ShoppingBag,
@@ -22,14 +23,16 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/components/auth/auth-provider";
-import { platformNav, type PlatformNavContext } from "@/data/site";
+import {
+  platformNav,
+  type PlatformNavContext,
+  type PlatformNavItem,
+} from "@/data/site";
 import {
   hasPermission,
   type PermissionSubject,
 } from "@/lib/permissions";
 
-// Map icon key strings (from site.ts) to Lucide components.
-// Adding an icon to platformNav? Add its import above and entry here.
 const iconMap: Record<string, LucideIcon> = {
   Award,
   BookOpen,
@@ -40,6 +43,7 @@ const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   PenTool,
   Plug,
+  Receipt,
   RefreshCw,
   Settings,
   ShoppingBag,
@@ -48,41 +52,100 @@ const iconMap: Record<string, LucideIcon> = {
   Users,
 };
 
-// Workspace switching lives in the top-right AccountMenu ("Switch view"
-// section with Manage my teaching / My learning) — clearer labels and a
-// single source of truth. The 2-letter LEARN/TEACH/OPS chips that used
-// to live at the top of this sidebar were redundant.
-
 export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useAuth();
   const pathname = usePathname() ?? "";
   const subject: PermissionSubject = { roles: user?.roles ?? ["guest"] };
   const context = resolveContext(pathname, subject);
+  const canSwitchWorkspace = hasPermission(subject, "teacherStudio.access");
 
   const visibleItems = platformNav.filter(
     (item) =>
       item.contexts.includes(context) &&
       (!item.permission || hasPermission(subject, item.permission)),
   );
+  const sections = groupBySection(visibleItems);
 
   return (
-    <nav className="mt-2 flex flex-col gap-0.5">
-      {/* Section headers (STUDIO / GROWTH / SETUP / DISCOVER / ACCOUNT)
-          were removed per user audit — Cakto-style flat list. The section
-          metadata stays on each PlatformNavItem so future grouping (e.g.
-          a divider between unrelated areas) can be re-introduced cheaply
-          without touching site.ts. */}
-      {visibleItems.map((item) => (
-        <PlatformNavLink
-          key={item.href}
-          href={item.href}
-          label={item.label}
-          icon={item.icon}
-          active={isActivePlatformRoute(pathname, item.href)}
-          collapsed={collapsed}
-        />
+    <nav className="platform-sidebar-nav mt-3 flex flex-col gap-4" aria-label="Workspace">
+      {!collapsed && canSwitchWorkspace ? (
+        <div className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-2">
+          <div className="grid grid-cols-2 gap-1 rounded-[8px] border border-[var(--color-line)] bg-white p-1">
+            <WorkspaceSwitchLink
+              href="/learn"
+              active={context === "learner"}
+              label="Learner"
+            />
+            <WorkspaceSwitchLink
+              href="/teach"
+              active={context === "teacher"}
+              label="Creator"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {sections.map((section) => (
+        <div key={section.label} className="grid gap-1">
+          {!collapsed ? (
+            <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              {section.label}
+            </p>
+          ) : null}
+          {section.items.map((item) => (
+            <PlatformNavLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              active={isActivePlatformRoute(pathname, item.href)}
+              collapsed={collapsed}
+            />
+          ))}
+        </div>
       ))}
     </nav>
+  );
+}
+
+function groupBySection(items: PlatformNavItem[]) {
+  return items.reduce<Array<{ label: string; items: PlatformNavItem[] }>>(
+    (groups, item) => {
+      const current = groups[groups.length - 1];
+
+      if (current?.label === item.section) {
+        current.items.push(item);
+        return groups;
+      }
+
+      groups.push({ label: item.section, items: [item] });
+      return groups;
+    },
+    [],
+  );
+}
+
+function WorkspaceSwitchLink({
+  active,
+  href,
+  label,
+}: {
+  active: boolean;
+  href: string;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`workspace-switch-link rounded-[7px] px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] transition ${
+        active
+          ? "workspace-switch-link--active bg-[var(--color-primary)] text-white shadow-[var(--shadow-button)]"
+          : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
+      }`}
+    >
+      {label}
+    </Link>
   );
 }
 
@@ -102,8 +165,6 @@ function resolveContext(
     return "ops";
   }
 
-  // Neutral pages (Marketplace, Account) follow the member's primary
-  // workspace so a teacher keeps their studio sidebar until they switch.
   if (hasPermission(subject, "platform.accessAdmin")) {
     return "ops";
   }
@@ -116,7 +177,17 @@ function resolveContext(
 }
 
 function isActivePlatformRoute(pathname: string, href: string) {
-  if (["/learn", "/teach", "/ops", "/account"].includes(href)) {
+  if (href === "/account") {
+    return (
+      pathname === "/account" ||
+      pathname.startsWith("/account/profile") ||
+      pathname.startsWith("/account/email") ||
+      pathname.startsWith("/account/security") ||
+      pathname.startsWith("/account/notifications")
+    );
+  }
+
+  if (["/learn", "/teach", "/ops"].includes(href)) {
     return pathname === href;
   }
 
@@ -138,11 +209,6 @@ function PlatformNavLink({
 }) {
   const Icon = iconMap[icon] ?? LayoutDashboard;
 
-  // Icon sits directly inline with the label — no white badge wrapper.
-  // Previous design (white square holding a tiny 13px icon) made the icon
-  // visually disappear in the active state on hi-DPI screens. Now: a solid
-  // 18px icon, on a transparent background, inheriting currentColor. Active
-  // = bright white over primary blue. Inactive = ink-soft, hover = ink.
   return (
     <Link
       href={href}
@@ -154,12 +220,14 @@ function PlatformNavLink({
           : "border-transparent text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-strong)] hover:text-[var(--color-ink)]"
       }`}
     >
-      <Icon
-        aria-hidden="true"
-        size={18}
-        strokeWidth={2}
-        className="shrink-0"
-      />
+      <span className="platform-nav-icon-chip">
+        <Icon
+          aria-hidden="true"
+          size={18}
+          strokeWidth={2}
+          className="shrink-0"
+        />
+      </span>
       <span
         className={`platform-sidebar-label ${active ? "text-[var(--color-base)]" : ""}`}
       >

@@ -68,9 +68,7 @@ export async function createAdminEnrollmentForTeacherCourse(
     courseSlug: course.id,
     courseTitle: course.title,
     courseCategory: course.category,
-    courseImage:
-      course.coverImageUrl
-      || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+    courseImage: course.coverImageUrl || "/brand/logo-mark.png",
     status: "active",
     source: "admin",
     progressPercent: 0,

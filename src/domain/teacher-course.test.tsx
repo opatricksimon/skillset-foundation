@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   countCourseLessons,
+  normalizeCourseCategories,
   normalizeInstallmentsMax,
+  normalizeTeacherCourseModules,
   teacherCanEditCourse,
   teacherCanSubmitCourse,
   type TeacherCourseModule,
@@ -48,5 +50,62 @@ describe("teacher course domain", () => {
     expect(normalizeInstallmentsMax(40)).toBe(36);
     expect(normalizeInstallmentsMax(0)).toBe(1);
     expect(normalizeInstallmentsMax(null)).toBeNull();
+  });
+
+  it("deduplicates selected course categories", () => {
+    expect(
+      normalizeCourseCategories([
+        "Marketing and sales",
+        " marketing and sales ",
+        "Technology and software",
+        "",
+      ]),
+    ).toEqual(["Marketing and sales", "Technology and software"]);
+  });
+
+  it("normalizes modules, lessons, module copy, and lesson media references", () => {
+    expect(
+      normalizeTeacherCourseModules([
+        {
+          id: "module-1",
+          title: " Foundations ",
+          summary: "  Start here  ",
+          coverAssetId: undefined,
+          lessons: [
+            {
+              id: "lesson-1",
+              title: " Intro ",
+              type: "video",
+              description: "  Watch first  ",
+              durationMinutes: undefined,
+              contentText: "  Notes  ",
+              externalUrl: "  https://youtu.be/dQw4w9WgXcQ  ",
+              dripDelayDays: 2.6,
+              thumbnailAssetId: undefined,
+            },
+          ],
+        },
+      ]),
+    ).toEqual([
+      {
+        id: "module-1",
+        title: "Foundations",
+        summary: "Start here",
+        coverAssetId: null,
+        lessons: [
+          {
+            id: "lesson-1",
+            title: "Intro",
+            type: "video",
+            description: "Watch first",
+            durationMinutes: null,
+            contentText: "Notes",
+            externalUrl: "https://youtu.be/dQw4w9WgXcQ",
+            dripDelayDays: 3,
+            thumbnailAssetId: null,
+          },
+        ],
+      },
+    ]);
   });
 });

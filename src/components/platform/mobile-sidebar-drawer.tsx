@@ -11,17 +11,26 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { PlatformNav } from "@/components/platform/platform-nav";
 import { SessionCard } from "@/components/platform/session-card";
 import { LogoWordmark } from "@/components/shared/logo-wordmark";
 
-export function MobileSidebarDrawer() {
+type MobileSidebarDrawerProps = {
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+};
+
+export function MobileSidebarDrawer({
+  open,
+  onOpen,
+  onClose,
+}: MobileSidebarDrawerProps) {
   const { user } = useAuth();
   const pathname = usePathname() ?? "";
-  const [open, setOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const workspaceItem = useMemo(() => {
     const isTeacher = user?.roles.includes("teacher");
@@ -37,10 +46,6 @@ export function MobileSidebarDrawer() {
     { href: "/account/profile", label: "Profile", icon: User },
   ];
 
-  function closeDrawer() {
-    setOpen(false);
-  }
-
   useEffect(() => {
     if (!open) {
       return;
@@ -48,7 +53,7 @@ export function MobileSidebarDrawer() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
+        onClose();
       }
     }
 
@@ -57,7 +62,7 @@ export function MobileSidebarDrawer() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [onClose, open]);
 
   return (
     <>
@@ -82,7 +87,7 @@ export function MobileSidebarDrawer() {
         })}
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={onOpen}
           className="grid min-w-0 flex-1 place-items-center gap-1 px-2 py-2 text-[10px] font-bold text-[var(--color-ink-soft)]"
           aria-label="Open more navigation"
         >
@@ -97,7 +102,7 @@ export function MobileSidebarDrawer() {
             type="button"
             className="absolute inset-0 bg-[rgba(15,39,68,0.45)]"
             aria-label="Close navigation"
-            onClick={closeDrawer}
+            onClick={onClose}
           />
           <aside
             className="relative z-[60] flex h-screen w-[280px] flex-col bg-white shadow-[0_0_60px_rgba(15,39,68,0.25)]"
@@ -109,7 +114,7 @@ export function MobileSidebarDrawer() {
               const endX = event.changedTouches[0]?.clientX ?? null;
 
               if (startX !== null && endX !== null && startX - endX > 60) {
-                closeDrawer();
+                onClose();
               }
 
               touchStartX.current = null;
@@ -124,7 +129,7 @@ export function MobileSidebarDrawer() {
               </div>
               <button
                 type="button"
-                onClick={closeDrawer}
+                onClick={onClose}
                 className="grid size-9 place-items-center rounded-[10px] text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
                 aria-label="Close navigation"
               >

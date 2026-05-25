@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  addDoc,
   collection,
   doc,
   onSnapshot,
@@ -11,6 +10,7 @@ import {
   where,
   type Unsubscribe,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 import type {
   CreateTeacherCourseInput,
@@ -18,44 +18,46 @@ import type {
   TeacherCourseStatus,
   UpdateTeacherCourseBuilderInput,
 } from "@/domain/teacher-course";
-import { countCourseLessons } from "@/domain/teacher-course";
-import { getFirestoreDb } from "@/lib/firebase/client";
+import { normalizeCourseCategories } from "@/domain/teacher-course";
+import { getFirebaseFunctions, getFirestoreDb } from "@/lib/firebase/client";
 
 const coursesCollection = "courses";
 
 export async function createTeacherCourse(input: CreateTeacherCourseInput) {
   const paymentType = input.paymentType ?? "one_time";
-  const courseRef = await addDoc(collection(getFirestoreDb(), coursesCollection), {
-    ownerId: input.ownerId,
-    title: input.title.trim(),
-    summary: input.summary.trim(),
-    category: input.category.trim(),
-    status: "draft",
-    modules: [],
-    lessonCount: 0,
-    priceAmountMinor: paymentType === "free" ? 0 : null,
-    currency: "USD",
+  const createDraft = httpsCallable<
+    {
+      title: string;
+      summary: string;
+      category: string;
+      categories: string[];
+      paymentType: NonNullable<CreateTeacherCourseInput["paymentType"]>;
+    },
+    { courseId: string }
+  >(getFirebaseFunctions(), "createTeacherCourseDraft");
+
+  const categories = normalizeCourseCategories([
+    ...(input.categories ?? []),
+    input.category,
+  ]);
+  const result = await createDraft({
+    title: input.title,
+    summary: input.summary,
+    category: categories[0] ?? input.category,
+    categories,
     paymentType,
-    installmentsEnabled: false,
-    installmentsMax: null,
-    platformFeeBps: 1500,
-    dripStrategy: "instant",
-    dripIntervalDays: 1,
-    freePreviewLessonId: null,
-    coverImageUrl: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
   });
 
-  return courseRef.id;
+  return result.data.courseId;
 }
 
 export async function submitTeacherCourseForReview(courseId: string) {
-  await updateDoc(doc(getFirestoreDb(), coursesCollection, courseId), {
-    status: "in_review",
-    reviewNote: null,
-    updatedAt: serverTimestamp(),
-  });
+  const submitForReview = httpsCallable<
+    { courseId: string },
+    { success: true }
+  >(getFirebaseFunctions(), "submitTeacherCourseForReview");
+
+  await submitForReview({ courseId });
 }
 
 export async function updateCourseReviewStatus(
@@ -74,22 +76,21 @@ export async function updateTeacherCourseBuilder(
   courseId: string,
   input: UpdateTeacherCourseBuilderInput,
 ) {
-  await updateDoc(doc(getFirestoreDb(), coursesCollection, courseId), {
+  const saveBuilder = httpsCallable<
+    UpdateTeacherCourseBuilderInput & { courseId: string },
+    { success: true }
+  >(getFirebaseFunctions(), "updateTeacherCourseBuilder");
+
+  await saveBuilder({
+    ...input,
+    courseId,
     title: input.title.trim(),
     summary: input.summary.trim(),
     category: input.category.trim(),
-    modules: input.modules,
-    lessonCount: countCourseLessons(input.modules),
-    priceAmountMinor: input.priceAmountMinor,
-    currency: input.currency,
-    paymentType: input.paymentType,
-    installmentsEnabled: input.installmentsEnabled,
-    installmentsMax: input.installmentsMax,
-    platformFeeBps: input.platformFeeBps,
-    dripStrategy: input.dripStrategy,
-    dripIntervalDays: input.dripIntervalDays,
-    freePreviewLessonId: input.freePreviewLessonId,
-    updatedAt: serverTimestamp(),
+    categories: normalizeCourseCategories([
+      ...(input.categories ?? []),
+      input.category,
+    ]),
   });
 }
 

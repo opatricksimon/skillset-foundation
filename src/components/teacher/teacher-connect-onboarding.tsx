@@ -3,15 +3,18 @@
 import {
   ConnectAccountOnboarding,
   ConnectComponentsProvider,
-  ConnectNotificationBanner,
 } from "@stripe/react-connect-js";
 import {
   loadConnectAndInitialize,
+  type LoadError,
   type StripeConnectInstance,
 } from "@stripe/connect-js";
 import { useEffect, useState } from "react";
 
-import { fetchConnectAccountSessionSecret } from "@/lib/payments/connect";
+import {
+  fetchConnectAccountSessionSecret,
+  startTeacherStripeOnboarding,
+} from "@/lib/payments/connect";
 
 /**
  * Renders Stripe's embedded creator-onboarding flow INSIDE Skillset.
@@ -44,6 +47,9 @@ export function TeacherConnectOnboarding({
 }: TeacherConnectOnboardingProps) {
   const [connect, setConnect] = useState<StripeConnectInstance | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<LoadError["error"] | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const [isOpeningHosted, setIsOpeningHosted] = useState(false);
 
   useEffect(() => {
     if (!publishableKey) return;
@@ -89,7 +95,26 @@ export function TeacherConnectOnboarding({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
+
+  async function openHostedFallback() {
+    setError(null);
+    setIsOpeningHosted(true);
+
+    try {
+      await startTeacherStripeOnboarding();
+    } catch {
+      setError("We could not open Stripe onboarding. Please try again.");
+      setIsOpeningHosted(false);
+    }
+  }
+
+  function retryEmbeddedSetup() {
+    setConnect(null);
+    setError(null);
+    setLoadError(null);
+    setRetryKey((current) => current + 1);
+  }
 
   if (!publishableKey) {
     return (
@@ -107,9 +132,27 @@ export function TeacherConnectOnboarding({
 
   if (error) {
     return (
-      <div className="rounded-[3px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
-        {error}
-      </div>
+      <StripeConnectFallback
+        detail={error}
+        isOpeningHosted={isOpeningHosted}
+        onHosted={openHostedFallback}
+        onRetry={retryEmbeddedSetup}
+      />
+    );
+  }
+
+  if (loadError) {
+    return (
+      <StripeConnectFallback
+        detail={
+          loadError.type === "authentication_error"
+            ? "Stripe could not complete the embedded authentication flow in this browser session."
+            : loadError.message || `Stripe embedded component error: ${loadError.type}.`
+        }
+        isOpeningHosted={isOpeningHosted}
+        onHosted={openHostedFallback}
+        onRetry={retryEmbeddedSetup}
+      />
     );
   }
 
@@ -126,15 +169,15 @@ export function TeacherConnectOnboarding({
   }
 
   return (
-    <div className="overflow-hidden rounded-[3px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
+    <div className="overflow-hidden rounded-[14px] border fine-rule bg-white shadow-[var(--shadow-soft)]">
       <ConnectComponentsProvider connectInstance={connect}>
-        <div className="border-b fine-rule px-4 py-3">
-          <ConnectNotificationBanner />
-        </div>
         <div className="p-4">
           <ConnectAccountOnboarding
             onExit={() => {
               onComplete?.();
+            }}
+            onLoadError={(nextError) => {
+              setLoadError(nextError.error);
             }}
           />
         </div>
@@ -142,6 +185,51 @@ export function TeacherConnectOnboarding({
           Powered by Stripe
         </p>
       </ConnectComponentsProvider>
+    </div>
+  );
+}
+
+function StripeConnectFallback({
+  detail,
+  isOpeningHosted,
+  onHosted,
+  onRetry,
+}: {
+  detail: string;
+  isOpeningHosted: boolean;
+  onHosted: () => void;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="rounded-[14px] border border-[rgba(178,34,52,0.18)] bg-[rgba(178,34,52,0.04)] p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+        Stripe embedded setup needs a fallback
+      </p>
+      <h4 className="display-title mt-2 text-2xl text-[var(--color-primary)]">
+        Continue with Stripe&apos;s secure onboarding page.
+      </h4>
+      <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+        {detail} This can happen with browser privacy settings, blocked cookies,
+        or when Stripe requires a stronger authentication step. The payout setup
+        still works; this fallback returns you to Skillset after completion.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onHosted}
+          disabled={isOpeningHosted}
+          className="button-solid px-4 py-2 text-sm disabled:opacity-60"
+        >
+          {isOpeningHosted ? "Opening Stripe..." : "Continue secure setup"}
+        </button>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="button-outline px-4 py-2 text-sm"
+        >
+          Retry embedded setup
+        </button>
+      </div>
     </div>
   );
 }

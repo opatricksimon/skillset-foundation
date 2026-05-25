@@ -32,6 +32,7 @@ type UploadCourseAssetInput = {
   file: File;
   isPreview: boolean;
   lessonId?: string | null;
+  moduleId?: string | null;
   onProgress?: (progress: UploadCourseAssetProgress) => void;
 };
 
@@ -86,6 +87,7 @@ export async function uploadCourseAsset(input: UploadCourseAssetInput) {
         ownerId: input.ownerId,
         kind: input.kind,
         lessonId: input.lessonId ?? "",
+        moduleId: input.moduleId ?? "",
       },
     });
 
@@ -130,6 +132,7 @@ export async function uploadCourseAsset(input: UploadCourseAssetInput) {
       downloadUrl,
       isPreview: input.isPreview,
       lessonId: input.lessonId ?? null,
+      moduleId: input.moduleId ?? null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

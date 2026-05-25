@@ -18,6 +18,7 @@ export type CourseAsset = {
   downloadUrl?: string | null;
   isPreview: boolean;
   lessonId: string | null;
+  moduleId?: string | null;
   createdAt?: unknown;
   updatedAt?: unknown;
 };
@@ -35,12 +36,62 @@ export const courseAssetAcceptTypes: Record<CourseAssetKind, string> = {
   course_cover: "image/*",
   module_cover: "image/*",
   lesson_thumbnail: "image/*",
-  lesson_material: "application/pdf,text/*,image/*",
+  lesson_material:
+    [
+      "application/pdf",
+      ".doc",
+      ".docx",
+      ".ppt",
+      ".pptx",
+      ".xls",
+      ".xlsx",
+      ".csv",
+      ".zip",
+      "text/*",
+      "image/*",
+      "audio/*",
+    ].join(","),
   lesson_video: "video/*",
   live_recording: "video/*",
 };
 
 export const courseAssetMaxBytes = 500 * 1024 * 1024;
+
+const lessonMaterialMimeTypes = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/zip",
+  "application/x-zip-compressed",
+  "text/csv",
+]);
+
+const lessonMaterialExtensions = new Set([
+  "pdf",
+  "txt",
+  "md",
+  "csv",
+  "doc",
+  "docx",
+  "ppt",
+  "pptx",
+  "xls",
+  "xlsx",
+  "zip",
+  "mp3",
+  "m4a",
+  "wav",
+  "ogg",
+]);
+
+function getFileExtension(fileName: string) {
+  return fileName.split(".").pop()?.toLowerCase() ?? "";
+}
 
 export function isAllowedCourseAssetFile(file: File, kind: CourseAssetKind): boolean {
   if (file.size > courseAssetMaxBytes) {
@@ -60,9 +111,11 @@ export function isAllowedCourseAssetFile(file: File, kind: CourseAssetKind): boo
   }
 
   return (
-    file.type === "application/pdf" ||
+    lessonMaterialMimeTypes.has(file.type) ||
     file.type.startsWith("text/") ||
-    file.type.startsWith("image/")
+    file.type.startsWith("image/") ||
+    file.type.startsWith("audio/") ||
+    lessonMaterialExtensions.has(getFileExtension(file.name))
   );
 }
 

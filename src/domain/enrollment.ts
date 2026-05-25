@@ -7,7 +7,7 @@ export type EnrollmentStatus =
   | "revoked"
   | "expired";
 
-export type EnrollmentSource = "manual_demo" | "payment" | "admin";
+export type EnrollmentSource = "manual_demo" | "free_course" | "payment" | "admin";
 
 export type Enrollment = {
   id: string;

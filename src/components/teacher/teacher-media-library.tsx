@@ -111,53 +111,50 @@ export function TeacherMediaLibrary() {
         ) : null}
       </div>
 
-      <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_220px]">
-        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-          Search assets
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by filename or type"
-            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-          />
-        </label>
+      {courses.length > 0 ? (
+        <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_220px]">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Search assets
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by filename or type"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            />
+          </label>
 
-        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-          Type
-          <select
-            value={kindFilter}
-            onChange={(event) => setKindFilter(event.target.value as CourseAssetKind | "all")}
-            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-          >
-            {assetKindFilters.map((kind) => (
-              <option key={kind} value={kind}>
-                {kind === "all" ? "All files" : courseAssetKindLabels[kind]}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Type
+            <select
+              value={kindFilter}
+              onChange={(event) => setKindFilter(event.target.value as CourseAssetKind | "all")}
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            >
+              {assetKindFilters.map((kind) => (
+                <option key={kind} value={kind}>
+                  {kind === "all" ? "All files" : courseAssetKindLabels[kind]}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-          Course
-          <select
-            value={selectedCourseId}
-            onChange={(event) => setSelectedCourseId(event.target.value)}
-            disabled={courses.length === 0}
-            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
-          >
-            {courses.length === 0 ? (
-              <option value="">No courses yet</option>
-            ) : (
-              courses.map((course) => (
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Course
+            <select
+              value={selectedCourseId}
+              onChange={(event) => setSelectedCourseId(event.target.value)}
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            >
+              {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.title}
                 </option>
-              ))
-            )}
-          </select>
-        </label>
-      </div>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="mt-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
@@ -171,15 +168,48 @@ export function TeacherMediaLibrary() {
             Loading media library...
           </p>
         ) : courses.length === 0 ? (
-          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-            Create a course draft first. Media uploads stay attached to a course so
-            every file has clear ownership and access rules.
-          </p>
+          <div className="rounded-[16px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              No course container yet
+            </p>
+            <h4 className="display-title mt-3 text-3xl text-[var(--color-primary)]">
+              Create a course before uploading files.
+            </h4>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              Media uploads stay attached to a course, module, or lesson. That
+              keeps access rules clean for videos, PDFs, slides, docs, and
+              private learner materials.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/teach?newCourse=1" className="button-solid px-4 py-3 text-sm">
+                Create first course
+              </Link>
+              <Link href="/teach" className="button-outline px-4 py-3 text-sm">
+                Back to Studio
+              </Link>
+            </div>
+          </div>
         ) : filteredAssets.length === 0 ? (
-          <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
-            No assets match this view. Upload a course cover, lesson material, or
-            recording from the builder.
-          </p>
+          <div className="rounded-[16px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Library is ready
+            </p>
+            <h4 className="display-title mt-3 text-3xl text-[var(--color-primary)]">
+              Upload from the builder.
+            </h4>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+              Add a course cover, module cover, lesson video, PDF, slide deck,
+              worksheet, audio file, or replay from the selected course builder.
+            </p>
+            {selectedCourse ? (
+              <Link
+                href={`/teach/builder?courseId=${selectedCourse.id}`}
+                className="button-solid mt-5 px-4 py-3 text-sm"
+              >
+                Open builder upload area
+              </Link>
+            ) : null}
+          </div>
         ) : (
           filteredAssets.map((asset) => (
             <article

@@ -98,7 +98,7 @@ describe("platform shells", () => {
     render(<LearnPage />);
 
     expect(
-      screen.getByText("A learner dashboard built for focus and continuity."),
+      screen.getByText("Your learning, in one place."),
     ).toBeInTheDocument();
   });
 

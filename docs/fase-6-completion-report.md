@@ -58,11 +58,45 @@ Fase 6 moved Skillset from a working prototype surface toward an organized creat
 - `npm run build`: passed, 71 app routes generated.
 - `npm --prefix functions run build`: passed.
 
+## 2026-05-22 addendum
+
+Follow-up founder QA found four practical MVP gaps: collapsed sidebar active icons, duplicate course CTAs, confusing Settings/Billing/Payouts hierarchy, and course flows that looked functional but still had missing enrollment guardrails.
+
+Changes applied:
+
+- Sidebar active icon now remains visible in collapsed mode.
+- Teacher header now exposes one `New course` CTA only, opening the real create-course modal.
+- Account pages now separate Settings from Billing and creator Payouts.
+- Stripe setup banner now depends on both charges and payouts readiness and the Payouts panel can refresh Stripe status manually.
+- Free creator courses can now enroll authenticated learners via a callable Function.
+- Paid/free enrollment model is required before Course Builder submit and admin publish.
+- Legacy `/learn/courses/<creatorCourseId>` links redirect into the creator-course workspace.
+- `npm run build` now passes after fixing Turbopack root detection for the Windows workspace.
+
+Verification on 2026-05-22:
+
+- `npm run lint`: passed.
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passed.
+- `npm --prefix functions run build`: passed.
+- `npm run build`: passed, 72 app routes generated.
+
+Deploy on 2026-05-22:
+
+- `firebase deploy --only firestore:rules --project skillsetusaofficial --non-interactive`: passed.
+- `firebase deploy --only functions --project skillsetusaofficial --non-interactive`: passed; `createFreeCourseEnrollment` was created.
+- `firebase deploy --only hosting --project skillsetusaofficial --non-interactive`: passed; live Hosting URL is `https://skillsetusaofficial.web.app`.
+- Stripe live webhook endpoint was verified as enabled and pointing to `https://stripewebhook-7foyhb2owa-uc.a.run.app`.
+- Stripe live webhook events were restricted to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`.
+- Firebase `STRIPE_WEBHOOK_SECRET` was updated from the founder-provided credentials file and `stripeWebhook` was redeployed.
+- Post-deploy HTTP smoke: `/`, `/teach`, `/account/billing`, `/courses`, and `/welcome` returned `200`.
+- Backend smoke: unauthenticated `createFreeCourseEnrollment` returned `401 UNAUTHENTICATED`; unsigned `stripeWebhook` returned `400 Missing Stripe signature`.
+
 ## Not verified in this pass
 
 - Lighthouse scores were not captured.
 - Browser screenshots were not captured.
 - Real Firebase avatar upload, onboarding persistence, Stripe Connect, and Firestore live data flows were not manually exercised.
+- A real paid Stripe checkout was not run to avoid creating live financial objects without explicit authorization.
 - Console-clean smoke testing in DevTools was not performed.
 
 ## Remaining release blockers

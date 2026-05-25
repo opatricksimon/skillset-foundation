@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import {
+  Clapperboard,
+  FileText,
+  Image as ImageIcon,
+  Layers3,
+  UploadCloud,
+  Video,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { CourseAsset, CourseAssetKind } from "@/domain/course-asset";
 import {
@@ -32,6 +41,51 @@ const lessonTargetKinds: CourseAssetKind[] = [
   "lesson_video",
   "live_recording",
 ];
+const moduleTargetKinds: CourseAssetKind[] = ["module_cover"];
+
+const uploadPresets: Array<{
+  kind: CourseAssetKind;
+  label: string;
+  detail: string;
+  icon: LucideIcon;
+}> = [
+  {
+    kind: "lesson_video",
+    label: "Lesson video",
+    detail: "Upload the main video students will watch inside the classroom.",
+    icon: Video,
+  },
+  {
+    kind: "lesson_material",
+    label: "Materials",
+    detail: "PDF, Word, slides, spreadsheets, ZIPs, audio, images, or text files.",
+    icon: FileText,
+  },
+  {
+    kind: "lesson_thumbnail",
+    label: "Lesson thumbnail",
+    detail: "Optional visual cover for a specific lesson.",
+    icon: ImageIcon,
+  },
+  {
+    kind: "live_recording",
+    label: "Live recording",
+    detail: "Replay from a cohort, class, webinar, or mentorship call.",
+    icon: Clapperboard,
+  },
+  {
+    kind: "module_cover",
+    label: "Module cover",
+    detail: "Visual cover for one module in the student members area.",
+    icon: Layers3,
+  },
+  {
+    kind: "course_cover",
+    label: "Course cover",
+    detail: "Public artwork for marketplace, course detail, and previews.",
+    icon: UploadCloud,
+  },
+];
 
 type CourseAssetUploaderProps = {
   course: TeacherCourse;
@@ -43,6 +97,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
   const [kind, setKind] = useState<CourseAssetKind>("course_cover");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [lessonId, setLessonId] = useState("");
+  const [moduleId, setModuleId] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -55,12 +110,19 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       moduleTitle: module.title,
     })),
   );
+  const allModules = course.modules.map((module) => ({
+    id: module.id,
+    title: module.title,
+  }));
   const requiresLessonTarget = lessonTargetKinds.includes(kind);
+  const requiresModuleTarget = moduleTargetKinds.includes(kind);
   const selectedLesson = lessonId
     ? allLessons.find((lesson) => lesson.id === lessonId)
     : null;
-  const courseLevelAssets = assets.filter((asset) => !asset.lessonId);
+  const courseLevelAssets = assets.filter((asset) => !asset.lessonId && !asset.moduleId);
+  const moduleAssets = assets.filter((asset) => asset.moduleId);
   const lessonAssets = assets.filter((asset) => asset.lessonId);
+  const activePreset = uploadPresets.find((preset) => preset.kind === kind);
 
   useEffect(() => {
     return subscribeToCourseAssets(
@@ -93,6 +155,11 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       return;
     }
 
+    if (requiresModuleTarget && !moduleId) {
+      setError("Choose the module this cover belongs to.");
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -103,11 +170,13 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
         file: selectedFile,
         isPreview,
         lessonId: requiresLessonTarget ? lessonId : null,
+        moduleId: requiresModuleTarget ? moduleId : null,
         onProgress: setUploadProgress,
       });
       setSuccess("Asset uploaded.");
       setSelectedFile(null);
       setLessonId("");
+      setModuleId("");
       setIsPreview(false);
       setUploadProgress(null);
       setFileInputKey((current) => current + 1);
@@ -119,17 +188,25 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
   }
 
   return (
-    <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-      <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-        Course assets
-      </p>
-      <h3 className="display-title mt-3 text-3xl text-[var(--color-ink)]">
-        Upload course media
-      </h3>
-      <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
-        Add covers, lesson materials, preview clips, and recordings. Large video
-        processing comes later; this prepares the authenticated upload layer.
-      </p>
+    <section className="course-upload-panel">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+            Lesson upload
+          </p>
+          <h3 className="display-title mt-3 text-3xl text-[var(--color-primary)]">
+            Attach videos and materials to the course.
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
+            Pick what you are uploading, choose the module or lesson target, and
+            send it to Skillset Storage. This powers the student classroom and
+            keeps private files protected.
+          </p>
+        </div>
+        <span className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+          {assets.length} uploaded
+        </span>
+      </div>
       {course.coverImageUrl ? (
         <p className="mt-4 rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]">
           Course cover is set. Upload another course cover to replace it.
@@ -137,58 +214,51 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       ) : null}
 
       <form className="mt-5 grid gap-3" onSubmit={handleUpload}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => {
-              setKind("course_cover");
-              setLessonId("");
-              setSelectedFile(null);
-              setFileInputKey((current) => current + 1);
-              setUploadProgress(null);
-            }}
-            disabled={!isEditable || isUploading}
-            className={`rounded-[3px] border p-4 text-left transition-colors disabled:opacity-60 ${
-              !requiresLessonTarget
-                ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)]"
-                : "border-[var(--color-line)] bg-[var(--color-surface-soft)]"
-            }`}
-          >
-            <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Course asset
-            </span>
-            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
-              Covers and course-level files
-            </span>
-            <span className="mt-1 block text-xs leading-5 text-[var(--color-ink-soft)]">
-              Use for public course covers and broad course visuals.
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setKind("lesson_material");
-              setSelectedFile(null);
-              setFileInputKey((current) => current + 1);
-              setUploadProgress(null);
-            }}
-            disabled={!isEditable || isUploading}
-            className={`rounded-[3px] border p-4 text-left transition-colors disabled:opacity-60 ${
-              requiresLessonTarget
-                ? "border-[var(--color-primary)] bg-[rgba(26,54,93,0.08)]"
-                : "border-[var(--color-line)] bg-[var(--color-surface-soft)]"
-            }`}
-          >
-            <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Lesson asset
-            </span>
-            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
-              Attach to a specific lesson
-            </span>
-            <span className="mt-1 block text-xs leading-5 text-[var(--color-ink-soft)]">
-              Use for videos, PDFs, thumbnails, and recordings.
-            </span>
-          </button>
+        <div className="course-upload-presets" role="list" aria-label="Upload type">
+          {uploadPresets.map((preset) => {
+            const Icon = preset.icon;
+            const active = preset.kind === kind;
+
+            return (
+              <button
+                key={preset.kind}
+                type="button"
+                role="listitem"
+                onClick={() => {
+                  setKind(preset.kind);
+                  setLessonId("");
+                  setModuleId("");
+                  setSelectedFile(null);
+                  setFileInputKey((current) => current + 1);
+                  setUploadProgress(null);
+                }}
+                disabled={!isEditable || isUploading}
+                className={`course-upload-preset ${active ? "course-upload-preset--active" : ""}`}
+              >
+                <span className="course-upload-preset__icon">
+                  <Icon aria-hidden="true" size={18} strokeWidth={2} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold">{preset.label}</span>
+                  <span className="mt-1 block text-xs leading-5">
+                    {preset.detail}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-[14px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+            Uploading
+          </p>
+          <p className="mt-2 text-sm font-bold text-[var(--color-ink)]">
+            {activePreset?.label ?? courseAssetKindLabels[kind]}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-ink-soft)]">
+            {activePreset?.detail ?? "Choose the target and file before uploading."}
+          </p>
         </div>
 
         <select
@@ -197,6 +267,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             setKind(event.target.value as CourseAssetKind);
             setSelectedFile(null);
             setLessonId("");
+            setModuleId("");
             setUploadProgress(null);
             setFileInputKey((current) => current + 1);
           }}
@@ -209,6 +280,27 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             </option>
           ))}
         </select>
+
+        {requiresModuleTarget ? (
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Attach to module
+            <select
+              value={moduleId}
+              onChange={(event) => setModuleId(event.target.value)}
+              disabled={!isEditable || isUploading || allModules.length === 0}
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+            >
+              <option value="">
+                {allModules.length === 0 ? "Add modules first" : "Choose module"}
+              </option>
+              {allModules.map((module) => (
+                <option key={module.id} value={module.id}>
+                  {module.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         {requiresLessonTarget ? (
           <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
@@ -308,6 +400,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             || isUploading
             || !selectedFile
             || (requiresLessonTarget && !lessonId)
+            || (requiresModuleTarget && !moduleId)
           }
           className="button-solid px-4 py-3 text-sm disabled:opacity-60"
         >
@@ -326,11 +419,19 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             <AssetGroup
               title="Course-level assets"
               assets={courseLevelAssets}
+              allModules={allModules}
+              allLessons={allLessons}
+            />
+            <AssetGroup
+              title="Module assets"
+              assets={moduleAssets}
+              allModules={allModules}
               allLessons={allLessons}
             />
             <AssetGroup
               title="Lesson assets"
               assets={lessonAssets}
+              allModules={allModules}
               allLessons={allLessons}
             />
           </>
@@ -343,10 +444,12 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
 function AssetGroup({
   title,
   assets,
+  allModules,
   allLessons,
 }: {
   title: string;
   assets: CourseAsset[];
+  allModules: Array<{ id: string; title: string }>;
   allLessons: Array<{ id: string; title: string; moduleTitle: string }>;
 }) {
   return (
@@ -362,6 +465,9 @@ function AssetGroup({
         assets.map((asset) => {
           const lesson = asset.lessonId
             ? allLessons.find((item) => item.id === asset.lessonId)
+            : null;
+          const targetModule = asset.moduleId
+            ? allModules.find((item) => item.id === asset.moduleId)
             : null;
 
           return (
@@ -383,6 +489,11 @@ function AssetGroup({
                       {lesson
                         ? `${lesson.moduleTitle} - ${lesson.title}`
                         : asset.lessonId}
+                    </p>
+                  ) : null}
+                  {asset.moduleId ? (
+                    <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                      Module: {targetModule ? targetModule.title : asset.moduleId}
                     </p>
                   ) : null}
                 </div>

@@ -4,26 +4,59 @@ import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import type { CreateTeacherCourseInput } from "@/domain/teacher-course";
+import {
+  normalizeCourseCategories,
+  skillsetCourseCategories,
+  type CreateTeacherCourseInput,
+} from "@/domain/teacher-course";
 import { createTeacherCourse } from "@/lib/data/teacher-courses";
 
 type CreateCourseModalProps = {
   ownerId: string;
+  autoOpen?: boolean;
+  triggerClassName?: string;
 };
 
 const draftSummary =
   "Draft course created from Teacher Studio. Add the full learner outcome, audience, and course promise before submitting for review.";
 
-export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
+export function CreateCourseModal({
+  ownerId,
+  autoOpen = false,
+  triggerClassName = "button-solid px-5 py-3 text-sm",
+}: CreateCourseModalProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [courseType, setCourseType] =
     useState<NonNullable<CreateTeacherCourseInput["paymentType"]>>("one_time");
   const [delivery, setDelivery] = useState("hosted");
   const [title, setTitle] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const canSubmit = title.trim().length >= 3 && !isSaving;
+
+  function closeModal() {
+    setOpen(false);
+
+    if (autoOpen) {
+      router.replace("/teach/builder", { scroll: false });
+    }
+  }
+
+  function openModal() {
+    setOpen(true);
+  }
+
+  function toggleCategory(nextCategory: string) {
+    setSelectedCategories((current) => {
+      if (current.includes(nextCategory)) {
+        return current.filter((category) => category !== nextCategory);
+      }
+
+      return normalizeCourseCategories([...current, nextCategory]);
+    });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,18 +69,29 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
     setIsSaving(true);
 
     try {
+      const categories = normalizeCourseCategories(selectedCategories);
+      const primaryCategory = categories[0] ?? "Other";
       const courseId = await createTeacherCourse({
         ownerId,
         title,
         summary: draftSummary,
-        category: "Management",
+        category: primaryCategory,
+        categories,
         paymentType: courseType,
       });
 
       setOpen(false);
       router.push(`/teach/builder?courseId=${courseId}`);
-    } catch {
-      setError("We could not create this course. Please try again.");
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error ? caughtError.message : "";
+      setError(
+        message.toLowerCase().includes("already")
+          ? "A course with this title already exists. Choose a more specific name."
+          : message.toLowerCase().includes("permission")
+          ? "Course creation is blocked until creator setup is complete. Verify your email and accept Teacher Terms first."
+          : "We could not create this course. Please try again.",
+      );
       setIsSaving(false);
     }
   }
@@ -56,8 +100,8 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className="button-solid px-5 py-3 text-sm"
+        onClick={openModal}
+        className={triggerClassName}
       >
         New course
       </button>
@@ -71,11 +115,11 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
         >
           <form
             onSubmit={handleSubmit}
-            className="relative w-[min(480px,92vw)] rounded-[4px] border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-strong)]"
+            className="relative w-[min(520px,92vw)] rounded-[18px] border border-[var(--color-line)] bg-white p-7 shadow-[var(--shadow-strong)]"
           >
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={closeModal}
               className="absolute right-4 top-4 grid size-8 place-items-center rounded-[8px] text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
               aria-label="Close create course modal"
             >
@@ -103,7 +147,7 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
                 >
                   <option value="one_time">One-time payment</option>
-                  <option value="subscription" disabled>
+                  <option value="subscription_monthly" disabled>
                     Subscription - Coming soon
                   </option>
                   <option value="free">Free course</option>
@@ -135,6 +179,35 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
                   className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
                 />
               </label>
+
+              <div className="grid gap-2 text-xs font-semibold text-[var(--color-ink)]">
+                Categories
+                <p className="text-xs font-normal leading-5 text-[var(--color-ink-soft)]">
+                  Optional. Select up to five categories so learners can find the
+                  course in the right context.
+                </p>
+                <div className="grid max-h-44 gap-2 overflow-y-auto rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3 sm:grid-cols-2">
+                  {skillsetCourseCategories.map((category) => {
+                    const selected = selectedCategories.includes(category);
+
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => toggleCategory(category)}
+                        className={`rounded-[8px] border px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                          selected
+                            ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                            : "border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:border-[var(--color-primary-light)]"
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {error ? (
@@ -146,7 +219,7 @@ export function CreateCourseModal({ ownerId }: CreateCourseModalProps) {
             <div className="mt-6 flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeModal}
                 className="button-outline px-4 py-2 text-sm"
               >
                 Cancel

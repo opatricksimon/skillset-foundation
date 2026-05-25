@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 
-import { AccountPanel } from "@/components/account/account-panel";
 import { ProtectedSurface } from "@/components/auth/protected-surface";
 import { PlatformShell } from "@/components/platform/platform-shell";
 
@@ -16,8 +15,7 @@ export default function BillingReturnPage() {
   return (
     <ProtectedSurface permissions={["auth.signOut"]}>
       <PlatformShell title="Subscription confirmed" compact>
-        <AccountPanel active="Billing">
-          <div className="rounded-[4px] border fine-rule bg-white p-10 text-center shadow-[var(--shadow-soft)]">
+        <div className="rounded-[4px] border fine-rule bg-white p-10 text-center shadow-[var(--shadow-soft)]">
             <div className="mx-auto grid size-12 place-items-center rounded-full bg-[var(--color-primary)] text-white">
               <Check aria-hidden="true" size={24} strokeWidth={2.4} />
             </div>
@@ -41,8 +39,7 @@ export default function BillingReturnPage() {
                 Open Teacher Studio
               </Link>
             </div>
-          </div>
-        </AccountPanel>
+        </div>
       </PlatformShell>
     </ProtectedSurface>
   );

@@ -138,7 +138,9 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     modules: course.modules.map((module) => ({
       id: module.id,
       title: module.title,
-      summary: `${module.lessons.length} lesson${module.lessons.length === 1 ? "" : "s"}`,
+      summary:
+        module.summary
+        || `${module.lessons.length} lesson${module.lessons.length === 1 ? "" : "s"}`,
       lessons: module.lessons.map((lesson) => ({
         id: lesson.id,
         title: lesson.title,
