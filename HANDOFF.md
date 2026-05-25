@@ -158,3 +158,27 @@ Validacao:
 
 Proximo bloco:
 - Bloco D: validar gate pos-compra para classroom/video protegido contra `storage.rules`.
+
+## 2026-05-25 - Fase 2 / Bloco D - Gate de acesso pos-compra e Storage
+
+Estado: concluido e validado.
+
+Feito:
+- Adicionado teste automatizado de `storage.rules` para assets protegidos de curso.
+- Validado que professor dono consegue subir video de aula no path real `courses/{courseId}/assets/{ownerId}/{assetId}/{fileName}`.
+- Validado que professor nao-dono nao consegue subir arquivo em curso de outro professor.
+- Validado que aluno com enrollment `active` consegue ler video/material protegido.
+- Validado que aluno sem enrollment nao consegue ler video/material protegido.
+- Script `npm run test:rules` agora sobe Firestore + Storage em projeto demo fixo para que `firestore.get()` dentro de `storage.rules` aponte para o mesmo namespace dos seeds.
+- `vitest.rules.config.ts` roda arquivos de rules sem paralelismo para evitar `clearFirestore()` concorrente entre suites.
+
+Validacao:
+- `npx tsc --noEmit --pretty false --types vitest/globals`: passou.
+- `npm run lint`: passou.
+- `npm test`: 16 arquivos / 63 testes passaram.
+- `npm run test:rules`: 2 arquivos / 11 testes passaram.
+- `npm run build`: passou.
+- `npm --prefix functions run build`: passou.
+
+Estado final:
+- Blocos A, B, C e D concluidos na branch `fase-2-builder-backend`.

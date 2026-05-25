@@ -36,7 +36,7 @@ const unverifiedAuth = {
 
 beforeAll(async () => {
   testEnv = await initializeTestEnvironment({
-    projectId: "skillset-rules-test",
+    projectId: "demo-skillset-rules-test",
     firestore: {
       rules: readFileSync(resolve("firestore.rules"), "utf8"),
     },
