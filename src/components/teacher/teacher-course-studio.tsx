@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { ListingSearchBar } from "@/components/shared/listing-search-bar";
 import { StatusChip } from "@/components/shared/status-chip";
 import { StatusFilterDropdown } from "@/components/shared/status-filter-dropdown";
-import { CreateCourseModal } from "@/components/teacher/create-course-modal";
+import { CreateCourseStart } from "@/components/teacher/create-course-start";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { teacherCanSubmitCourse } from "@/domain/teacher-course";
 import {
@@ -80,6 +80,16 @@ export function TeacherCourseStudio({
     }
   }
 
+  if (autoOpenCreate) {
+    return user ? (
+      <CreateCourseStart ownerId={user.uid} />
+    ) : (
+      <p className="rounded-[10px] border border-[var(--color-line)] bg-white p-4 text-sm text-[var(--color-ink-soft)]">
+        Sign in as a creator to start a course.
+      </p>
+    );
+  }
+
   return (
     <div className="grid gap-5">
       {error ? (
@@ -104,14 +114,9 @@ export function TeacherCourseStudio({
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            {user ? (
-              <CreateCourseModal
-                key={autoOpenCreate ? "auto-open-create-course" : "manual-create-course"}
-                ownerId={user.uid}
-                autoOpen={autoOpenCreate}
-                triggerClassName="button-solid px-5 py-3 text-sm"
-              />
-            ) : null}
+            <Link href="/teach/builder?newCourse=1" className="button-solid px-5 py-3 text-sm">
+              New course
+            </Link>
             <Link href="/teach/media" className="button-outline px-5 py-3 text-sm">
               View media library
             </Link>
@@ -214,12 +219,9 @@ export function TeacherCourseStudio({
                     </p>
                   </div>
                   <div className="grid gap-3">
-                    {user ? (
-                      <CreateCourseModal
-                        ownerId={user.uid}
-                        triggerClassName="button-solid px-5 py-3 text-sm"
-                      />
-                    ) : null}
+                    <Link href="/teach/builder?newCourse=1" className="button-solid px-5 py-3 text-center text-sm">
+                      New course
+                    </Link>
                     <Link href="/teach/media" className="button-outline px-5 py-3 text-center text-sm">
                       View media library
                     </Link>
