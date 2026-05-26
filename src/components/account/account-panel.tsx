@@ -36,22 +36,22 @@ const accountLinkMeta: Record<
   { href: string; icon: LucideIcon; helper: string }
 > = {
   Profile: {
-    href: "/account/profile",
+    href: "/account?tab=profile",
     icon: UserRound,
     helper: "Name, username, avatar, bio, phone, timezone.",
   },
   Email: {
-    href: "/account/email",
+    href: "/account?tab=security",
     icon: Mail,
     helper: "Login email, email change, and verification.",
   },
   Security: {
-    href: "/account/security",
+    href: "/account?tab=security",
     icon: Shield,
     helper: "Password, account protection, and data actions.",
   },
   Notifications: {
-    href: "/account/notifications",
+    href: "/account?tab=notifications",
     icon: Bell,
     helper: "Course, billing, and support alerts.",
   },

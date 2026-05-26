@@ -24,7 +24,7 @@ export function SessionCard({ collapsed = false }: { collapsed?: boolean }) {
   if (collapsed) {
     return (
       <Link
-        href="/account/profile"
+        href="/account?tab=profile"
         className="mt-3 grid place-items-center rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
         aria-label="Open profile settings"
       >
@@ -43,7 +43,7 @@ export function SessionCard({ collapsed = false }: { collapsed?: boolean }) {
   // shortcut to profile settings; the avatar + name make the link obvious.
   return (
     <Link
-      href="/account/profile"
+      href="/account?tab=profile"
       className="mt-3 flex items-center gap-2 rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-2 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(44,82,130,0.28)]"
     >
       <UserAvatar

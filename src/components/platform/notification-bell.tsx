@@ -84,7 +84,7 @@ export function NotificationBell() {
           </div>
           <div className="border-t border-[var(--color-line)] px-5 py-3 text-center">
             <Link
-              href="/account/notifications"
+              href="/account?tab=notifications"
               className="text-xs font-semibold text-[var(--color-primary)]"
             >
               View all

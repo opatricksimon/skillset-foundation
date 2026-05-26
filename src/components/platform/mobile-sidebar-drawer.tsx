@@ -43,7 +43,7 @@ export function MobileSidebarDrawer({
     { href: "/platform", label: "Home", icon: Home },
     { href: "/courses", label: "Market", icon: ShoppingBag },
     workspaceItem,
-    { href: "/account/profile", label: "Profile", icon: User },
+    { href: "/account", label: "Profile", icon: User },
   ];
 
   useEffect(() => {
