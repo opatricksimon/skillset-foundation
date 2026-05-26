@@ -101,14 +101,6 @@ export const platformNav: PlatformNavItem[] = [
     permission: "teacherStudio.manageCourses",
   },
   {
-    href: "/teach/media",
-    label: "Media library",
-    icon: "Image",
-    contexts: [],
-    section: "Teach",
-    permission: "teacherStudio.manageCourses",
-  },
-  {
     href: "/teach/events",
     label: "Agenda",
     icon: "Calendar",
