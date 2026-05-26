@@ -117,9 +117,6 @@ export function TeacherCourseStudio({
             <Link href="/teach/builder?newCourse=1" className="button-solid px-5 py-3 text-sm">
               New course
             </Link>
-            <Link href="/teach/media" className="button-outline px-5 py-3 text-sm">
-              View media library
-            </Link>
           </div>
 
           <div className="mt-7 grid gap-3">
@@ -221,9 +218,6 @@ export function TeacherCourseStudio({
                   <div className="grid gap-3">
                     <Link href="/teach/builder?newCourse=1" className="button-solid px-5 py-3 text-center text-sm">
                       New course
-                    </Link>
-                    <Link href="/teach/media" className="button-outline px-5 py-3 text-center text-sm">
-                      View media library
                     </Link>
                   </div>
                 </div>

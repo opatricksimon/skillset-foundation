@@ -176,16 +176,17 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
       </section>
 
       {activeTab === "posts" ? (
-        <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
-          <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-            <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-              New post
-            </p>
-            <form className="mt-6 grid gap-3" onSubmit={handleSubmit}>
+        <div className="grid gap-5">
+          <form
+            className="community-composer rounded-[14px] border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-soft)] sm:p-5"
+            onSubmit={handleSubmit}
+          >
+            <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-start">
               <select
                 value={category}
                 onChange={(event) => setCategory(event.target.value as CommunityPostCategory)}
-                className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
+                className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-3 text-sm font-semibold outline-none focus:border-[var(--color-primary-light)]"
+                aria-label="Post category"
               >
                 {categories.map((item) => (
                   <option key={item} value={item}>
@@ -196,25 +197,24 @@ export function CourseCommunityFeed({ space }: CourseCommunityFeedProps) {
               <textarea
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                rows={6}
-                placeholder="Share an update, question, resource, or reflection."
-                className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
+                rows={3}
+                placeholder="Write a post for this course community..."
+                className="min-h-[72px] resize-none rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--color-primary-light)] focus:bg-white"
               />
-              {error ? (
-                <p className="rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
-                  {error}
-                </p>
-              ) : null}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="button-solid px-4 py-3 text-sm disabled:opacity-60"
               >
-                {isSubmitting ? "Publishing..." : "Publish post"}
+                {isSubmitting ? "Publishing..." : "Post"}
               </button>
-            </form>
-          </section>
-
+            </div>
+            {error ? (
+              <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+                {error}
+              </p>
+            ) : null}
+          </form>
           <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
               Feed

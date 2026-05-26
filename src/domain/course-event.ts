@@ -53,7 +53,7 @@ export const courseEventTypeLabels: Record<CourseEventType, string> = {
   live_class: "Live class",
   mentorship: "Mentorship",
   office_hours: "Office hours",
-  webinar: "Webinar",
+  webinar: "Webinar or masterclass",
   deadline: "Deadline",
 };
 

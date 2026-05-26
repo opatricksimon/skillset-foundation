@@ -6,9 +6,9 @@ export default function LearnEventsPage() {
   return (
     <ProtectedSurface permissions={["courses.viewLearning"]}>
       <PlatformShell
-        eyebrow="Live schedule"
-        title="Classes, mentorships, and course events in one place."
-        description="Learners see live sessions only for courses they are enrolled in. External links work first; recordings can be connected after the class."
+        eyebrow="Course agenda"
+        title="Your live learning schedule."
+        description="Classes, mentorships, masterclasses, office hours, webinars, and deadlines from your enrolled courses appear here."
       >
         <LearnEventsHub />
       </PlatformShell>

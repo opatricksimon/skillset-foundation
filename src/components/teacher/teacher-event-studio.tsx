@@ -129,15 +129,15 @@ export function TeacherEventStudio() {
       <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
-            Schedule a class or mentorship
+            Schedule an agenda item
           </h3>
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
-            Live sessions
+            Course agenda
           </span>
         </div>
         <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-          Use external links first. After the session, recordings can be added
-          through the course media flow and connected to the lesson structure.
+          Add a live class, mentorship, masterclass, office hour, webinar, or
+          deadline. Learners enrolled in that course see it in their own agenda.
         </p>
 
         <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
@@ -195,7 +195,7 @@ export function TeacherEventStudio() {
               onChange={(event) => setTitle(event.target.value)}
               required
               minLength={3}
-              placeholder="Example: Leadership clinic with live Q&A"
+                placeholder="Example: Leadership clinic with live Q&A"
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
             />
           </label>
@@ -219,7 +219,7 @@ export function TeacherEventStudio() {
               required
               minLength={12}
               rows={4}
-              placeholder="What should learners expect in this session?"
+                placeholder="What should learners expect in this event?"
               className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
             />
           </label>
@@ -259,8 +259,8 @@ export function TeacherEventStudio() {
         <div className="mt-6 grid gap-3">
           {events.length === 0 ? (
             <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-7 text-[var(--color-ink-soft)]">
-              No live sessions scheduled yet. Create one when the course has a
-              class, mentorship, webinar, or deadline to share.
+              No agenda items scheduled yet. Create one when the course has a
+              class, mentorship, masterclass, office hour, webinar, or deadline.
             </p>
           ) : (
             events.map((event) => (

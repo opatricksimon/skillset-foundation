@@ -423,11 +423,11 @@ function buildActivity(courses: TeacherCourse[], payoutsReady: boolean): Activit
   });
 
   items.push({
-    title: "Media library",
-    detail: "Review lesson videos, covers, recordings, and attached materials in one place.",
-    href: "/teach/media",
+    title: "Schedule the next live session",
+    detail: "Add a class, mentorship, masterclass, office hour, webinar, or deadline to the course agenda.",
+    href: "/teach/events",
     kind: "normal",
-    icon: "flag",
+    icon: "clock",
   });
 
   return items.slice(0, 3);

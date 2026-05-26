@@ -69,7 +69,7 @@ export const platformNav: PlatformNavItem[] = [
   },
   {
     href: "/learn/events",
-    label: "Calendar",
+    label: "Agenda",
     icon: "Calendar",
     contexts: ["learner"],
     section: "Learn",
@@ -104,6 +104,14 @@ export const platformNav: PlatformNavItem[] = [
     href: "/teach/media",
     label: "Media library",
     icon: "Image",
+    contexts: [],
+    section: "Teach",
+    permission: "teacherStudio.manageCourses",
+  },
+  {
+    href: "/teach/events",
+    label: "Agenda",
+    icon: "Calendar",
     contexts: ["teacher"],
     section: "Teach",
     permission: "teacherStudio.manageCourses",
