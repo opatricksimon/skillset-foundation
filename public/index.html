@@ -818,7 +818,9 @@
         function addMessage(text, isUser) {
             const msgDiv = document.createElement('div');
             msgDiv.className = `chat-message ${isUser ? 'user' : 'bot'}`;
-            msgDiv.innerHTML = `<p>${text}</p>`;
+            const paragraph = document.createElement('p');
+            paragraph.textContent = text;
+            msgDiv.appendChild(paragraph);
             chatMessages.appendChild(msgDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

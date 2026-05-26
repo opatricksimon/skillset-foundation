@@ -68,6 +68,22 @@ describe("Storage course asset rules", () => {
     await assertFails(uploadVideoAsset(storage.ref(assetPath)));
   });
 
+  it("blocks SVG uploads for protected course assets", async () => {
+    const storage = testEnv.authenticatedContext(teacherId, verifiedAuth).storage(bucketUrl);
+
+    await assertFails(uploadSvgAsset(storage.ref(
+      `courses/${courseId}/assets/${teacherId}/asset-svg/payload.svg`,
+    )));
+  });
+
+  it("blocks SVG uploads for profile avatars", async () => {
+    const storage = testEnv.authenticatedContext(teacherId, verifiedAuth).storage(bucketUrl);
+
+    await assertFails(uploadSvgAsset(storage.ref(
+      `users/${teacherId}/avatar/payload.svg`,
+    )));
+  });
+
   it("allows an enrolled learner to read protected lesson video assets", async () => {
     await seedProtectedAsset();
     const storage = testEnv
@@ -97,6 +113,14 @@ function uploadVideoAsset(reference: firebase.storage.Reference): Promise<unknow
   return new Promise((resolve, reject) => {
     reference.put(new Uint8Array([1, 2, 3]), {
       contentType: "video/mp4",
+    }).then(resolve, reject);
+  });
+}
+
+function uploadSvgAsset(reference: firebase.storage.Reference): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    reference.put(new Uint8Array([60, 115, 118, 103, 62]), {
+      contentType: "image/svg+xml",
     }).then(resolve, reject);
   });
 }

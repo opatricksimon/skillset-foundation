@@ -50,7 +50,10 @@ service firebase.storage {
         && request.resource.size > 0
         && request.resource.size <= 500 * 1024 * 1024
         && (
-          request.resource.contentType.matches('image/.*')
+          (
+            request.resource.contentType.matches('image/.*')
+            && request.resource.contentType != 'image/svg+xml'
+          )
           || request.resource.contentType.matches('video/.*')
           || request.resource.contentType.matches('text/.*')
           || request.resource.contentType.matches('audio/.*')
@@ -75,7 +78,8 @@ service firebase.storage {
       return request.resource != null
         && request.resource.size > 0
         && request.resource.size <= 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.contentType != 'image/svg+xml';
     }
 
     match /users/{uid}/avatar/{fileName} {
