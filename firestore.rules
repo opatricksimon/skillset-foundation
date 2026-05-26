@@ -671,6 +671,31 @@ service cloud.firestore {
         && enrollmentChangedOnly(['status', 'progressPercent', 'lastLessonId', 'updatedAt']);
     }
 
+    function hasOnlyAllowedWishlistKeys() {
+      return request.resource.data.keys().hasOnly([
+        'id',
+        'userId',
+        'courseId',
+        'courseSlug',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validWishlistShape(wishlistId) {
+      return hasOnlyAllowedWishlistKeys()
+        && signedIn()
+        && request.resource.data.id == wishlistId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.courseId is string
+        && request.resource.data.courseSlug is string
+        && wishlistId == request.auth.uid + '__' + request.resource.data.courseId
+        && request.resource.data.courseId.size() >= 3
+        && request.resource.data.courseId.size() <= 160
+        && request.resource.data.courseSlug.size() >= 3
+        && request.resource.data.courseSlug.size() <= 160;
+    }
+
     function enrollmentExists(enrollmentId) {
       return exists(/databases/$(database)/documents/enrollments/$(enrollmentId));
     }
@@ -1378,6 +1403,15 @@ service cloud.firestore {
           && validLessonProgressShape(enrollmentId, lessonId);
         allow delete: if isAdmin() || ownsEnrollment(enrollmentId);
       }
+    }
+
+    match /wishlists/{wishlistId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if validWishlistShape(wishlistId);
+      allow update: if false;
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /communityPosts/{postId} {

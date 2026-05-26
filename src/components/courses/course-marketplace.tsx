@@ -3,13 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import type { CourseCard } from "@/lib/data/catalog";
 import {
   subscribeToPublishedTeacherCourses,
   teacherCourseToCourseCard,
 } from "@/lib/data/published-courses";
+import {
+  subscribeToUserWishlistCourseIds,
+  toggleWishlistCourse,
+} from "@/lib/data/wishlist";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
 
 type CourseMarketplaceProps = {
@@ -19,6 +25,7 @@ type CourseMarketplaceProps = {
 const allCategoriesLabel = "All courses";
 
 export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
+  const { status, user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -30,6 +37,13 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [publishedCourses, setPublishedCourses] = useState<CourseCard[]>([]);
   const [publishedCoursesError, setPublishedCoursesError] = useState("");
+  const [wishlistError, setWishlistError] = useState("");
+  const [wishlistCourseIds, setWishlistCourseIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [pendingWishlistCourseIds, setPendingWishlistCourseIds] = useState<
+    Set<string>
+  >(() => new Set());
   const [isLoadingPublishedCourses, setIsLoadingPublishedCourses] = useState(
     Boolean(getFirebaseClientConfig()),
   );
@@ -83,6 +97,49 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
       },
     );
   }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !user) {
+      return;
+    }
+
+    return subscribeToUserWishlistCourseIds(
+      user.uid,
+      (nextCourseIds) => {
+        setWishlistCourseIds(nextCourseIds);
+        setWishlistError("");
+      },
+      () => {
+        setWishlistError("Saved courses could not load right now.");
+      },
+    );
+  }, [status, user]);
+
+  async function handleToggleWishlist(course: CourseCard) {
+    if (!user) {
+      router.push("/auth?mode=signup");
+      return;
+    }
+
+    setPendingWishlistCourseIds((current) => new Set(current).add(course.slug));
+    setWishlistError("");
+
+    try {
+      await toggleWishlistCourse({
+        userId: user.uid,
+        courseId: course.slug,
+        courseSlug: course.slug,
+      });
+    } catch {
+      setWishlistError("Could not update your saved courses. Please try again.");
+    } finally {
+      setPendingWishlistCourseIds((current) => {
+        const next = new Set(current);
+        next.delete(course.slug);
+        return next;
+      });
+    }
+  }
 
   const visibleCourses = marketplaceCourses.filter((course) => {
     const matchesCategory =
@@ -138,6 +195,12 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
       {publishedCoursesError ? (
         <p className="mb-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {publishedCoursesError}
+        </p>
+      ) : null}
+
+      {wishlistError ? (
+        <p className="mb-5 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          {wishlistError}
         </p>
       ) : null}
 
@@ -222,6 +285,10 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
         <div className="grid gap-5 lg:grid-cols-3">
           {visibleCourses.map((track) => {
             const hasFreePreview = Boolean(track.freePreviewHref);
+            const isWishlisted =
+              status === "authenticated" && wishlistCourseIds.has(track.slug);
+            const isWishlistPending = pendingWishlistCourseIds.has(track.slug);
+            const WishlistIcon = isWishlisted ? BookmarkCheck : Bookmark;
 
             return (
             <article
@@ -245,6 +312,31 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
                     {track.sourceLabel ?? "Preview"}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  aria-pressed={isWishlisted}
+                  aria-label={
+                    isWishlisted
+                      ? `Remove ${track.title} from wishlist`
+                      : `Save ${track.title} to wishlist`
+                  }
+                  title={
+                    isWishlisted
+                      ? "Remove from wishlist"
+                      : status === "authenticated"
+                        ? "Save to wishlist"
+                        : "Sign in to save"
+                  }
+                  disabled={isWishlistPending}
+                  onClick={() => void handleToggleWishlist(track)}
+                  className={`absolute right-5 top-5 grid size-10 place-items-center rounded-full border border-white/30 shadow-[0_12px_24px_rgba(15,39,68,0.22)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 ${
+                    isWishlisted
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-white/95 text-[var(--color-primary)]"
+                  }`}
+                >
+                  <WishlistIcon aria-hidden="true" size={18} strokeWidth={2} />
+                </button>
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between gap-4">

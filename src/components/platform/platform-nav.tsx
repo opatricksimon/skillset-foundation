@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Award,
+  Bookmark,
   BookOpen,
   Calendar,
   CreditCard,
@@ -35,6 +36,7 @@ import {
 
 const iconMap: Record<string, LucideIcon> = {
   Award,
+  Bookmark,
   BookOpen,
   Calendar,
   CreditCard,

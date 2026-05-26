@@ -68,6 +68,14 @@ export const platformNav: PlatformNavItem[] = [
     permission: "community.read",
   },
   {
+    href: "/learn/wishlist",
+    label: "Wishlist",
+    icon: "Bookmark",
+    contexts: ["learner"],
+    section: "Learn",
+    permission: "courses.viewLearning",
+  },
+  {
     href: "/learn/events",
     label: "Agenda",
     icon: "Calendar",
