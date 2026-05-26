@@ -604,7 +604,7 @@ select {
   top: calc(100% + 8px);
   right: 0;
   z-index: 50;
-  width: 280px;
+  width: 344px;
   padding: 6px;
   border: 1px solid var(--color-line);
   border-radius: 14px;
@@ -673,6 +673,90 @@ select {
   margin: -6px -6px 4px;
   border-bottom: 1px solid var(--color-line);
   padding: 12px 12px 14px;
+}
+
+.account-menu-context-chip {
+  display: inline-flex;
+  margin-top: 0.45rem;
+  border: 1px solid rgba(178, 34, 52, 0.2);
+  border-radius: 999px;
+  background: rgba(178, 34, 52, 0.06);
+  padding: 0.2rem 0.45rem;
+  color: var(--color-accent);
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.account-menu-section-label {
+  padding: 0.625rem 0.75rem 0.35rem;
+  color: var(--color-ink-muted);
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.account-menu-switch {
+  margin: 0.25rem 0 0.35rem;
+  border-bottom: 1px solid var(--color-line);
+  padding: 0 0 0.55rem;
+}
+
+.account-menu-switch-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--color-ink);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.account-menu-switch-link:hover,
+.account-menu-switch-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--color-line);
+  background: var(--color-surface-soft);
+  color: var(--color-primary);
+}
+
+.account-menu-switch-link.is-active {
+  border-color: rgba(26, 54, 93, 0.16);
+  background: linear-gradient(180deg, rgba(26, 54, 93, 0.06), rgba(26, 54, 93, 0.02));
+}
+
+.account-menu-switch-link strong,
+.account-menu-switch-link small {
+  display: block;
+}
+
+.account-menu-switch-link strong {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu-switch-link small {
+  margin-top: 0.2rem;
+  overflow: hidden;
+  color: var(--color-ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .account-menu-item {

@@ -4,10 +4,11 @@ import {
   Award,
   Bookmark,
   ChevronDown,
+  GraduationCap,
+  LayoutDashboard,
   FileText,
   LogOut,
   Settings,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -76,13 +77,13 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canTeach = hasPermission({ roles: user.roles }, "teacherStudio.access");
   const isTeacherView = pathname.startsWith("/teach");
+  const isLearnerView = pathname.startsWith("/learn");
   const moneyHref = user.roles.includes("teacher")
     ? "/account/payments"
     : "/account/billing";
   const moneyLabel = user.roles.includes("teacher") ? "Payouts & tax" : "Billing";
-  const switchHref = isTeacherView ? "/learn" : "/teach";
-  const switchLabel = isTeacherView ? "Switch to Learner view" : "Switch to Creator view";
   const currentPlanName = planById(currentPlanId).name;
+  const currentViewLabel = isTeacherView ? "Creator" : "Learner";
 
   useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
 
@@ -144,14 +145,40 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
               <p className="mt-0.5 truncate text-xs text-[var(--color-ink-soft)]">
                 {user.email}
               </p>
+              <p className="account-menu-context-chip">{currentViewLabel}</p>
             </div>
           </div>
 
+          {canTeach ? (
+            <div className="account-menu-switch">
+              <p className="account-menu-section-label">Switch view</p>
+              <div className="grid gap-2">
+                <SwitchLink
+                  href="/teach"
+                  icon={LayoutDashboard}
+                  label="Manage teaching"
+                  detail="Studio, builder, agenda, payouts"
+                  active={isTeacherView}
+                  onNavigate={() => setIsOpen(false)}
+                />
+                <SwitchLink
+                  href="/learn"
+                  icon={GraduationCap}
+                  label="My learning"
+                  detail="Courses, community, credentials"
+                  active={isLearnerView}
+                  onNavigate={() => setIsOpen(false)}
+                />
+              </div>
+            </div>
+          ) : null}
+
           <div className="py-1">
+            <p className="account-menu-section-label">Account</p>
             <MenuLink
               href="/account/plans"
               icon={Award}
-              label="Plan"
+              label={user.roles.includes("teacher") ? "Creator plan" : "Subscription"}
               chip={currentPlanName}
               onNavigate={() => setIsOpen(false)}
             />
@@ -175,18 +202,6 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
             />
           </div>
 
-          {canTeach ? (
-            <>
-              <div className="account-menu-separator" />
-              <MenuLink
-                href={switchHref}
-                icon={Users}
-                label={switchLabel}
-                onNavigate={() => setIsOpen(false)}
-              />
-            </>
-          ) : null}
-
           <div className="account-menu-separator" />
           <button
             type="button"
@@ -204,6 +219,40 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SwitchLink({
+  active,
+  detail,
+  href,
+  icon: Icon,
+  label,
+  onNavigate,
+}: {
+  active: boolean;
+  detail: string;
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`account-menu-switch-link ${active ? "is-active" : ""}`}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+    >
+      <span className="account-menu-icon">
+        <Icon aria-hidden="true" size={14} strokeWidth={1.9} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </span>
+      {active ? <span className="account-menu-chip">Active</span> : null}
+    </Link>
   );
 }
 
