@@ -55,7 +55,7 @@ export function PlatformShell({
             }`}
           >
             <aside
-              className={`platform-sidebar platform-sidebar-panel border-r border-[var(--color-line)] bg-white p-3 ${
+              className={`platform-sidebar platform-sidebar-panel border-r border-[var(--color-line)] p-3 ${
                 isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
               }`}
             >

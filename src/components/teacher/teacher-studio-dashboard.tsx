@@ -1,12 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import {
-  BookOpenCheck,
-  Image,
-  Settings2,
-  WalletCards,
-} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -16,37 +10,6 @@ import type { TeacherCourse } from "@/domain/teacher-course";
 import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import { subscribeToTeacherPayoutLedger } from "@/lib/data/payout-ledger";
 import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
-
-const studioActions = [
-  {
-    title: "Course Builder",
-    detail: "Create courses, configure modules, upload lessons and submit for review.",
-    href: "/teach/builder",
-    cta: "Open builder",
-    icon: BookOpenCheck,
-  },
-  {
-    title: "Media library",
-    detail: "Review uploaded course covers, lesson videos, recordings and materials.",
-    href: "/teach/media",
-    cta: "Open library",
-    icon: Image,
-  },
-  {
-    title: "Payouts & tax",
-    detail: "Connect Stripe, check payout status, statements and tax setup.",
-    href: "/account/payments",
-    cta: "Open payouts",
-    icon: WalletCards,
-  },
-  {
-    title: "Settings",
-    detail: "Profile, email, security, notifications, privacy and account preferences.",
-    href: "/account",
-    cta: "Open settings",
-    icon: Settings2,
-  },
-];
 
 export function TeacherStudioDashboard() {
   const { user } = useAuth();
@@ -118,43 +81,6 @@ export function TeacherStudioDashboard() {
 
       <TeacherOverviewMetrics />
       <TeacherStudioInsights />
-
-      <section className="dash-card dash-card--soft p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-              Studio surfaces
-            </p>
-            <h2 className="display-title mt-2 text-3xl leading-tight text-[var(--color-primary)]">
-              Keep the dashboard clean.
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">
-            The Studio summarizes the business. Creation, uploads, payouts, and
-            account settings stay in their own focused work areas.
-          </p>
-        </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {studioActions.map((action) => {
-            const Icon = action.icon;
-
-            return (
-              <Link
-                key={action.title}
-                href={action.href}
-                className="studio-action-card group"
-              >
-                <span className="studio-action-card__icon">
-                  <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
-                </span>
-                <strong>{action.title}</strong>
-                <small>{action.detail}</small>
-                <span className="studio-action-card__cta">{action.cta}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

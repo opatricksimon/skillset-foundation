@@ -65,6 +65,21 @@ const builderTabs = [
 ] as const;
 
 type BuilderTab = (typeof builderTabs)[number]["value"];
+
+const builderStages: Array<{
+  id: string;
+  label: string;
+  sub: string;
+  target: BuilderTab;
+}> = [
+  { id: "basics", label: "Course basics", sub: "Title, category", target: "details" },
+  { id: "cover", label: "Course cover", sub: "Hero image", target: "details" },
+  { id: "about", label: "About", sub: "Promise, outcomes", target: "details" },
+  { id: "modules", label: "Modules", sub: "Structure", target: "content" },
+  { id: "lessons", label: "Lessons", sub: "Video, text, files", target: "content" },
+  { id: "pricing", label: "Pricing", sub: "Access model", target: "pricing" },
+  { id: "submit", label: "Submit", sub: "Review", target: "review" },
+];
 type ActiveLessonStudio = {
   moduleId: string;
   lessonId: string;
@@ -442,9 +457,6 @@ export function CourseBuilderStudio() {
   const selectedTabIndex = builderTabs.findIndex(
     (tab) => tab.value === activeTab,
   );
-  const builderStepProgress = Math.round(
-    ((selectedTabIndex + 1) / builderTabs.length) * 100,
-  );
   const savedLessonIds = new Set(
     course?.modules.flatMap((module) =>
       module.lessons.map((lesson) => lesson.id),
@@ -470,6 +482,24 @@ export function CourseBuilderStudio() {
       Boolean(freePreviewLessonId),
     review: readinessProgress === 100,
   };
+  const stageCompletion: Record<string, boolean> = {
+    basics: Boolean(title.trim() && selectedCategories.length > 0),
+    cover: Boolean(course?.coverImageUrl),
+    about: summary.trim().length >= 20,
+    modules: modules.length > 0,
+    lessons: lessonCount > 0,
+    pricing: tabCompletion.pricing,
+    submit: tabCompletion.review,
+  };
+  const completedStageCount = builderStages.filter(
+    (stage) => stageCompletion[stage.id],
+  ).length;
+  const builderStepProgress = Math.round(
+    (completedStageCount / builderStages.length) * 100,
+  );
+  const activeStageId =
+    builderStages.find((stage) => stage.target === activeTab)?.id ??
+    builderStages[0].id;
 
   function handlePaymentTypeChange(nextPaymentType: TeacherCoursePaymentType) {
     if (!isEditable) {
@@ -995,22 +1025,22 @@ export function CourseBuilderStudio() {
               />
             </div>
             <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
-              <span>Builder step {selectedTabIndex + 1} of {builderTabs.length}</span>
+              <span>{completedStageCount} of {builderStages.length} stages ready</span>
               <span className="text-[var(--color-primary)]">
                 Review readiness {readinessProgress}%
               </span>
             </div>
           </div>
-          <div className="mt-5 grid gap-2">
-            {builderTabs.map((tab, index) => {
-              const isActive = activeTab === tab.value;
-              const isDone = tabCompletion[tab.value];
+          <div className="course-builder-steps mt-5">
+            {builderStages.map((stage, index) => {
+              const isActive = activeStageId === stage.id;
+              const isDone = stageCompletion[stage.id];
 
               return (
                 <button
-                  key={tab.value}
+                  key={stage.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.value)}
+                  onClick={() => setActiveTab(stage.target)}
                   className={`course-builder-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
                 >
                   <span className="course-builder-step__num">
@@ -1021,8 +1051,8 @@ export function CourseBuilderStudio() {
                     )}
                   </span>
                   <span className="min-w-0">
-                    <span className="course-builder-step__label">{tab.label}</span>
-                    <span className="course-builder-step__sub">{tab.sub}</span>
+                    <span className="course-builder-step__label">{stage.label}</span>
+                    <span className="course-builder-step__sub">{stage.sub}</span>
                   </span>
                 </button>
               );

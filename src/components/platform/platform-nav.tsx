@@ -64,7 +64,7 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
       item.contexts.includes(context) &&
       (!item.permission || hasPermission(subject, item.permission)),
   );
-  const sections = groupBySection(visibleItems);
+  const sections = groupBySection(visibleItems, context);
 
   return (
     <nav className="platform-sidebar-nav mt-3 flex flex-col gap-4" aria-label="Workspace">
@@ -108,21 +108,28 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   );
 }
 
-function groupBySection(items: PlatformNavItem[]) {
-  return items.reduce<Array<{ label: string; items: PlatformNavItem[] }>>(
-    (groups, item) => {
-      const current = groups[groups.length - 1];
+function groupBySection(items: PlatformNavItem[], context: PlatformNavContext) {
+  const sectionOrder: Record<PlatformNavContext, string[]> = {
+    learner: ["Discover", "Learn", "Account"],
+    teacher: ["Teach", "Discover", "Account", "Growth", "Setup"],
+    ops: ["Operations", "Discover", "Account"],
+  };
+  const groups = new Map<string, PlatformNavItem[]>();
 
-      if (current?.label === item.section) {
-        current.items.push(item);
-        return groups;
-      }
+  items.forEach((item) => {
+    groups.set(item.section, [...(groups.get(item.section) ?? []), item]);
+  });
 
-      groups.push({ label: item.section, items: [item] });
-      return groups;
-    },
-    [],
-  );
+  const orderedLabels = [
+    ...sectionOrder[context],
+    ...Array.from(groups.keys()).filter(
+      (label) => !sectionOrder[context].includes(label),
+    ),
+  ];
+
+  return orderedLabels
+    .map((label) => ({ label, items: groups.get(label) ?? [] }))
+    .filter((group) => group.items.length > 0);
 }
 
 function WorkspaceSwitchLink({
