@@ -69,14 +69,10 @@ The current build uses one Next.js app with separated product surfaces by route 
 
 ---
 
-## Legacy prototype
+## Design references
 
-The original Firebase static prototype is still present as reference material in:
-
-- `public/index.html`
-- `public/css/style.css`
-
-These files are no longer the primary application entrypoint.
+Historical prototypes and visual reference material live under `docs/`.
+The production app entrypoint is the Next.js application in `src/app`.
 
 ---
 
