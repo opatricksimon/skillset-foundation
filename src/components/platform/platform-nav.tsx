@@ -59,7 +59,6 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname() ?? "";
   const subject: PermissionSubject = { roles: user?.roles ?? ["guest"] };
   const context = resolveContext(pathname, subject);
-  const canSwitchWorkspace = hasPermission(subject, "teacherStudio.access");
 
   const visibleItems = platformNav.filter(
     (item) =>
@@ -70,23 +69,6 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
 
   return (
     <nav className="platform-sidebar-nav mt-3 flex flex-col gap-4" aria-label="Workspace">
-      {!collapsed && canSwitchWorkspace ? (
-        <div className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-2">
-          <div className="grid grid-cols-2 gap-1 rounded-[8px] border border-[var(--color-line)] bg-white p-1">
-            <WorkspaceSwitchLink
-              href="/learn"
-              active={context === "learner"}
-              label="Learner"
-            />
-            <WorkspaceSwitchLink
-              href="/teach"
-              active={context === "teacher"}
-              label="Creator"
-            />
-          </div>
-        </div>
-      ) : null}
-
       {sections.map((section) => (
         <div key={section.label} className="grid gap-1">
           {!collapsed ? (
@@ -132,30 +114,6 @@ function groupBySection(items: PlatformNavItem[], context: PlatformNavContext) {
   return orderedLabels
     .map((label) => ({ label, items: groups.get(label) ?? [] }))
     .filter((group) => group.items.length > 0);
-}
-
-function WorkspaceSwitchLink({
-  active,
-  href,
-  label,
-}: {
-  active: boolean;
-  href: string;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={`workspace-switch-link rounded-[7px] px-3 py-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] transition ${
-        active
-          ? "workspace-switch-link--active bg-[var(--color-primary)] text-white shadow-[var(--shadow-button)]"
-          : "text-[var(--color-ink-soft)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
-      }`}
-    >
-      {label}
-    </Link>
-  );
 }
 
 function resolveContext(

@@ -4,22 +4,18 @@ import {
   Award,
   Bookmark,
   ChevronDown,
-  GraduationCap,
-  LayoutDashboard,
   FileText,
   LogOut,
   Settings,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { planById, type PlanId } from "@/data/plans";
 import { formatPrimaryRole, type SkillsetUser } from "@/domain/auth";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
-import { hasPermission } from "@/lib/permissions";
 
 type AccountMenuProps = {
   user: SkillsetUser;
@@ -71,19 +67,15 @@ function useDismissableLayer(
 }
 
 export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
-  const pathname = usePathname() ?? "";
   const [isOpen, setIsOpen] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<PlanId>("free");
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const canTeach = hasPermission({ roles: user.roles }, "teacherStudio.access");
-  const isTeacherView = pathname.startsWith("/teach");
-  const isLearnerView = pathname.startsWith("/learn");
   const moneyHref = user.roles.includes("teacher")
     ? "/account/payments"
     : "/account/billing";
   const moneyLabel = user.roles.includes("teacher") ? "Payouts & tax" : "Billing";
   const currentPlanName = planById(currentPlanId).name;
-  const currentViewLabel = isTeacherView ? "Creator" : "Learner";
+  const accountRoleLabel = formatPrimaryRole(user.roles);
 
   useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
 
@@ -145,33 +137,9 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
               <p className="mt-0.5 truncate text-xs text-[var(--color-ink-soft)]">
                 {user.email}
               </p>
-              <p className="account-menu-context-chip">{currentViewLabel}</p>
+              <p className="account-menu-context-chip">{accountRoleLabel}</p>
             </div>
           </div>
-
-          {canTeach ? (
-            <div className="account-menu-switch">
-              <p className="account-menu-section-label">Switch view</p>
-              <div className="grid gap-2">
-                <SwitchLink
-                  href="/teach"
-                  icon={LayoutDashboard}
-                  label="Manage teaching"
-                  detail="Studio, builder, agenda, payouts"
-                  active={isTeacherView}
-                  onNavigate={() => setIsOpen(false)}
-                />
-                <SwitchLink
-                  href="/learn"
-                  icon={GraduationCap}
-                  label="My learning"
-                  detail="Courses, community, credentials"
-                  active={isLearnerView}
-                  onNavigate={() => setIsOpen(false)}
-                />
-              </div>
-            </div>
-          ) : null}
 
           <div className="py-1">
             <p className="account-menu-section-label">Account</p>
@@ -219,40 +187,6 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
         </div>
       ) : null}
     </div>
-  );
-}
-
-function SwitchLink({
-  active,
-  detail,
-  href,
-  icon: Icon,
-  label,
-  onNavigate,
-}: {
-  active: boolean;
-  detail: string;
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  onNavigate: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`account-menu-switch-link ${active ? "is-active" : ""}`}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-    >
-      <span className="account-menu-icon">
-        <Icon aria-hidden="true" size={14} strokeWidth={1.9} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <strong>{label}</strong>
-        <small>{detail}</small>
-      </span>
-      {active ? <span className="account-menu-chip">Active</span> : null}
-    </Link>
   );
 }
 

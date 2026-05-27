@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
 import LearnPage from "@/app/learn/page";
 import OpsPage from "@/app/ops/page";
 import TeachPage from "@/app/teach/page";
+import { AccountMenu } from "@/components/site/account-menu";
 
 const mockAuthState = vi.hoisted(() => ({
   roles: ["admin"],
@@ -114,6 +115,8 @@ describe("platform shells", () => {
       screen.getByRole("heading", { name: "Publishing flow" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Educator support")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Learner" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Creator" })).not.toBeInTheDocument();
   });
 
   it("renders the support and safety surface", () => {
@@ -121,5 +124,31 @@ describe("platform shells", () => {
     render(<OpsPage />);
 
     expect(screen.getByText("Learner support")).toBeInTheDocument();
+  });
+
+  it("does not expose workspace switching in the account dropdown", () => {
+    render(
+      <AccountMenu
+        onSignOut={vi.fn()}
+        user={{
+          uid: "teacher-user",
+          email: "teacher@example.com",
+          displayName: "Teacher User",
+          emailVerified: true,
+          photoURL: null,
+          roles: ["teacher"],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open account menu" }));
+
+    expect(screen.queryByText("Switch view")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Manage teaching/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /My learning/i }),
+    ).not.toBeInTheDocument();
   });
 });
