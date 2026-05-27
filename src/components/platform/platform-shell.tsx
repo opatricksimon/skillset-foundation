@@ -10,6 +10,7 @@ import { PlatformHeader } from "@/components/platform/platform-header";
 import { PlatformNav } from "@/components/platform/platform-nav";
 import { SidebarToggle } from "@/components/platform/sidebar-toggle";
 import { StatusBanner } from "@/components/platform/status-banner";
+import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { useSidebarState } from "@/lib/ui/sidebar-state";
 
@@ -46,70 +47,73 @@ export function PlatformShell({
     <ThemeProvider>
       <main className="page-shell platform-shell-root">
         <StatusBanner />
-        <PlatformHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
         <div className="platform-shell-body">
-        <div className="platform-shell-inner w-full">
-          <div
-            className={`platform-grid ${
-              isCollapsed ? "platform-grid--collapsed" : ""
-            }`}
-          >
-            <aside
-              className={`platform-sidebar platform-sidebar-panel border-r border-[var(--color-line)] p-3 ${
-                isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
+          <div className="platform-shell-inner w-full">
+            <div
+              className={`platform-grid ${
+                isCollapsed ? "platform-grid--collapsed" : ""
               }`}
             >
-              <SidebarToggle
-                state={persistentState}
-                isCollapsed={isCollapsed}
-                onToggle={toggle}
-              />
-              {!isCollapsed ? <PlatformSidebarSearch pathname={pathname} /> : null}
-              <PlatformNav collapsed={isCollapsed} />
-            </aside>
+              <aside
+                className={`platform-sidebar platform-sidebar-panel ${
+                  isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
+                }`}
+              >
+                <SidebarBrand collapsed={isCollapsed} />
+                <SidebarToggle
+                  state={persistentState}
+                  isCollapsed={isCollapsed}
+                  onToggle={toggle}
+                />
+                {!isCollapsed ? <PlatformSidebarSearch pathname={pathname} /> : null}
+                <PlatformNav collapsed={isCollapsed} />
+              </aside>
 
-            <section
-              className={`platform-content ${
-                compact ? "space-y-4" : "space-y-6"
-              }`}
-            >
-              {hideHeader ? null : (
-                <div
-                  className={`platform-page-heading ${
-                    compact ? "platform-page-heading--compact" : ""
+              <div className="platform-main-column">
+                <PlatformHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
+                <section
+                  className={`platform-content ${
+                    compact ? "space-y-4" : "space-y-6"
                   }`}
                 >
-                  {eyebrow ? (
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                      {eyebrow}
-                    </p>
-                  ) : null}
-                  <h1
-                    className={
-                      compact
-                        ? "display-title max-w-4xl text-xl leading-tight text-[var(--color-primary)] sm:text-2xl lg:text-3xl"
-                        : `display-title ${
-                            eyebrow ? "mt-3" : ""
-                          } max-w-4xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl lg:text-5xl`
-                    }
-                  >
-                    {title}
-                  </h1>
-                  {description ? (
-                    <p
-                      className={`max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)] ${
-                        compact ? "mt-2" : "mt-3"
+                  {hideHeader ? null : (
+                    <div
+                      className={`platform-page-heading ${
+                        compact ? "platform-page-heading--compact" : ""
                       }`}
                     >
-                      {description}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-              {children}
-            </section>
+                      {eyebrow ? (
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                          {eyebrow}
+                        </p>
+                      ) : null}
+                      <h1
+                        className={
+                          compact
+                            ? "display-title max-w-4xl text-xl leading-tight text-[var(--color-primary)] sm:text-2xl lg:text-3xl"
+                            : `display-title ${
+                                eyebrow ? "mt-3" : ""
+                              } max-w-4xl text-3xl leading-tight text-[var(--color-primary)] sm:text-4xl lg:text-5xl`
+                        }
+                      >
+                        {title}
+                      </h1>
+                      {description ? (
+                        <p
+                          className={`max-w-3xl text-sm leading-7 text-[var(--color-ink-soft)] ${
+                            compact ? "mt-2" : "mt-3"
+                          }`}
+                        >
+                          {description}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                  {children}
+                </section>
+              </div>
+            </div>
           </div>
-        </div>
         </div>
         <MobileSidebarDrawer
           open={mobileNavOpen}
@@ -119,6 +123,25 @@ export function PlatformShell({
         <HelpBubble />
       </main>
     </ThemeProvider>
+  );
+}
+
+function SidebarBrand({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className="platform-sidebar-brand">
+      <LogoWordmark
+        href="/"
+        nav
+        variant="mark"
+        className="platform-sidebar-brand__mark"
+      />
+      {!collapsed ? (
+        <>
+          <span className="platform-sidebar-brand__name">Skillset</span>
+          <span className="platform-sidebar-brand__badge">Beta</span>
+        </>
+      ) : null}
+    </div>
   );
 }
 
