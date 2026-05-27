@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ConsoleSignature } from "@/components/shared/console-signature";
+import { PostHogProvider } from "@/app/posthog-provider";
 import { brand } from "@/data/brand";
 import "./globals.css";
 
@@ -37,7 +38,9 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[var(--color-base)] text-[var(--color-ink)] antialiased">
         <ConsoleSignature />
-        <AuthProvider>{children}</AuthProvider>
+        <PostHogProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
