@@ -107,7 +107,7 @@ export function SignupForm() {
         username: deriveUsername(displayName, email),
       });
       track.userSignedUp({
-        role: pathIntent === "teach" ? "teacher" : "student",
+        role: pathIntent === "teacher" ? "teacher" : "student",
         source: "email",
       });
       router.push(`/welcome${getAuthPathQuery(pathIntent)}`);
@@ -137,7 +137,7 @@ export function SignupForm() {
       // identifyUser via AuthProvider instead.
       if (!profile?.onboardingCompleted) {
         track.userSignedUp({
-          role: pathIntent === "teach" ? "teacher" : "student",
+          role: pathIntent === "teacher" ? "teacher" : "student",
           source: "google",
         });
       }
