@@ -27,8 +27,11 @@ The remaining course-creation friction is concentrated in a few concrete, fixabl
 |--------|--------|-----------------------------------|
 | `368e44e` | **Autosave drafts** + live save-state pill (`BuilderSaveStatus`: saving / unsaved / saved / failed) + total-duration display | Teachers were losing lesson text/settings edits that "save with the course draft" (`lesson-content-modal.tsx:518`). Autosave + a visible status removes the silent data-loss trap. |
 | `0babe0c` | **Guided Back / Continue** footer nav across the 4 builder tabs | Linear "what do I do next" flow, matching the prototype's stepper progression. |
+| `d35b524` | **Course cover field with live preview** at the top of the Details tab (P0) | Reuses `uploadCourseAsset({ kind: "course_cover" })`; the stepper's "Course cover -> Details" stage is now honored with a visible 16:9 preview. No backend change. |
+| `a191da7` | **Honest stepper navigation** (jump-and-scroll to each named section) + **live summary char counter** (P1) | Clicking "Course cover" / "About" now scrolls to that exact section. Hook-safe (ref + `activeTab` effect). Counter shows progress to the 20-char review minimum. |
+| `56cb4a5` | **Reframe asset panel as "Course media library"** (P2, step 1 / non-destructive) | Retitled from "Lesson upload"; clarifies it is the catch-all media manager and that per-lesson video/text/settings live in the lesson studio. Copy-only. |
 
-Both validated: ESLint 0 problems (file), `tsc` 0 non-test errors, `next build` EXIT 0, `npm test` 67/67. Loop-safe autosave (shared serializer for live payload + hydration baseline; purely-derived dirty state; debounced; concurrency-guarded) — no `react-hooks/set-state-in-effect` / `purity` / `refs` violations.
+All validated: ESLint 0 problems, `next build` EXIT 0, `npm test` 67/67 on every commit. Loop-safe patterns throughout (shared serializer for autosave; ref-held scroll target read only in handler/effect) — no `react-hooks/set-state-in-effect` / `purity` / `refs` violations.
 
 ---
 
@@ -92,11 +95,11 @@ Both validated: ESLint 0 problems (file), `tsc` 0 non-test errors, `next build` 
 
 | # | Priority | Item | Risk | Backend? | Status |
 |---|----------|------|------|----------|--------|
-| 1 | **P0** | Course cover field in Details tab (preview + inline upload, reuse `uploadCourseAsset`) | Low | No | **Next** |
-| 2 | P1 | Honest stepper → section anchors + Details section headers + live summary counter | Low | No | Queued |
-| 3 | P2 | Single canonical lesson editor (Lesson Studio modal); demote aside uploader | Medium | No | Queued |
-| 4 | P2 | Structured "what you'll learn" outcomes (field + CF validator + public render) | Medium | **Yes** | Flagged — deliberate, not in loop |
-| 5 | P3 | Course "level" field | Low | Yes | Note only |
+| 1 | **P0** | Course cover field in Details tab (preview + inline upload, reuse `uploadCourseAsset`) | Low | No | ✅ Shipped `d35b524` |
+| 2 | P1 | Honest stepper → section anchors + live summary counter | Low | No | ✅ Shipped `a191da7` |
+| 3 | P2 | Single canonical lesson editor (Lesson Studio modal); demote aside uploader | Medium | No | 🔶 Step 1 shipped `56cb4a5` (relabel to media library). Relocation needs founder OK — risk of breaking module-cover / thumbnail / video uploads. |
+| 4 | P2 | Structured "what you'll learn" outcomes (field + CF validator + public render) | Medium | **Yes** | ⏸ Flagged — needs backend (Cloud Function) decision; not done in autonomous loop. |
+| 5 | P3 | Course "level" field | Low | Yes | ⏸ Note only — backend-coordinated. |
 
 ---
 
