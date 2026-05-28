@@ -95,14 +95,15 @@ const builderStages: Array<{
   label: string;
   sub: string;
   target: BuilderTab;
+  anchor: string;
 }> = [
-  { id: "basics", label: "Course basics", sub: "Title, category", target: "details" },
-  { id: "cover", label: "Course cover", sub: "Hero image", target: "details" },
-  { id: "about", label: "About", sub: "Promise, outcomes", target: "details" },
-  { id: "modules", label: "Modules", sub: "Structure", target: "content" },
-  { id: "lessons", label: "Lessons", sub: "Video, text, files", target: "content" },
-  { id: "pricing", label: "Pricing", sub: "Access model", target: "pricing" },
-  { id: "submit", label: "Submit", sub: "Review", target: "review" },
+  { id: "basics", label: "Course basics", sub: "Title, category", target: "details", anchor: "builder-sec-basics" },
+  { id: "cover", label: "Course cover", sub: "Hero image", target: "details", anchor: "builder-sec-cover" },
+  { id: "about", label: "About", sub: "Promise, outcomes", target: "details", anchor: "builder-sec-about" },
+  { id: "modules", label: "Modules", sub: "Structure", target: "content", anchor: "builder-sec-modules" },
+  { id: "lessons", label: "Lessons", sub: "Video, text, files", target: "content", anchor: "builder-sec-lessons" },
+  { id: "pricing", label: "Pricing", sub: "Access model", target: "pricing", anchor: "builder-sec-pricing" },
+  { id: "submit", label: "Submit", sub: "Review", target: "review", anchor: "builder-sec-review" },
 ];
 type ActiveLessonStudio = {
   moduleId: string;
@@ -428,6 +429,10 @@ export function CourseBuilderStudio() {
   // effect body.
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const isAutosavingRef = useRef(false);
+  // Stepper "jump to section" target. A ref (not state) so setting it never
+  // triggers a render, and it is read/cleared only inside an event handler or
+  // an effect — never during render — to stay clear of react-hooks/refs.
+  const pendingScrollRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!courseId) {
@@ -1126,6 +1131,28 @@ export function CourseBuilderStudio() {
     runAutosave,
   ]);
 
+  // Stepper -> section scroll. The ref is read/cleared only here and in the
+  // stepper click handler (never during render). useCallback keeps the effect
+  // dependency stable.
+  const scrollPendingSectionIntoView = useCallback(() => {
+    const anchor = pendingScrollRef.current;
+    if (!anchor || typeof document === "undefined") {
+      return;
+    }
+    pendingScrollRef.current = null;
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(anchor)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  // After a stepper click switches tabs, the target section mounts on the next
+  // render; scroll once activeTab settles. No-op for normal tab nav (ref null).
+  useEffect(() => {
+    scrollPendingSectionIntoView();
+  }, [activeTab, scrollPendingSectionIntoView]);
+
   if (!courseId) {
     return (
       <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
@@ -1233,7 +1260,14 @@ export function CourseBuilderStudio() {
                 <button
                   key={stage.id}
                   type="button"
-                  onClick={() => setActiveTab(stage.target)}
+                  onClick={() => {
+                    pendingScrollRef.current = stage.anchor;
+                    if (activeTab === stage.target) {
+                      scrollPendingSectionIntoView();
+                    } else {
+                      setActiveTab(stage.target);
+                    }
+                  }}
                   className={`course-builder-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
                 >
                   <span className="course-builder-step__num">
@@ -1320,10 +1354,15 @@ export function CourseBuilderStudio() {
 
         {activeTab === "details" ? (
         <div className="mt-6 grid gap-4">
-          {course ? (
-            <CourseCoverField course={course} isEditable={isEditable} />
-          ) : null}
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <div id="builder-sec-cover" className="scroll-mt-24">
+            {course ? (
+              <CourseCoverField course={course} isEditable={isEditable} />
+            ) : null}
+          </div>
+          <label
+            id="builder-sec-basics"
+            className="grid gap-2 scroll-mt-24 text-sm font-semibold text-[var(--color-ink)]"
+          >
             Course title
             <input
               value={title}
@@ -1361,7 +1400,10 @@ export function CourseBuilderStudio() {
               })}
             </div>
           </div>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+          <label
+            id="builder-sec-about"
+            className="grid gap-2 scroll-mt-24 text-sm font-semibold text-[var(--color-ink)]"
+          >
             Course summary
             <textarea
               value={summary}
@@ -1370,6 +1412,17 @@ export function CourseBuilderStudio() {
               rows={4}
               className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
             />
+            <span
+              className={`text-xs font-semibold ${
+                summary.trim().length >= 20
+                  ? "text-[var(--color-ink-soft)]"
+                  : "text-[var(--color-accent)]"
+              }`}
+            >
+              {summary.trim().length >= 20
+                ? `${summary.trim().length} characters`
+                : `${summary.trim().length}/20 characters minimum for review`}
+            </span>
           </label>
           <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             Keep the title specific, the category clear, and the summary focused
@@ -1379,7 +1432,10 @@ export function CourseBuilderStudio() {
         ) : null}
 
         {activeTab === "pricing" ? (
-          <div className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div
+            id="builder-sec-pricing"
+            className="scroll-mt-24 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Marketplace setup
             </p>
@@ -1539,7 +1595,10 @@ export function CourseBuilderStudio() {
 
         {activeTab === "content" ? (
         <div className="mt-6 grid gap-4">
-          <div className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div
+            id="builder-sec-modules"
+            className="scroll-mt-24 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+          >
             <h4 className="text-sm font-semibold text-[var(--color-ink)]">
               Add module
             </h4>
@@ -1569,7 +1628,10 @@ export function CourseBuilderStudio() {
             </form>
           </div>
 
-          <div className="rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4">
+          <div
+            id="builder-sec-lessons"
+            className="scroll-mt-24 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+          >
             <h4 className="text-sm font-semibold text-[var(--color-ink)]">
               Add lesson
             </h4>
@@ -1956,7 +2018,10 @@ export function CourseBuilderStudio() {
         ) : null}
 
         {activeTab === "review" ? (
-          <div className="mt-6 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5">
+          <div
+            id="builder-sec-review"
+            className="mt-6 scroll-mt-24 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-5"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Submit readiness
             </p>
