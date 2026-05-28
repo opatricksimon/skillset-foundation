@@ -10,7 +10,7 @@
 
 ## 0. TL;DR
 
-The builder is **further along than it looks at a glance**. It already has a 7-stage left-rail stepper with done-checkmarks, an overall progress bar, a "next best action" hint, per-stage completion logic, a review-readiness checklist with jump-to-fix, and (as of this session) **autosave + a live save-state pill + guided Back/Continue navigation**. The student classroom is genuinely strong (protected video, drip unlock, progress, per-lesson discussion, certificates, course resources).
+The builder is **further along than it looks at a glance**. It already has a 7-stage left-rail stepper with done-checkmarks, an overall progress bar, a "next best action" hint, per-stage completion logic, a review-readiness checklist with jump-to-fix, and (as of this session) **autosave + a live save-state pill + an unsaved-changes (`beforeunload`) guard + guided Back/Continue navigation + an in-place 16:9 cover preview + an honest jump-and-scroll stepper**. The student classroom is genuinely strong (protected video, drip unlock, progress, per-lesson discussion, certificates, course resources).
 
 The remaining course-creation friction is concentrated in a few concrete, fixable places:
 
@@ -30,8 +30,11 @@ The remaining course-creation friction is concentrated in a few concrete, fixabl
 | `d35b524` | **Course cover field with live preview** at the top of the Details tab (P0) | Reuses `uploadCourseAsset({ kind: "course_cover" })`; the stepper's "Course cover -> Details" stage is now honored with a visible 16:9 preview. No backend change. |
 | `a191da7` | **Honest stepper navigation** (jump-and-scroll to each named section) + **live summary char counter** (P1) | Clicking "Course cover" / "About" now scrolls to that exact section. Hook-safe (ref + `activeTab` effect). Counter shows progress to the 20-char review minimum. |
 | `56cb4a5` | **Reframe asset panel as "Course media library"** (P2, step 1 / non-destructive) | Retitled from "Lesson upload"; clarifies it is the catch-all media manager and that per-lesson video/text/settings live in the lesson studio. Copy-only. |
+| `b075927` | **`beforeunload` guard for unsaved edits** (completes the data-loss story) | Autosave's 1800ms debounce window and the **failed-save** state both leave edits unpersisted; the browser now warns before a close/reload while the draft is dirty. Listener attaches only while `draftIsDirty` (no ref, no setState in body → loop-safe). Client-only; no backend/deploy coordination. |
 
-All validated: ESLint 0 problems, `next build` EXIT 0, `npm test` 67/67 on every commit. Loop-safe patterns throughout (shared serializer for autosave; ref-held scroll target read only in handler/effect) — no `react-hooks/set-state-in-effect` / `purity` / `refs` violations.
+All validated: ESLint 0 problems, `next build` EXIT 0, `npm test` 67/67 on every commit. Loop-safe patterns throughout (shared serializer for autosave; ref-held scroll target read only in handler/effect; `beforeunload` keyed on the pure `draftIsDirty` signal) — no `react-hooks/set-state-in-effect` / `purity` / `refs` violations.
+
+**Data-loss prevention is now complete & well-rounded:** autosave (happy path) → explicit "Save failed — use Save draft" pill + always-visible manual Save button (`:1243`, `:2277`) → `beforeunload` guard (tab close / reload). No further work needed on this surface.
 
 ---
 
@@ -69,6 +72,7 @@ All validated: ESLint 0 problems, `next build` EXIT 0, `npm test` 67/67 on every
 ### 3.3 — P2 · No structured "what you'll learn" outcomes
 - Prototype Step 03 is outcome-led (`whatYouLearn`, 4+ bullets). Real app has one free-text `summary` (`:1348-1357`); the `about` sub-label "Promise, outcomes" (`:88`) is aspirational.
 - **Why deferred:** outcomes need a new persisted field validated by the `updateTeacherCourseBuilder` Cloud Function. That's a backend-coordinated change (schema + CF validator + domain type + public course page render). Do it deliberately, not in a blind loop — flagged here so it isn't lost.
+- **Sharpened finding (2026-05-28, why NOT to ship client-first):** I confirmed the CF is hand-rolled and *ignores* unknown input fields rather than rejecting them (`functions/src/index.ts:861` builds a clean object) — so a stray `learningOutcomes` would not break saving. **But** the builder's autosave baseline re-hydrates from the course `onSnapshot` on every echo (`course-builder-studio.tsx:483`), and the only deploy script in the repo is `deploy:hosting` (functions are deployed separately). So if the client writes `learningOutcomes` into the autosave signature (`:315`/`:354`) while a **hosting-only** deploy ships without the matching CF, the loop is: dirty → autosave → CF drops the field → snapshot echoes back *without* it → baseline recomputed without it → **dirty again → autosave loops forever** (burning writes, flickering the save pill). That is the *same silent-failure class* this session was eliminating. **Conclusion:** outcomes must ship as a single coordinated slice and be **deployed functions-first (or functions+hosting together)** — never client-first, never in an autonomous loop. Implementation map is locked: `buildBuilderDraftPayload`+`builderDraftSignatureFromCourse` (`:315`/`:354`, symmetric), CF sanitize after `summary` (`:711`) + persist (`:861`) + `TeacherCourseRecord` (`:76`), `createTeacherCourseDraft` initial set (`:668`), domain type, and student/public render.
 
 ### 3.4 — P2 · Lesson editing has three overlapping entry points
 - Curriculum inline controls + the always-on "Lesson upload" aside (`:2204`) + the Lesson Studio modal (`:2209`, `lesson-content-modal.tsx`) all edit lesson material. Functional but dilutes the "one obvious place" principle.
@@ -98,7 +102,8 @@ All validated: ESLint 0 problems, `next build` EXIT 0, `npm test` 67/67 on every
 | 1 | **P0** | Course cover field in Details tab (preview + inline upload, reuse `uploadCourseAsset`) | Low | No | ✅ Shipped `d35b524` |
 | 2 | P1 | Honest stepper → section anchors + live summary counter | Low | No | ✅ Shipped `a191da7` |
 | 3 | P2 | Single canonical lesson editor (Lesson Studio modal); demote aside uploader | Medium | No | 🔶 Step 1 shipped `56cb4a5` (relabel to media library). Relocation needs founder OK — risk of breaking module-cover / thumbnail / video uploads. |
-| 4 | P2 | Structured "what you'll learn" outcomes (field + CF validator + public render) | Medium | **Yes** | ⏸ Flagged — needs backend (Cloud Function) decision; not done in autonomous loop. |
+| 4 | P2 | Structured "what you'll learn" outcomes (field + CF validator + public render) | Medium | **Yes** | ⏸ Deferred **by design** — see §3.3 sharpened finding. Safe from CF rejection, but shipping it under a hosting-only deploy causes an autosave loop. **Must deploy functions-first (or functions+hosting together), never client-first.** Implementation map locked in §3.3. |
+| 6 | P1 | `beforeunload` guard for unsaved builder edits | Low | No | ✅ Shipped `b075927` — completes the data-loss-prevention story (autosave + manual recovery + tab-close guard). |
 | 5 | P3 | Course "level" field | Low | Yes | ⏸ Note only — backend-coordinated. |
 
 ---
