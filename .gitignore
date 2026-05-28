@@ -46,6 +46,10 @@ yarn-error.log*
 .env*
 !.env.example
 !functions/.env.example
+# .env.production carries ONLY publishable NEXT_PUBLIC_* values that are
+# safe to ship in the browser bundle (e.g. PostHog phc_ project key).
+# Server secrets stay out — see file header.
+!.env.production
 
 # vercel
 .vercel
