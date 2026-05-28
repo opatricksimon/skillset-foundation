@@ -4,17 +4,26 @@ import Link from "next/link";
 import {
   CalendarClock,
   CheckCircle2,
+  CloudOff,
   CreditCard,
   ExternalLink,
   Eye,
   FileText,
   Gift,
   Layers3,
+  Loader2,
   PlayCircle,
   Repeat,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import {
@@ -267,6 +276,94 @@ function getCourseStructureError(modules: TeacherCourseModule[]): string {
   return "";
 }
 
+type BuilderDraftFields = {
+  title: string;
+  summary: string;
+  category: string;
+  selectedCategories: string[];
+  modules: TeacherCourseModule[];
+  priceAmount: string;
+  currency: string;
+  paymentType: TeacherCoursePaymentType;
+  installmentsEnabled: boolean;
+  installmentsMax: string;
+  dripStrategy: DripStrategy;
+  dripIntervalDays: string;
+  freePreviewLessonId: string;
+  platformFeeBps: number;
+};
+
+// Single normalization pipeline used by manual save, autosave, and the
+// change-signature. Keeping one function guarantees the live payload and the
+// hydration baseline can never disagree (which would otherwise loop autosave).
+function buildBuilderDraftPayload(input: BuilderDraftFields) {
+  const nextPriceAmountMinor =
+    input.paymentType === "free" ? 0 : parsePriceAmountMinor(input.priceAmount);
+  const nextInstallmentsEnabled =
+    input.paymentType === "one_time" && input.installmentsEnabled;
+  const nextInstallmentsMax = nextInstallmentsEnabled
+    ? parseInstallmentsMax(input.installmentsMax)
+    : null;
+  const nextDripIntervalDays = Math.max(
+    1,
+    normalizeDripDelayDays(input.dripIntervalDays) ?? 1,
+  );
+  const nextModules = sanitizeModules(input.modules);
+  const nextCategories = normalizeCourseCategories([
+    ...input.selectedCategories,
+    input.category,
+  ]);
+  const nextCategory = nextCategories[0] ?? "Other";
+
+  return {
+    title: input.title.trim(),
+    summary: input.summary.trim(),
+    category: nextCategory,
+    categories: nextCategories,
+    modules: nextModules,
+    priceAmountMinor: nextPriceAmountMinor,
+    currency: input.currency,
+    paymentType: input.paymentType,
+    installmentsEnabled: nextInstallmentsEnabled,
+    installmentsMax: nextInstallmentsMax,
+    platformFeeBps: input.platformFeeBps,
+    dripStrategy: input.dripStrategy,
+    dripIntervalDays: nextDripIntervalDays,
+    freePreviewLessonId: input.freePreviewLessonId || null,
+  };
+}
+
+// Mirrors the snapshot hydration setters exactly, so the baseline equals what
+// the builder state will serialize to right after loading the course.
+function builderDraftSignatureFromCourse(course: TeacherCourse): string {
+  return JSON.stringify(
+    buildBuilderDraftPayload({
+      title: course.title,
+      summary: course.summary,
+      category: course.category,
+      selectedCategories: normalizeCourseCategories([
+        ...(course.categories ?? []),
+        course.category,
+      ]),
+      modules: course.modules ?? [],
+      priceAmount:
+        typeof course.priceAmountMinor === "number"
+          ? String(course.priceAmountMinor / 100)
+          : "",
+      currency: course.currency ?? defaultSkillsetCurrency,
+      paymentType:
+        course.paymentType ??
+        (course.priceAmountMinor === 0 ? "free" : "one_time"),
+      installmentsEnabled: Boolean(course.installmentsEnabled),
+      installmentsMax: String(course.installmentsMax ?? 12),
+      dripStrategy: course.dripStrategy ?? "instant",
+      dripIntervalDays: String(course.dripIntervalDays ?? 1),
+      freePreviewLessonId: course.freePreviewLessonId ?? "",
+      platformFeeBps: course.platformFeeBps ?? 800,
+    }),
+  );
+}
+
 export function CourseBuilderStudio() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
@@ -307,6 +404,15 @@ export function CourseBuilderStudio() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeLessonStudio, setActiveLessonStudio] =
     useState<ActiveLessonStudio>(null);
+  const [autosaveState, setAutosaveState] =
+    useState<"idle" | "saving" | "saved" | "error">("idle");
+  // Signature of the last state we know Firestore has. Lives in state (not a
+  // ref) so the "Unsaved changes" indicator can be derived purely in render
+  // without reading a ref. Updated only in async callbacks (save success and
+  // the snapshot hydration), so it never causes a synchronous setState in an
+  // effect body.
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
+  const isAutosavingRef = useRef(false);
 
   useEffect(() => {
     if (!courseId) {
@@ -351,6 +457,10 @@ export function CourseBuilderStudio() {
         setFreePreviewLessonId(nextCourse.freePreviewLessonId ?? "");
         setLessonModuleId(nextCourse.modules?.[0]?.id ?? "");
         setError("");
+        // Baseline mirrors exactly what the state setters above produce, so a
+        // fresh hydration (or our own write echoing back) is never seen as a
+        // user edit. Async callback -> setState is allowed here.
+        setSavedSignature(builderDraftSignatureFromCourse(nextCourse));
       },
       () => {
         setIsLoading(false);
@@ -500,6 +610,75 @@ export function CourseBuilderStudio() {
   const activeStageId =
     builderStages.find((stage) => stage.target === activeTab)?.id ??
     builderStages[0].id;
+  const totalDurationMinutes = allLessons.reduce(
+    (sum, lesson) => sum + (lesson.durationMinutes ?? 0),
+    0,
+  );
+  const formattedDuration =
+    totalDurationMinutes >= 60
+      ? `${Math.floor(totalDurationMinutes / 60)}h ${totalDurationMinutes % 60}m`
+      : `${totalDurationMinutes}m`;
+
+  // Single source of truth for what gets persisted. Manual save, submit, and
+  // autosave all serialize from here so their payloads (and the autosave
+  // change-signature) stay identical and never disagree.
+  const builderDraftPayload = useMemo(
+    () =>
+      buildBuilderDraftPayload({
+        title,
+        summary,
+        category,
+        selectedCategories,
+        modules,
+        priceAmount,
+        currency,
+        paymentType,
+        installmentsEnabled,
+        installmentsMax,
+        dripStrategy,
+        dripIntervalDays,
+        freePreviewLessonId,
+        platformFeeBps: course?.platformFeeBps ?? 800,
+      }),
+    [
+      title,
+      summary,
+      category,
+      selectedCategories,
+      modules,
+      priceAmount,
+      currency,
+      paymentType,
+      installmentsEnabled,
+      installmentsMax,
+      dripStrategy,
+      dripIntervalDays,
+      freePreviewLessonId,
+      course?.platformFeeBps,
+    ],
+  );
+  const builderDraftSignature = useMemo(
+    () => JSON.stringify(builderDraftPayload),
+    [builderDraftPayload],
+  );
+  const draftStructureError = getCourseStructureError(
+    builderDraftPayload.modules,
+  );
+  const canAutosaveDraft =
+    isEditable
+    && priceFieldIsValid
+    && installmentsAreValid
+    && !draftStructureError;
+  const draftIsDirty =
+    savedSignature !== null && builderDraftSignature !== savedSignature;
+  const displayedSaveStatus: "pending" | "saving" | "saved" | "error" =
+    autosaveState === "saving"
+      ? "saving"
+      : autosaveState === "error"
+        ? "error"
+        : draftIsDirty
+          ? "pending"
+          : "saved";
 
   function handlePaymentTypeChange(nextPaymentType: TeacherCoursePaymentType) {
     if (!isEditable) {
@@ -627,7 +806,7 @@ export function CourseBuilderStudio() {
     setLessonExternalUrl("");
     setLessonIsFreePreview(false);
     setError("");
-    setSuccess("Lesson added. Save the draft before uploading video or materials to this lesson.");
+    setSuccess("Lesson added. It autosaves in a moment — then open the lesson studio to upload video and materials.");
   }
 
   function updateModuleTitle(moduleId: string, nextTitle: string) {
@@ -777,63 +956,33 @@ export function CourseBuilderStudio() {
 
     setError("");
     setSuccess("");
-    setIsSaving(true);
-    const nextPriceAmountMinor =
-      paymentType === "free" ? 0 : parsePriceAmountMinor(priceAmount);
-    const nextInstallmentsEnabled =
-      paymentType === "one_time" && installmentsEnabled;
-    const nextInstallmentsMax = nextInstallmentsEnabled
-      ? parseInstallmentsMax(installmentsMax)
-      : null;
-    const nextDripIntervalDays = Math.max(
-      1,
-      normalizeDripDelayDays(dripIntervalDays) ?? 1,
-    );
-    const nextModules = sanitizeModules(modules);
-    const structureError = getCourseStructureError(nextModules);
-    const nextCategories = normalizeCourseCategories([
-      ...selectedCategories,
-      category,
-    ]);
-    const nextCategory = nextCategories[0] ?? "Other";
 
     if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
-      setIsSaving(false);
       return;
     }
 
     if (!installmentsAreValid) {
       setError("Set a valid installment limit before saving.");
-      setIsSaving(false);
       return;
     }
 
-    if (structureError) {
-      setError(structureError);
-      setIsSaving(false);
+    if (draftStructureError) {
+      setError(draftStructureError);
       return;
     }
+
+    const signatureAtSave = builderDraftSignature;
+    setIsSaving(true);
+    setAutosaveState("saving");
 
     try {
-      await updateTeacherCourseBuilder(courseId, {
-        title,
-        summary,
-        category: nextCategory,
-        categories: nextCategories,
-        modules: nextModules,
-        priceAmountMinor: nextPriceAmountMinor,
-        currency,
-        paymentType,
-        installmentsEnabled: nextInstallmentsEnabled,
-        installmentsMax: nextInstallmentsMax,
-        platformFeeBps: course?.platformFeeBps ?? 800,
-        dripStrategy,
-        dripIntervalDays: nextDripIntervalDays,
-        freePreviewLessonId: freePreviewLessonId || null,
-      });
+      await updateTeacherCourseBuilder(courseId, builderDraftPayload);
+      setSavedSignature(signatureAtSave);
+      setAutosaveState("saved");
       setSuccess("Draft saved.");
     } catch {
+      setAutosaveState("error");
       setError("We could not save this course. Please try again.");
     } finally {
       setIsSaving(false);
@@ -847,73 +996,39 @@ export function CourseBuilderStudio() {
 
     setError("");
     setSuccess("");
-    setIsSubmitting(true);
-    const nextPriceAmountMinor =
-      paymentType === "free" ? 0 : parsePriceAmountMinor(priceAmount);
-    const nextInstallmentsEnabled =
-      paymentType === "one_time" && installmentsEnabled;
-    const nextInstallmentsMax = nextInstallmentsEnabled
-      ? parseInstallmentsMax(installmentsMax)
-      : null;
-    const nextDripIntervalDays = Math.max(
-      1,
-      normalizeDripDelayDays(dripIntervalDays) ?? 1,
-    );
-    const nextModules = sanitizeModules(modules);
-    const structureError = getCourseStructureError(nextModules);
-    const nextCategories = normalizeCourseCategories([
-      ...selectedCategories,
-      category,
-    ]);
-    const nextCategory = nextCategories[0] ?? "Other";
 
     if (!priceFieldIsValid) {
       setError("Use a valid non-negative price, or leave the field empty.");
-      setIsSubmitting(false);
       return;
     }
 
     if (!pricingModelIsReady) {
       setError("Set a paid price greater than $0, or choose Free as the payment model before submitting.");
-      setIsSubmitting(false);
       return;
     }
 
     if (!installmentsAreValid) {
       setError("Set a valid installment limit before submitting.");
-      setIsSubmitting(false);
       return;
     }
 
-    if (structureError) {
-      setError(structureError);
-      setIsSubmitting(false);
+    if (draftStructureError) {
+      setError(draftStructureError);
       return;
     }
 
     if (!freePreviewLessonId) {
       setError("Choose one lesson as the free preview before submitting.");
-      setIsSubmitting(false);
       return;
     }
 
+    const signatureAtSubmit = builderDraftSignature;
+    setIsSubmitting(true);
+
     try {
-      await updateTeacherCourseBuilder(courseId, {
-        title,
-        summary,
-        category: nextCategory,
-        categories: nextCategories,
-        modules: nextModules,
-        priceAmountMinor: nextPriceAmountMinor,
-        currency,
-        paymentType,
-        installmentsEnabled: nextInstallmentsEnabled,
-        installmentsMax: nextInstallmentsMax,
-        platformFeeBps: course?.platformFeeBps ?? 800,
-        dripStrategy,
-        dripIntervalDays: nextDripIntervalDays,
-        freePreviewLessonId: freePreviewLessonId || null,
-      });
+      await updateTeacherCourseBuilder(courseId, builderDraftPayload);
+      setSavedSignature(signatureAtSubmit);
+      setAutosaveState("saved");
       await submitTeacherCourseForReview(courseId);
       setSuccess("Course submitted for Skillset review.");
     } catch (caughtError) {
@@ -932,6 +1047,69 @@ export function CourseBuilderStudio() {
       setIsSubmitting(false);
     }
   }
+
+  const runAutosave = useCallback(
+    async (
+      signature: string,
+      payload: Parameters<typeof updateTeacherCourseBuilder>[1],
+    ) => {
+      if (!courseId || isAutosavingRef.current) {
+        return;
+      }
+
+      isAutosavingRef.current = true;
+      setAutosaveState("saving");
+
+      try {
+        await updateTeacherCourseBuilder(courseId, payload);
+        setSavedSignature(signature);
+        setAutosaveState("saved");
+      } catch {
+        setAutosaveState("error");
+      } finally {
+        isAutosavingRef.current = false;
+      }
+    },
+    [courseId],
+  );
+
+  useEffect(() => {
+    if (!courseId || isLoading) {
+      return;
+    }
+
+    // Not hydrated yet, or nothing changed since the last persisted state.
+    // (Hydration sets savedSignature from the course, so an initial load or
+    // our own write echoing back is never seen as a user edit -> loop-safe.)
+    if (savedSignature === null || builderDraftSignature === savedSignature) {
+      return;
+    }
+
+    // Genuinely changed but not safe to persist yet (invalid field, or a
+    // manual save/submit in flight). The "Unsaved changes" pill is derived in
+    // render, so just wait — no setState in this effect body.
+    if (!canAutosaveDraft || isSaving || isSubmitting) {
+      return;
+    }
+
+    const payloadAtSchedule = builderDraftPayload;
+    const signatureAtSchedule = builderDraftSignature;
+    const handle = window.setTimeout(() => {
+      void runAutosave(signatureAtSchedule, payloadAtSchedule);
+    }, 1800);
+
+    return () => window.clearTimeout(handle);
+  }, [
+    courseId,
+    isLoading,
+    isSaving,
+    isSubmitting,
+    canAutosaveDraft,
+    savedSignature,
+    builderDraftSignature,
+    builderDraftPayload,
+    runAutosave,
+  ]);
 
   if (!courseId) {
     return (
@@ -976,9 +1154,9 @@ export function CourseBuilderStudio() {
             <span className="rounded-[8px] border border-[var(--color-line)] bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
               {readinessProgress}% ready
             </span>
-            <span className="text-xs font-semibold text-[var(--color-ink-muted)]">
-              Save draft before leaving this screen
-            </span>
+            {isEditable ? (
+              <BuilderSaveStatus state={displayedSaveStatus} />
+            ) : null}
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             Course builder
@@ -1096,6 +1274,9 @@ export function CourseBuilderStudio() {
             <div className="grid gap-2 text-right text-xs font-semibold text-[var(--color-ink-soft)]">
               <span>{modules.length} modules</span>
               <span>{lessonCount} lessons</span>
+              {totalDurationMinutes > 0 ? (
+                <span>{formattedDuration} total</span>
+              ) : null}
               <span>{formattedPrice}</span>
             </div>
           </div>
@@ -1705,12 +1886,16 @@ export function CourseBuilderStudio() {
                                   title={
                                     savedLessonIds.has(lesson.id)
                                       ? "Open lesson studio"
-                                      : "Save draft before uploading files to this lesson"
+                                      : autosaveState === "error"
+                                        ? "Autosave failed — use Save draft to enable uploads"
+                                        : "Saving lesson… uploads unlock once the draft is saved"
                                   }
                                 >
                                   {savedLessonIds.has(lesson.id)
                                     ? "Open lesson studio"
-                                    : "Save draft to upload"}
+                                    : autosaveState === "error"
+                                      ? "Save draft to upload"
+                                      : "Saving lesson…"}
                                 </button>
                                 <button
                                   type="button"
@@ -2008,5 +2193,50 @@ export function CourseBuilderStudio() {
         />
       ) : null}
     </div>
+  );
+}
+
+function BuilderSaveStatus({
+  state,
+}: {
+  state: "pending" | "saving" | "saved" | "error";
+}) {
+  if (state === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--color-line)] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
+        <Loader2
+          aria-hidden="true"
+          size={12}
+          strokeWidth={2.2}
+          className="animate-spin"
+        />
+        Saving
+      </span>
+    );
+  }
+
+  if (state === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--color-line)] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-muted)]">
+        <span className="size-1.5 rounded-full bg-[var(--color-ink-muted)]" />
+        Unsaved changes
+      </span>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[rgba(178,34,52,0.22)] bg-[rgba(178,34,52,0.06)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+        <CloudOff aria-hidden="true" size={12} strokeWidth={2} />
+        Save failed — use Save draft
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--color-line)] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+      <CheckCircle2 aria-hidden="true" size={12} strokeWidth={2} />
+      All changes saved
+    </span>
   );
 }
