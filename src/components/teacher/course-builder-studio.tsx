@@ -1131,6 +1131,25 @@ export function CourseBuilderStudio() {
     runAutosave,
   ]);
 
+  // Browser-level guard for the gap autosave can't cover: the debounce window
+  // and a *failed* autosave both leave edits unpersisted. Warn before the tab
+  // closes/reloads while the draft is dirty. Keyed on draftIsDirty so the
+  // listener attaches only when there is something to lose and the closure
+  // always sees current state (no ref, no setState in body -> loop-safe).
+  useEffect(() => {
+    if (!draftIsDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [draftIsDirty]);
+
   // Stepper -> section scroll. The ref is read/cleared only here and in the
   // stepper click handler (never during render). useCallback keeps the effect
   // dependency stable.
