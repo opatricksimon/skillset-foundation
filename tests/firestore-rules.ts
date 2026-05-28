@@ -280,6 +280,224 @@ describe("Firestore course review rules", () => {
   });
 });
 
+describe("Firestore /users/{uid} privilege-escalation guards (C1/C2)", () => {
+  it("C1: blocks a user from self-setting currentPlanId on their own doc", async () => {
+    await seedUser("attacker-c1", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-c1", verifiedAuth).firestore();
+
+    // Attempt to zero the platform fee by self-promoting to "plus" plan.
+    // Backend (Stripe webhook) is the ONLY trusted writer of currentPlanId.
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-c1"), {
+        currentPlanId: "plus",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C1 (variant): blocks self-setting planTier / planUpdatedAt", async () => {
+    await seedUser("attacker-c1b", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-c1b", verifiedAuth).firestore();
+
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-c1b"), {
+        planTier: "plus",
+        planUpdatedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C2: blocks a user from self-setting stripeCustomerId on their own doc", async () => {
+    await seedUser("attacker-c2", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-c2", verifiedAuth).firestore();
+
+    // Attempt to hijack a victim's Stripe Billing Portal session.
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-c2"), {
+        stripeCustomerId: "cus_VICTIM_ACCOUNT_ID",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C2 (variant): blocks self-setting stripeSubscriptionId", async () => {
+    await seedUser("attacker-c2b", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-c2b", verifiedAuth).firestore();
+
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-c2b"), {
+        stripeSubscriptionId: "sub_VICTIM",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("blocks self-setting Stripe Connect status flags (charges/payouts enabled)", async () => {
+    await seedUser("teacher-fakekyc", ["student", "teacher"], {
+      teacherTermsAcceptedAt: Timestamp.now(),
+      teacherTermsVersion: "2026-05-10",
+    });
+    const db = testEnv.authenticatedContext("teacher-fakekyc", verifiedAuth).firestore();
+
+    await assertFails(
+      updateDoc(doc(db, "users/teacher-fakekyc"), {
+        stripeConnectedAccountId: "acct_FAKE",
+        stripeConnectStatus: "active",
+        stripeConnectChargesEnabled: true,
+        stripeConnectPayoutsEnabled: true,
+        stripeConnectUpdatedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("blocks self-setting platformFeeBps on user doc (defense-in-depth)", async () => {
+    await seedUser("attacker-fee", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-fee", verifiedAuth).firestore();
+
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-fee"), {
+        platformFeeBps: 0,
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("blocks self-setting privileged metadata (kycStatus, adminClaims, balance)", async () => {
+    await seedUser("attacker-meta", ["student"]);
+    const db = testEnv.authenticatedContext("attacker-meta", verifiedAuth).firestore();
+
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-meta"), {
+        kycStatus: "approved",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-meta"), {
+        adminClaims: true,
+        updatedAt: Timestamp.now(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(db, "users/attacker-meta"), {
+        balanceMinor: 9999999,
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("still allows benign identity field updates (displayName, lastLoginAt)", async () => {
+    await seedUser("benign-user", ["student"]);
+    const db = testEnv.authenticatedContext("benign-user", verifiedAuth).firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(db, "users/benign-user"), {
+        displayName: "New Display Name",
+        updatedAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+      }),
+    );
+  });
+});
+
+describe("Firestore teacher terms acceptance guard (C3)", () => {
+  it("C3: blocks backdated teacherTermsAcceptedAt on create (timestamp from 1970)", async () => {
+    const db = testEnv
+      .authenticatedContext("teacher-backdate-create", verifiedAuth)
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(db, "users/teacher-backdate-create"), {
+        uid: "teacher-backdate-create",
+        email: "teacher@example.com",
+        displayName: "Backdate Teacher",
+        roles: ["student", "teacher"],
+        onboardingCompleted: true,
+        teacherTermsAcceptedAt: Timestamp.fromMillis(0), // 1970 — way outside the 10min window
+        teacherTermsVersion: "2026-05-10",
+        termsAcceptedAt: Timestamp.now(),
+        termsVersion: "2026-05-10",
+        privacyAcceptedAt: Timestamp.now(),
+        privacyVersion: "2026-05-10",
+        marketingConsent: false,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C3: blocks future teacherTermsAcceptedAt (e.g. year 3000)", async () => {
+    const db = testEnv
+      .authenticatedContext("teacher-future", verifiedAuth)
+      .firestore();
+
+    // Year 3000 in ms — way past request.time
+    const farFuture = Timestamp.fromMillis(32503680000000);
+
+    await assertFails(
+      setDoc(doc(db, "users/teacher-future"), {
+        uid: "teacher-future",
+        email: "teacher@example.com",
+        displayName: "Future Teacher",
+        roles: ["student", "teacher"],
+        onboardingCompleted: true,
+        teacherTermsAcceptedAt: farFuture,
+        teacherTermsVersion: "2026-05-10",
+        termsAcceptedAt: Timestamp.now(),
+        termsVersion: "2026-05-10",
+        privacyAcceptedAt: Timestamp.now(),
+        privacyVersion: "2026-05-10",
+        marketingConsent: false,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C3: blocks rewriting teacherTermsAcceptedAt once it is set (write-once)", async () => {
+    // Seed already-accepted teacher with a fixed timestamp ~5 min ago
+    const acceptedAt = Timestamp.fromMillis(Date.now() - 5 * 60 * 1000);
+    await seedUser("teacher-rewrite", ["student", "teacher"], {
+      teacherTermsAcceptedAt: acceptedAt,
+      teacherTermsVersion: "2026-05-10",
+    });
+
+    const db = testEnv
+      .authenticatedContext("teacher-rewrite", verifiedAuth)
+      .firestore();
+
+    // Cannot overwrite to "now" — value must remain immutable
+    await assertFails(
+      updateDoc(doc(db, "users/teacher-rewrite"), {
+        teacherTermsAcceptedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+
+  it("C3: allows a first-time recent teacherTermsAcceptedAt (inside 10min window)", async () => {
+    await seedUser("teacher-firsttime", ["student"]); // not yet teacher
+
+    const db = testEnv
+      .authenticatedContext("teacher-firsttime", verifiedAuth)
+      .firestore();
+
+    // Upgrade to teacher role with fresh terms acceptance
+    await assertSucceeds(
+      updateDoc(doc(db, "users/teacher-firsttime"), {
+        roles: ["student", "teacher"],
+        teacherTermsAcceptedAt: Timestamp.now(),
+        teacherTermsVersion: "2026-05-10",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
+});
+
 async function seedTeacher(uid: string) {
   await seedUser(uid, ["student", "teacher"], {
     teacherTermsAcceptedAt: Timestamp.now(),

@@ -1278,6 +1278,84 @@ service cloud.firestore {
       );
     }
 
+    // Backend-only fields. Clients MUST NEVER write these on /users/{uid} —
+    // they are set exclusively by Cloud Functions via the Admin SDK
+    // (Stripe webhooks, billing reconciliation, Connect onboarding).
+    // Letting a client touch these fields is a revenue / identity leak:
+    //   - currentPlanId   → drives platformFeeBps lookup (free=8% … plus=0%)
+    //                       Self-set "plus" zeros the platform fee.
+    //   - stripeCustomerId → controls the Stripe Billing Portal session
+    //                        Self-set to a victim's id opens their portal.
+    //   - stripeConnect*  → controls KYC / charges / payout eligibility
+    //                       Self-set bypasses Connect onboarding.
+    //   - platformFeeBps  → overrides the per-order fee on order docs
+    //                       (defense-in-depth: also blocked here).
+    //   - balance / payout / admin* / kyc* → privileged state
+    function userUpdateDoesNotEscalatePrivilege() {
+      return !request.resource.data
+        .diff(resource.data)
+        .affectedKeys()
+        .hasAny([
+          'currentPlanId',
+          'currentPlan',
+          'planTier',
+          'planUpdatedAt',
+          'stripeCustomerId',
+          'stripeSubscriptionId',
+          'stripeConnectedAccountId',
+          'stripeConnectStatus',
+          'stripeConnectChargesEnabled',
+          'stripeConnectPayoutsEnabled',
+          'stripeConnectUpdatedAt',
+          'platformFeeBps',
+          'feeBps',
+          'feeOverride',
+          'balance',
+          'balanceMinor',
+          'payoutAccumulator',
+          'adminClaims',
+          'kycStatus',
+          'roleVerifiedAt'
+        ]);
+    }
+
+    // A "fresh" teacher-terms acceptance is one that landed in the last
+    // 10 minutes (tolerant of client clock skew + commit latency) and is
+    // not in the future. Backdated values (e.g. 1970, 2020) are rejected.
+    function teacherTermsAcceptedAtIsRecent() {
+      return request.resource.data.teacherTermsAcceptedAt is timestamp
+        && request.resource.data.teacherTermsAcceptedAt <= request.time
+        && request.resource.data.teacherTermsAcceptedAt
+            > request.time - duration.value(10, 'm');
+    }
+
+    // On CREATE the doc has no prior state. If the client sets
+    // teacherTermsAcceptedAt at all, it must be a recent timestamp
+    // (blocks backdating, e.g. faking acceptance 1 year ago).
+    function teacherTermsAcceptedAtOnCreateIsServerTime() {
+      return !('teacherTermsAcceptedAt' in request.resource.data)
+        || teacherTermsAcceptedAtIsRecent();
+    }
+
+    // On UPDATE, teacherTermsAcceptedAt is write-once: once set, it cannot
+    // change (even if user is the doc owner). If not yet set, the new
+    // value must be recent (server-now ± 10min, no backdate).
+    function teacherTermsAcceptedAtOnUpdateIsImmutableOrFresh() {
+      let prevExists = 'teacherTermsAcceptedAt' in resource.data
+        && resource.data.teacherTermsAcceptedAt is timestamp;
+      let nowSet = 'teacherTermsAcceptedAt' in request.resource.data
+        && request.resource.data.teacherTermsAcceptedAt is timestamp;
+      return !nowSet
+        || (
+          prevExists
+          && request.resource.data.teacherTermsAcceptedAt == resource.data.teacherTermsAcceptedAt
+        )
+        || (
+          !prevExists
+          && teacherTermsAcceptedAtIsRecent()
+        );
+    }
+
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
       allow create: if isSelf(uid)
@@ -1285,20 +1363,21 @@ service cloud.firestore {
         && validUserIdentityFields()
         && request.resource.data.uid == uid
         && requestedUserRolesAreSelfServiceOnly()
-        && requestedTeacherRoleIsGuarded();
-      // hasOnlyAllowedUserKeys dropped from update to unblock login when
-      // legacy docs carry fields not yet on the allowlist. The remaining
-      // guards keep the security envelope:
-      //  - isSelf(uid)             only the owner can update their doc
-      //  - validUserIdentityFields format/size checks on each field
-      //  - uid == path             still must match document id
-      //  - userRolesAreClientSafe  roles stay student/teacher with guards
-      // Worst case: a user can write extra junk fields into their OWN doc.
-      // Tighten back after a migration audits live docs.
+        && requestedTeacherRoleIsGuarded()
+        && teacherTermsAcceptedAtOnCreateIsServerTime();
+      // Update keeps the relaxed key policy (legacy docs may carry fields
+      // outside the 28-key allowlist), but blocks the four real attack
+      // surfaces individually:
+      //   - userUpdateDoesNotEscalatePrivilege  → C1/C2 revenue/identity leak
+      //   - teacherTermsAcceptedAt*             → C3 teacher terms bypass
+      //   - userRolesAreClientSafe              → role escalation
+      //   - validUserIdentityFields             → per-field format checks
       allow update: if isSelf(uid)
         && validUserIdentityFields()
         && request.resource.data.uid == uid
-        && userRolesAreClientSafe();
+        && userRolesAreClientSafe()
+        && userUpdateDoesNotEscalatePrivilege()
+        && teacherTermsAcceptedAtOnUpdateIsImmutableOrFresh();
       allow delete: if false;
     }
 
