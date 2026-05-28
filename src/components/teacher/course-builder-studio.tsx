@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  ArrowLeft,
+  ArrowRight,
   CalendarClock,
   CheckCircle2,
   CloudOff,
@@ -1971,6 +1973,44 @@ export function CourseBuilderStudio() {
             </InlineHelp>
           </div>
         ) : null}
+
+        <div className="mt-8 flex items-center justify-between gap-3 border-t border-[var(--color-line)] pt-6">
+          <button
+            type="button"
+            onClick={() => {
+              const previousTab = builderTabs[selectedTabIndex - 1];
+              if (previousTab) {
+                setActiveTab(previousTab.value);
+              }
+            }}
+            disabled={selectedTabIndex <= 0}
+            className="button-outline inline-flex items-center gap-2 px-4 py-3 text-sm disabled:opacity-40"
+          >
+            <ArrowLeft aria-hidden="true" size={14} strokeWidth={1.9} />
+            {selectedTabIndex > 0
+              ? `Back to ${builderTabs[selectedTabIndex - 1].label}`
+              : "Back"}
+          </button>
+          {selectedTabIndex < builderTabs.length - 1 ? (
+            <button
+              type="button"
+              onClick={() => {
+                const nextTab = builderTabs[selectedTabIndex + 1];
+                if (nextTab) {
+                  setActiveTab(nextTab.value);
+                }
+              }}
+              className="button-solid inline-flex items-center gap-2 px-5 py-3 text-sm"
+            >
+              Continue to {builderTabs[selectedTabIndex + 1].label}
+              <ArrowRight aria-hidden="true" size={14} strokeWidth={1.9} />
+            </button>
+          ) : (
+            <span className="text-xs font-semibold text-[var(--color-ink-soft)]">
+              Finish in the review checklist to submit.
+            </span>
+          )}
+        </div>
       </section>
 
       <aside className="course-builder-preview">
