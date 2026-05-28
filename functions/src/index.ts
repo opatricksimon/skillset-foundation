@@ -1976,6 +1976,12 @@ export const stripeWebhook = onRequest(
 
       if (event.type === "charge.refunded") {
         await handleChargeRefunded(event.data.object);
+        // TODO(posthog): emit REFUND_REQUESTED here using
+        //   posthog-node from a backend tracker. The handleChargeRefunded
+        //   call already resolves order_id + course_id from metadata, so
+        //   wiring this in is a few-line change once we add posthog-node
+        //   to functions/package.json and source the PROJECT API key
+        //   (not NEXT_PUBLIC_*) from process.env.POSTHOG_SERVER_KEY.
       }
 
       if (
@@ -1983,6 +1989,11 @@ export const stripeWebhook = onRequest(
         event.type === "customer.subscription.updated"
       ) {
         await syncSubscriptionFromStripe(event.data.object);
+        // TODO(posthog): emit CHECKOUT_COMPLETED here. syncSubscriptionFromStripe
+        //   has the canonical order/plan + currentPlanId — this is the
+        //   single source of truth for platform_fee_bps (C1 detection).
+        //   Use posthog-node with distinct_id = uid so the funnel joins
+        //   to the client-side identifyUser call.
       }
 
       if (event.type === "customer.subscription.deleted") {

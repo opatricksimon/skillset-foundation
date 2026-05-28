@@ -10,6 +10,14 @@ import { PlatformShell } from "@/components/platform/platform-shell";
  * webhook will have updated their currentPlanId in Firestore — the page
  * just shows a clean "you're upgraded" confirmation and pushes them
  * back into the workspace.
+ *
+ * TODO(posthog): emit CHECKOUT_COMPLETED here once we expose a backend
+ * endpoint to resolve the Stripe session_id → order doc (order_id,
+ * gross_minor, platform_fee_bps, platform_fee_minor). We deliberately
+ * DO NOT track the event here without those fields: platform_fee_bps is
+ * the C1-leak detector — its absence makes the event noise. The richer
+ * server-side capture should land in functions/src/index.ts inside the
+ * customer.subscription.created webhook handler.
  */
 export default function BillingReturnPage() {
   return (

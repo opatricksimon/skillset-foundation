@@ -29,6 +29,7 @@ import {
   getUserProfile,
   updateUserIdentity,
 } from "@/lib/data/user-profiles";
+import { track } from "@/lib/posthog/events";
 
 // Username is no longer asked at signup (it lived in a heavy field that made
 // the form scroll). We derive a valid handle from the name/email so the
@@ -105,6 +106,10 @@ export function SignupForm() {
         displayName,
         username: deriveUsername(displayName, email),
       });
+      track.userSignedUp({
+        role: pathIntent === "teach" ? "teacher" : "student",
+        source: "email",
+      });
       router.push(`/welcome${getAuthPathQuery(pathIntent)}`);
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
@@ -127,6 +132,15 @@ export function SignupForm() {
       const user = await signInWithGoogle();
       await acceptUserTerms(user.uid, false);
       const profile = await getUserProfile(user.uid);
+      // Only track as signup if this is the user's first hit (no completed
+      // onboarding yet). Returning users hitting Google sign-in fall under
+      // identifyUser via AuthProvider instead.
+      if (!profile?.onboardingCompleted) {
+        track.userSignedUp({
+          role: pathIntent === "teach" ? "teacher" : "student",
+          source: "google",
+        });
+      }
       router.push(
         profile?.onboardingCompleted
           ? getLoadingRoute("route", pathIntent)

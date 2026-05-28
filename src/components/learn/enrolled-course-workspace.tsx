@@ -48,6 +48,7 @@ import {
   subscribeToLessonComments,
   type LessonComment,
 } from "@/lib/data/lesson-comments";
+import { track } from "@/lib/posthog/events";
 
 type EnrolledCourseWorkspaceProps = {
   course: Course;
@@ -174,6 +175,23 @@ export function EnrolledCourseWorkspace({
       },
     );
   }, [course.id, enableFirestoreAssets, workspaceEnrollment]);
+
+  // LESSON_STARTED — fires when the learner navigates to a lesson card.
+  // Preview mode (teacher impersonating learner view) is excluded so the
+  // funnel doesn't get polluted by author QA sessions.
+  // Hook must live BEFORE the early returns to satisfy react-hooks/rules.
+  useEffect(() => {
+    if (previewMode) return;
+    if (!selectedLessonId) return;
+    const lessons = course.modules.flatMap((m) => m.lessons);
+    const position = lessons.findIndex((l) => l.id === selectedLessonId);
+    if (position < 0) return;
+    track.lessonStarted({
+      course_id: course.id,
+      lesson_id: selectedLessonId,
+      position: position + 1,
+    });
+  }, [selectedLessonId, course.id, course.modules, previewMode]);
 
   if (isLoading) {
     return (
@@ -319,6 +337,14 @@ export function EnrolledCourseWorkspace({
         await unmarkLessonCompleted(workspaceEnrollment.id, lessonId);
       } else {
         await markLessonCompleted(workspaceEnrollment.id, user.uid, lessonId);
+        // LESSON_COMPLETED — fired only on the mark→complete transition.
+        // unmark (toggling off) is treated as a correction, not a milestone.
+        const position = allLessons.findIndex((l) => l.id === lessonId);
+        track.lessonCompleted({
+          course_id: course.id,
+          lesson_id: lessonId,
+          position: position >= 0 ? position + 1 : 0,
+        });
       }
 
       await updateEnrollmentProgress(
@@ -331,6 +357,17 @@ export function EnrolledCourseWorkspace({
 
       if (!completed && nextProgressPercent === 100) {
         await issueSkillsetCertificate(workspaceEnrollment.id);
+        // COURSE_COMPLETED + CREDENTIAL_ISSUED — fire after the certificate
+        // is persisted so PostHog only sees credentials that actually exist.
+        track.courseCompleted({
+          course_id: course.id,
+          lessons_completed: nextCompletedLessonIds.length,
+        });
+        track.credentialIssued({
+          credential_id: `cred:${workspaceEnrollment.id}`,
+          course_id: course.id,
+          user_id: user.uid,
+        });
       }
     } catch {
       setError("We could not update lesson progress. Please try again.");

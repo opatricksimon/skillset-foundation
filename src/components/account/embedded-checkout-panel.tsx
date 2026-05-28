@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { plans, type PlanBillingCycle, type PlanId } from "@/data/plans";
 import { formatUsd } from "@/data/platform";
 import { createBillingCheckoutClientSecret } from "@/lib/payments/billing";
+import { track } from "@/lib/posthog/events";
 
 /**
  * The publishable key is intentionally public — Stripe distinguishes
@@ -60,6 +61,22 @@ export function EmbeddedCheckoutPanel({
       if (!stripeLoader) return;
       setError(null);
       setClientSecret(null);
+
+      // CHECKOUT_STARTED — fires once the panel commits to opening Stripe.
+      // course_id is reused for plan_id (the events taxonomy treats both as
+      // commerce intents); price is sent in minor units to keep the schema
+      // consistent with order/checkout completion events.
+      const planMeta = plans.find((p) => p.id === planId);
+      const priceUsd =
+        cycle === "yearly"
+          ? planMeta?.yearlyUsd ?? 0
+          : planMeta?.monthlyUsd ?? 0;
+      track.checkoutStarted({
+        course_id: `plan:${planId}:${cycle}`,
+        price_minor: Math.round(priceUsd * 100),
+        currency: "USD",
+      });
+
       try {
         const result = await createBillingCheckoutClientSecret(planId, cycle);
         if (!cancelled) {
@@ -72,6 +89,13 @@ export function EmbeddedCheckoutPanel({
               ? cause.message
               : "Could not start checkout. Try again in a moment.";
           setError(message);
+          // CHECKOUT_FAILED — only fired in the catch path so PostHog
+          // funnel stays clean (no false negatives on stripe-side errors
+          // that surface via Stripe Elements directly).
+          track.checkoutFailed({
+            course_id: `plan:${planId}:${cycle}`,
+            reason: message,
+          });
         }
       }
     }

@@ -25,6 +25,7 @@ import {
   currentPrivacyVersion,
   currentTermsVersion,
 } from "@/lib/legal/versions";
+import { identifyUser, resetUser } from "@/lib/posthog/client";
 
 type AuthContextValue = AuthSession & {
   refreshUser: () => Promise<void>;
@@ -42,6 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return listenToAuthState(setSession);
   }, []);
+
+  // PostHog identity binding — keeps analytics session attached to the
+  // authenticated uid (and clears it on sign-out so the next visitor
+  // doesn't inherit the previous user's distinct_id).
+  useEffect(() => {
+    if (session.status === "authenticated" && session.user) {
+      identifyUser(session.user.uid, {
+        email: session.user.email ?? undefined,
+        roles: session.user.roles,
+        email_verified: session.user.emailVerified,
+      });
+    } else if (session.status === "unauthenticated") {
+      resetUser();
+    }
+  }, [session.status, session.user]);
 
   async function refreshUser() {
     const auth = getFirebaseAuth();
