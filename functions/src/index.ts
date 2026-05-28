@@ -8,6 +8,7 @@ import {
 } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
+import { captureServerEvent, SERVER_EVENTS } from "./posthog";
 import { setGlobalOptions } from "firebase-functions/v2";
 import {
   HttpsError,
@@ -100,6 +101,7 @@ type UserProfileRecord = {
   displayName?: string | null;
   roles?: string[];
   stripeConnectedAccountId?: string | null;
+  stripeConnectStatus?: string;
   stripeConnectChargesEnabled?: boolean;
   stripeConnectPayoutsEnabled?: boolean;
   currentPlanId?: string | null;
@@ -687,6 +689,11 @@ export const createTeacherCourseDraft = onCall(async (request) => {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+  });
+
+  await captureServerEvent(uid, SERVER_EVENTS.COURSE_DRAFT_CREATED, {
+    course_id: courseRef.id,
+    teacher_id: uid,
   });
 
   return { courseId: courseRef.id };
@@ -1428,6 +1435,12 @@ export const refreshTeacherStripeAccount = onCall(
       { merge: true },
     );
 
+    if (status === "ready" && user.stripeConnectStatus !== "ready") {
+      await captureServerEvent(userId, SERVER_EVENTS.TEACHER_KYC_APPROVED, {
+        teacher_id: userId,
+      });
+    }
+
     return {
       connected: true,
       chargesEnabled: Boolean(account.charges_enabled),
@@ -1568,6 +1581,13 @@ export const requestRefund = onCall(
       },
       { merge: true },
     );
+
+    await captureServerEvent(userId, SERVER_EVENTS.REFUND_REQUESTED, {
+      order_id: orderDocument.id,
+      course_id: enrollment.courseId,
+      reason: "student_request",
+      progress_pct: enrollment.progressPercent ?? 0,
+    });
 
     return {
       refundId: refund.id,
@@ -1732,6 +1752,13 @@ async function releaseLedgerTransfer(
     },
     { merge: true },
   );
+
+  await captureServerEvent(ledger.teacherId, SERVER_EVENTS.PAYOUT_RELEASED, {
+    ledger_id: ledgerId,
+    teacher_id: ledger.teacherId,
+    amount_minor: amount,
+    currency: normalizeSkillsetCurrency(ledger.currency),
+  });
 }
 
 export const issueSkillsetCertificate = onCall(async (request) => {
@@ -1976,12 +2003,9 @@ export const stripeWebhook = onRequest(
 
       if (event.type === "charge.refunded") {
         await handleChargeRefunded(event.data.object);
-        // TODO(posthog): emit REFUND_REQUESTED here using
-        //   posthog-node from a backend tracker. The handleChargeRefunded
-        //   call already resolves order_id + course_id from metadata, so
-        //   wiring this in is a few-line change once we add posthog-node
-        //   to functions/package.json and source the PROJECT API key
-        //   (not NEXT_PUBLIC_*) from process.env.POSTHOG_SERVER_KEY.
+        // PostHog: refund_requested is emitted at request time inside the
+        // requestRefund callable (it carries course_id + progress_pct). This
+        // webhook only fulfils the refund, so no separate event is emitted.
       }
 
       if (
@@ -1989,11 +2013,10 @@ export const stripeWebhook = onRequest(
         event.type === "customer.subscription.updated"
       ) {
         await syncSubscriptionFromStripe(event.data.object);
-        // TODO(posthog): emit CHECKOUT_COMPLETED here. syncSubscriptionFromStripe
-        //   has the canonical order/plan + currentPlanId — this is the
-        //   single source of truth for platform_fee_bps (C1 detection).
-        //   Use posthog-node with distinct_id = uid so the funnel joins
-        //   to the client-side identifyUser call.
+        // PostHog: checkout_completed (course sales) is emitted in
+        // handleCheckoutCompleted, which owns order_id + platform_fee_bps.
+        // Plan-subscription billing has no taxonomy event yet (future:
+        // plan_upgraded) — intentionally not emitted here.
       }
 
       if (event.type === "customer.subscription.deleted") {
@@ -2040,6 +2063,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
   const ledgerRef = db.collection("payoutLedger").doc(orderId);
 
+  const checkoutAnalytics: {
+    value:
+      | {
+          teacherId: string;
+          grossMinor: number;
+          platformFeeBps: number;
+          platformFeeMinor: number;
+          currency: string;
+        }
+      | null;
+  } = { value: null };
+
   await db.runTransaction(async (transaction) => {
     const [orderSnapshot, courseSnapshot, enrollmentSnapshot] = await Promise.all([
       transaction.get(orderRef),
@@ -2071,6 +2106,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       0,
       grossAmountMinor - skillsetFeeMinor - stripeFeeMinor,
     );
+
+    checkoutAnalytics.value = {
+      teacherId: course.ownerId,
+      grossMinor: grossAmountMinor,
+      platformFeeBps,
+      platformFeeMinor: skillsetFeeMinor,
+      currency: String(order.currency || defaultSkillsetCurrency),
+    };
 
     transaction.set(
       paymentRef,
@@ -2140,6 +2183,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       });
     }
   });
+
+  if (checkoutAnalytics.value) {
+    await captureServerEvent(userId, SERVER_EVENTS.CHECKOUT_COMPLETED, {
+      order_id: orderId,
+      course_id: courseId,
+      teacher_id: checkoutAnalytics.value.teacherId,
+      gross_minor: checkoutAnalytics.value.grossMinor,
+      platform_fee_bps: checkoutAnalytics.value.platformFeeBps,
+      platform_fee_minor: checkoutAnalytics.value.platformFeeMinor,
+      currency: checkoutAnalytics.value.currency,
+    });
+  }
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge) {
@@ -2717,6 +2772,10 @@ export const createConnectAccountSession = onCall(
         },
         { merge: true },
       );
+
+      await captureServerEvent(userId, SERVER_EVENTS.TEACHER_KYC_SUBMITTED, {
+        teacher_id: userId,
+      });
     }
 
     // Account Session client_secret powers the in-app embedded UI.
