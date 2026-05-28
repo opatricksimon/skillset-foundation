@@ -192,15 +192,17 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-            Lesson upload
+            Course media library
           </p>
           <h3 className="display-title mt-3 text-3xl text-[var(--color-primary)]">
-            Attach videos and materials to the course.
+            Upload covers, videos, and materials for this course.
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
-            Pick what you are uploading, choose the module or lesson target, and
-            send it to Skillset Storage. This powers the student classroom and
-            keeps private files protected.
+            The home for every course file: module covers, lesson thumbnails,
+            videos, and downloads. Pick what you are uploading, choose the module
+            or lesson target, and send it to Skillset Storage. (A lesson&apos;s own
+            video, text, and settings also live inside its lesson studio.) This
+            powers the student classroom and keeps private files protected.
           </p>
         </div>
         <span className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
