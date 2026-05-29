@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import type { Order } from "@/domain/order";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { subscribeToTeacherOrders } from "@/lib/data/orders";
+import { logSubscriptionError } from "@/lib/data/subscription-error";
 import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
 
 const money = new Intl.NumberFormat("en", {
@@ -74,7 +75,11 @@ export function TeacherOverviewMetrics() {
     }
 
     try {
-      return subscribeToTeacherOrders(user.uid, setOrders, () => {});
+      return subscribeToTeacherOrders(
+        user.uid,
+        setOrders,
+        logSubscriptionError("TeacherOverviewMetrics.orders"),
+      );
     } catch (error) {
       // Non-blocking metric: degrade silently in the UI but keep the failure
       // visible in logs.

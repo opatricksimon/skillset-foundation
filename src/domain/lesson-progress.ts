@@ -51,6 +51,40 @@ export function getNextCourseLesson(
   );
 }
 
+/**
+ * Resolves the lesson that follows the learner's last *completed* lesson
+ * (enrollment.lastLessonId). Used by list/dashboard surfaces that know the
+ * last completed lesson id but do not load the full completed-lesson set.
+ *
+ * - null lastLessonId (nothing completed yet) → first lesson
+ * - stale id not in this course → first lesson (safe fallback)
+ * - last completed lesson is the final one → null (course finished)
+ */
+export function getNextCourseLessonAfter(
+  course: Course,
+  lastCompletedLessonId: string | null,
+): CourseLessonEntry | null {
+  const entries = getCourseLessonEntries(course);
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  if (!lastCompletedLessonId) {
+    return entries[0];
+  }
+
+  const lastIndex = entries.findIndex(
+    (entry) => entry.lesson.id === lastCompletedLessonId,
+  );
+
+  if (lastIndex < 0) {
+    return entries[0];
+  }
+
+  return entries[lastIndex + 1] ?? null;
+}
+
 export function getLastCompletedCourseLesson(
   course: Course,
   completedLessonIds: readonly string[],

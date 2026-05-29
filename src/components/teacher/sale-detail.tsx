@@ -280,15 +280,17 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
               <Mail aria-hidden="true" size={14} />
               Contact support
             </a>
-            <button
-              type="button"
-              disabled
-              className="button-outline inline-flex items-center gap-2 px-4 py-2 text-xs opacity-50"
-              title="Refund actions are handled by the refund workflow."
+            <a
+              href={`mailto:support@skillset.app?subject=${encodeURIComponent(
+                `Refund request - order ${order.id}`,
+              )}&body=${encodeURIComponent(
+                `Please help me process a refund for order ${order.id} (${order.courseTitle}).`,
+              )}`}
+              className="button-outline inline-flex items-center gap-2 px-4 py-2 text-xs"
             >
               <RotateCcw aria-hidden="true" size={14} />
-              Issue refund
-            </button>
+              Request refund
+            </a>
           </div>
         </section>
       </div>

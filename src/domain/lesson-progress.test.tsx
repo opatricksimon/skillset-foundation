@@ -3,6 +3,7 @@ import {
   getCourseProgressPercent,
   getLastCompletedCourseLesson,
   getNextCourseLesson,
+  getNextCourseLessonAfter,
 } from "@/domain/lesson-progress";
 import type { Course } from "@/domain/learning";
 
@@ -66,5 +67,17 @@ describe("lesson progress helpers", () => {
     expect(getLastCompletedCourseLesson(course, ["lesson-1", "lesson-3"])?.lesson.id).toBe(
       "lesson-3",
     );
+  });
+
+  it("resolves the lesson after the last completed one", () => {
+    // Nothing completed yet → first lesson.
+    expect(getNextCourseLessonAfter(course, null)?.lesson.id).toBe("lesson-1");
+    // After a mid-course lesson → the next in module order.
+    expect(getNextCourseLessonAfter(course, "lesson-1")?.lesson.id).toBe("lesson-2");
+    expect(getNextCourseLessonAfter(course, "lesson-2")?.lesson.id).toBe("lesson-3");
+    // Final lesson completed → no next lesson.
+    expect(getNextCourseLessonAfter(course, "lesson-3")).toBeNull();
+    // Stale id not in this course → safe fallback to the first lesson.
+    expect(getNextCourseLessonAfter(course, "ghost-lesson")?.lesson.id).toBe("lesson-1");
   });
 });

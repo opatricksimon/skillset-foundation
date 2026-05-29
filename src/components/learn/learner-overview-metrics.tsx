@@ -9,6 +9,7 @@ import { canContinueEnrollment, type Enrollment } from "@/domain/enrollment";
 import { subscribeToUserCertificates } from "@/lib/data/certificates";
 import { subscribeToCourseEvents } from "@/lib/data/course-events";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
+import { logSubscriptionError } from "@/lib/data/subscription-error";
 
 const weekMillis = 7 * 24 * 60 * 60 * 1000;
 
@@ -54,7 +55,11 @@ export function LearnerOverviewMetrics() {
     }
 
     try {
-      return subscribeToUserCertificates(user.uid, setCertificates, () => {});
+      return subscribeToUserCertificates(
+        user.uid,
+        setCertificates,
+        logSubscriptionError("LearnerOverviewMetrics.certificates"),
+      );
     } catch (error) {
       // Non-blocking metric: degrade silently in the UI but keep the failure
       // visible in logs.
@@ -83,7 +88,7 @@ export function LearnerOverviewMetrics() {
               ...current,
               [courseSlug]: events,
             })),
-          () => {},
+          logSubscriptionError(`LearnerOverviewMetrics.courseEvents[${courseSlug}]`),
         ),
       );
 

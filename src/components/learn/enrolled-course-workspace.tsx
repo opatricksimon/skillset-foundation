@@ -23,6 +23,7 @@ import {
   type LessonUnlockState,
 } from "@/domain/drip-policy";
 import type { Enrollment } from "@/domain/enrollment";
+import { getSafeExternalUrl } from "@/domain/external-url";
 import type { Course, Lesson, LessonType } from "@/domain/learning";
 import {
   getCourseProgressPercent,
@@ -846,6 +847,7 @@ function LessonContentPanel({
   const trustedEmbed = locked || primaryHostedVideo
     ? null
     : getTrustedLessonEmbed(lesson.externalUrl);
+  const safeLessonExternalUrl = getSafeExternalUrl(lesson.externalUrl);
 
   return (
     <div className="member-lesson-panel">
@@ -915,11 +917,11 @@ function LessonContentPanel({
             {lesson.contentText}
           </div>
         ) : null}
-        {!locked && lesson.externalUrl && !trustedEmbed ? (
+        {!locked && safeLessonExternalUrl && !trustedEmbed ? (
           <a
-            href={lesson.externalUrl}
+            href={safeLessonExternalUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noreferrer noopener"
             className="button-outline mt-4 inline-flex px-4 py-3 text-sm"
           >
             Open instructor resource

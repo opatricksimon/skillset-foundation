@@ -17,8 +17,25 @@ import { StatusChip } from "@/components/shared/status-chip";
 import type { Order } from "@/domain/order";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { subscribeToTeacherOrders } from "@/lib/data/orders";
+import { logSubscriptionError } from "@/lib/data/subscription-error";
 import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
+
+type RevenueRange = "3m" | "6m" | "12m" | "all";
+
+const revenueRanges: { value: RevenueRange; label: string }[] = [
+  { value: "3m", label: "3m" },
+  { value: "6m", label: "6m" },
+  { value: "12m", label: "12m" },
+  { value: "all", label: "All" },
+];
+
+const revenueRangeSubtitle: Record<RevenueRange, string> = {
+  "3m": "Last 3 months - all courses",
+  "6m": "Last 6 months - all courses",
+  "12m": "Last 12 months - all courses",
+  all: "All time - all courses",
+};
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -41,13 +58,18 @@ export function TeacherStudioInsights() {
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [payoutsReady, setPayoutsReady] = useState(false);
+  const [revenueRange, setRevenueRange] = useState<RevenueRange>("12m");
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    return subscribeToTeacherCourses(user.uid, setCourses, () => {});
+    return subscribeToTeacherCourses(
+      user.uid,
+      setCourses,
+      logSubscriptionError("TeacherStudioInsights.courses"),
+    );
   }, [user]);
 
   useEffect(() => {
@@ -55,7 +77,11 @@ export function TeacherStudioInsights() {
       return;
     }
 
-    return subscribeToTeacherOrders(user.uid, setOrders, () => {});
+    return subscribeToTeacherOrders(
+      user.uid,
+      setOrders,
+      logSubscriptionError("TeacherStudioInsights.orders"),
+    );
   }, [user]);
 
   useEffect(() => {
@@ -83,7 +109,10 @@ export function TeacherStudioInsights() {
     0,
   );
   const netMinor = Math.max(0, grossMinor - platformFeeMinor);
-  const monthlyRevenue = useMemo(() => buildMonthlyRevenue(paidOrders), [paidOrders]);
+  const monthlyRevenue = useMemo(
+    () => buildMonthlyRevenue(paidOrders, revenueRange),
+    [paidOrders, revenueRange],
+  );
   const chart = useMemo(() => buildChart(monthlyRevenue), [monthlyRevenue]);
   const topCourses = useMemo(
     () => buildTopCourses(courses, paidOrders),
@@ -101,17 +130,19 @@ export function TeacherStudioInsights() {
                 Revenue
               </h3>
               <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-                Last 12 months - all courses
+                {revenueRangeSubtitle[revenueRange]}
               </p>
             </div>
             <div className="studio-range-tabs" aria-label="Revenue range">
-              {["30d", "3m", "12m", "All"].map((range) => (
+              {revenueRanges.map((range) => (
                 <button
-                  key={range}
+                  key={range.value}
                   type="button"
-                  className={range === "12m" ? "is-active" : undefined}
+                  aria-pressed={revenueRange === range.value}
+                  onClick={() => setRevenueRange(range.value)}
+                  className={revenueRange === range.value ? "is-active" : undefined}
                 >
-                  {range}
+                  {range.label}
                 </button>
               ))}
             </div>
@@ -433,10 +464,50 @@ function buildActivity(courses: TeacherCourse[], payoutsReady: boolean): Activit
   return items.slice(0, 3);
 }
 
-function buildMonthlyRevenue(paidOrders: Order[]) {
+function getRevenueMonthsBack(
+  paidOrders: Order[],
+  range: RevenueRange,
+  now: Date,
+): number {
+  if (range === "3m") {
+    return 3;
+  }
+  if (range === "6m") {
+    return 6;
+  }
+  if (range === "12m") {
+    return 12;
+  }
+
+  // "all": span from the earliest paid order to now, clamped to [1, 24] months
+  // so the monthly chart stays readable.
+  const earliest = paidOrders
+    .map((order) => getTimestampMillis(order.createdAt))
+    .filter((value): value is number => value !== null)
+    .sort((left, right) => left - right)[0];
+
+  if (!earliest) {
+    return 12;
+  }
+
+  const earliestDate = new Date(earliest);
+  const monthSpan =
+    (now.getFullYear() - earliestDate.getFullYear()) * 12 +
+    (now.getMonth() - earliestDate.getMonth()) +
+    1;
+
+  return Math.min(24, Math.max(1, monthSpan));
+}
+
+function buildMonthlyRevenue(paidOrders: Order[], range: RevenueRange) {
   const now = new Date();
-  const months = Array.from({ length: 12 }, (_, index) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - 11 + index, 1);
+  const monthsBack = getRevenueMonthsBack(paidOrders, range, now);
+  const months = Array.from({ length: monthsBack }, (_, index) => {
+    const date = new Date(
+      now.getFullYear(),
+      now.getMonth() - (monthsBack - 1) + index,
+      1,
+    );
 
     return {
       key: `${date.getFullYear()}-${date.getMonth()}`,

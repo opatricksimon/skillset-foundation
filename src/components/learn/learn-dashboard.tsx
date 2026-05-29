@@ -15,6 +15,7 @@ import {
   canOpenEnrollment,
   type Enrollment,
 } from "@/domain/enrollment";
+import { getNextCourseLessonAfter } from "@/domain/lesson-progress";
 import { getCourseBySlug } from "@/lib/data/catalog";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
 
@@ -209,7 +210,11 @@ export function LearnDashboard() {
             </p>
           ) : visibleEnrollments.map((enrollment) => {
             const course = getCourseBySlug(enrollment.courseSlug);
-            const nextLesson = course?.modules[0]?.lessons[0];
+            // Next lesson after the learner's last *completed* lesson — not a
+            // hardcoded first lesson, which mislabeled progress on the card.
+            const nextLesson = course
+              ? getNextCourseLessonAfter(course, enrollment.lastLessonId)?.lesson
+              : undefined;
             const workspaceHref = course
               ? `/learn/courses/${enrollment.courseSlug}`
               : `/learn/courses/${enrollment.courseId}`;

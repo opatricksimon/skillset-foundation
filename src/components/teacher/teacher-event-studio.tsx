@@ -12,6 +12,7 @@ import {
   type CourseEventRsvp,
   type CourseEventType,
 } from "@/domain/course-event";
+import { getSafeExternalUrl } from "@/domain/external-url";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import {
   createCourseEvent,
@@ -291,14 +292,16 @@ export function TeacherEventStudio() {
                   {event.description}
                 </p>
                 <TeacherEventRsvpSummary eventId={event.id} />
-                <a
-                  href={event.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)]"
-                >
-                  Open external link
-                </a>
+                {getSafeExternalUrl(event.externalUrl) ? (
+                  <a
+                    href={getSafeExternalUrl(event.externalUrl) ?? undefined}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-accent)]"
+                  >
+                    Open external link
+                  </a>
+                ) : null}
               </article>
             ))
           )}

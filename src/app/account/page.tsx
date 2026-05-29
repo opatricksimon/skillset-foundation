@@ -13,10 +13,19 @@ export default function AccountPage() {
         compact
         hideHeader
       >
-        <Suspense fallback={null}>
+        <Suspense fallback={<SettingsFallback />}>
           <AccountSettingsHub />
         </Suspense>
       </PlatformShell>
     </ProtectedSurface>
+  );
+}
+
+function SettingsFallback() {
+  return (
+    <div className="space-y-6" aria-hidden="true">
+      <div className="h-40 animate-pulse rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-strong)]" />
+      <div className="h-64 animate-pulse rounded-[18px] border border-[var(--color-line)] bg-[var(--color-surface-strong)]" />
+    </div>
   );
 }

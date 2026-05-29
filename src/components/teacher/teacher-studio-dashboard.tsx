@@ -9,12 +9,14 @@ import { TeacherStudioInsights } from "@/components/teacher/teacher-studio-insig
 import type { TeacherCourse } from "@/domain/teacher-course";
 import type { PayoutLedgerEntry } from "@/domain/payout-ledger";
 import { subscribeToTeacherPayoutLedger } from "@/lib/data/payout-ledger";
+import { logSubscriptionError } from "@/lib/data/subscription-error";
 import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
 
 export function TeacherStudioDashboard() {
   const { user } = useAuth();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [ledger, setLedger] = useState<PayoutLedgerEntry[]>([]);
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
   const firstName = user?.displayName?.trim().split(/\s+/)[0] ?? "there";
   const publishedCourses = courses.filter((course) => course.status === "published");
   const draftCourses = courses.filter((course) => course.status === "draft");
@@ -25,7 +27,17 @@ export function TeacherStudioDashboard() {
       return;
     }
 
-    return subscribeToTeacherCourses(user.uid, setCourses, () => {});
+    return subscribeToTeacherCourses(
+      user.uid,
+      (nextCourses) => {
+        setCourses(nextCourses);
+        setCoursesLoaded(true);
+      },
+      (error) => {
+        logSubscriptionError("TeacherStudioDashboard.courses")(error);
+        setCoursesLoaded(true);
+      },
+    );
   }, [user]);
 
   useEffect(() => {
@@ -33,7 +45,11 @@ export function TeacherStudioDashboard() {
       return;
     }
 
-    return subscribeToTeacherPayoutLedger(user.uid, setLedger, () => {});
+    return subscribeToTeacherPayoutLedger(
+      user.uid,
+      setLedger,
+      logSubscriptionError("TeacherStudioDashboard.payoutLedger"),
+    );
   }, [user]);
 
   return (
@@ -47,19 +63,23 @@ export function TeacherStudioDashboard() {
             <h1 className="display-title mt-3 text-4xl leading-[1.03] text-[var(--color-primary)] sm:text-5xl lg:text-6xl">
               Welcome back, {firstName}.
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
-              You have{" "}
-              <strong className="text-[var(--color-ink)]">
-                {publishedCourses.length} published{" "}
-                {publishedCourses.length === 1 ? "course" : "courses"}
-              </strong>{" "}
-              and{" "}
-              <strong className="text-[var(--color-ink)]">
-                {draftCourses.length} draft{draftCourses.length === 1 ? "" : "s"}
-              </strong>
-              . Your next payout is{" "}
-              <strong className="text-[var(--color-ink)]">{nextPayout}</strong>.
-            </p>
+            {coursesLoaded ? (
+              <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-ink-soft)]">
+                You have{" "}
+                <strong className="text-[var(--color-ink)]">
+                  {publishedCourses.length} published{" "}
+                  {publishedCourses.length === 1 ? "course" : "courses"}
+                </strong>{" "}
+                and{" "}
+                <strong className="text-[var(--color-ink)]">
+                  {draftCourses.length} draft{draftCourses.length === 1 ? "" : "s"}
+                </strong>
+                . Your next payout is{" "}
+                <strong className="text-[var(--color-ink)]">{nextPayout}</strong>.
+              </p>
+            ) : (
+              <div className="mt-4 h-6 w-3/4 max-w-2xl animate-pulse rounded bg-[var(--color-surface-strong)]" />
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

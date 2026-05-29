@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { getSafeExternalUrl } from "@/domain/external-url";
 import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import { normalizeLearningOutcomes } from "@/domain/teacher-course";
@@ -131,6 +132,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     ? lessons.find((lesson) => lesson.id === course.freePreviewLessonId)
     : null;
   const previewLessonEmbed = getTrustedLessonEmbed(previewLesson?.externalUrl);
+  const previewLessonExternalUrl = getSafeExternalUrl(previewLesson?.externalUrl);
   const lockedLessonCount = Math.max(lessons.length - (previewLesson ? 1 : 0), 0);
   const ratingLabel =
     course.ratingCount && course.ratingAverage
@@ -255,11 +257,11 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
                   />
                 </div>
               ) : null}
-              {previewLesson.externalUrl && !previewLessonEmbed ? (
+              {previewLessonExternalUrl && !previewLessonEmbed ? (
                 <a
-                  href={previewLesson.externalUrl}
+                  href={previewLessonExternalUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noreferrer noopener"
                   className="button-outline w-fit px-4 py-2 text-sm"
                 >
                   Open preview resource

@@ -15,6 +15,7 @@ import {
   type CourseEventRsvpStatus,
 } from "@/domain/course-event";
 import type { Enrollment } from "@/domain/enrollment";
+import { getSafeExternalUrl } from "@/domain/external-url";
 import {
   saveCourseEventRsvp,
   subscribeToCourseEventRsvp,
@@ -226,6 +227,7 @@ function LearnerEventCard({
   }
 
   const rsvpLabel = rsvp ? courseEventRsvpStatusLabels[rsvp.status] : "No RSVP yet";
+  const safeJoinUrl = getSafeExternalUrl(event.externalUrl);
 
   return (
     <article className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
@@ -284,14 +286,20 @@ function LearnerEventCard({
         </div>
       </div>
 
-      <a
-        href={event.externalUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="button-solid mt-6 inline-flex px-4 py-3 text-sm"
-      >
-        Join external session
-      </a>
+      {safeJoinUrl ? (
+        <a
+          href={safeJoinUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="button-solid mt-6 inline-flex px-4 py-3 text-sm"
+        >
+          Join external session
+        </a>
+      ) : (
+        <p className="mt-6 rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] px-4 py-3 text-sm text-[var(--color-ink-soft)]">
+          A join link has not been added for this session yet.
+        </p>
+      )}
     </article>
   );
 }
