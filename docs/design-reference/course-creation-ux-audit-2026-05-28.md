@@ -17,7 +17,7 @@ The remaining course-creation friction is concentrated in a few concrete, fixabl
 1. **The course cover is in the wrong place, has no visual preview, and is mislabeled** — the single biggest "easy/intuitive" gap. *(P0)*
 2. **The left-rail stepper is not fully honest** — clicking "Course cover" or "About" all dump onto the top of the Details tab with no scroll/anchor to the relevant section. *(P1)*
 3. **~~No structured "what you'll learn" outcomes~~** — ✅ shipped this session (`e8989fe`): outcomes editor → public/preview/workspace render. *(P2 — done; deploy functions+hosting together, see §3.3)*
-4. **Lesson editing is reachable from three overlapping surfaces** — Curriculum inline + the always-on "Lesson upload" aside + the Lesson Studio modal — which dilutes the mental model. *(P2 — the one remaining course-creation friction worth a deliberate pass; relabel shipped `56cb4a5`, relocation needs founder OK)*
+4. **~~Lesson editing is reachable from three overlapping surfaces~~** — ✅ shipped `56cb4a5` + `e98939c`: aside scoped to `course_cover` + `module_cover` only; per-lesson uploads exclusively in the Lesson Studio modal. *(P2 — done)*
 
 ---
 
@@ -30,6 +30,7 @@ The remaining course-creation friction is concentrated in a few concrete, fixabl
 | `d35b524` | **Course cover field with live preview** at the top of the Details tab (P0) | Reuses `uploadCourseAsset({ kind: "course_cover" })`; the stepper's "Course cover -> Details" stage is now honored with a visible 16:9 preview. No backend change. |
 | `a191da7` | **Honest stepper navigation** (jump-and-scroll to each named section) + **live summary char counter** (P1) | Clicking "Course cover" / "About" now scrolls to that exact section. Hook-safe (ref + `activeTab` effect). Counter shows progress to the 20-char review minimum. |
 | `56cb4a5` | **Reframe asset panel as "Course media library"** (P2, step 1 / non-destructive) | Retitled from "Lesson upload"; clarifies it is the catch-all media manager and that per-lesson video/text/settings live in the lesson studio. Copy-only. |
+| `e98939c` | **Scope aside to course & module covers only** (P2, step 2 / full consolidation) | Removes `lesson_video`, `live_recording`, `lesson_material`, `lesson_thumbnail` from `CourseAssetUploader`. Per-lesson uploads are now exclusively in the Lesson Studio modal. Aside keeps the full asset list view. 5 insertions, 91 deletions, ESLint 0, build EXIT 0, 70/70 tests. |
 | `b075927` | **`beforeunload` guard for unsaved edits** (completes the data-loss story) | Autosave's 1800ms debounce window and the **failed-save** state both leave edits unpersisted; the browser now warns before a close/reload while the draft is dirty. Listener attaches only while `draftIsDirty` (no ref, no setState in body → loop-safe). Client-only; no backend/deploy coordination. |
 | `e8989fe` | **Structured "what you'll learn" outcomes** (P2 — full vertical slice, founder-greenlit) | Teachers add up to 8 outcomes in the About section; they render on the public creator course page, builder preview, and enrolled workspace (replacing the hardcoded placeholder bullets). Domain + CF + builder + 2 render surfaces + unit test, all symmetric. **⚠️ Requires functions+hosting deployed together — see §3.3.** |
 
@@ -80,9 +81,12 @@ All validated: ESLint 0 problems, `next build` EXIT 0, **functions `tsc --noEmit
   - **Render**: public creator page (`creator-course-detail.tsx`, new "What you'll learn" section, hidden when empty) + builder preview + enrolled workspace (`lib/data/published-courses.ts` feeds the pre-existing `Course.outcomes` slot real data, with a 3-line generic fallback only when a teacher set none). 3 normalizer unit tests (`src/domain/learning-outcomes.test.tsx`).
 - **⚠️ Deploy requirement that REMAINS (the footgun this slice was built around):** the builder's autosave baseline re-hydrates from the course `onSnapshot` on every echo, and the repo's only deploy script is `deploy:hosting` (functions deploy separately). If a **hosting-only** deploy ships the client without the matching CF, the loop is: dirty → autosave → CF drops `learningOutcomes` → snapshot echoes back *without* it → baseline recomputed without it → **dirty again → autosave loops forever** (burning writes, flickering the save pill). **Therefore this must be deployed functions-first, or functions+hosting together** — `firebase deploy --only functions,hosting`. Never hosting-only for this release. (Founder's review-before-deploy gate is the backstop; this note makes the ordering explicit so it isn't lost.)
 
-### 3.4 — P2 · Lesson editing has three overlapping entry points
+### 3.4 — P2 · Lesson editing has three overlapping entry points — ✅ SHIPPED `56cb4a5` + `e98939c`
 - Curriculum inline controls + the always-on "Lesson upload" aside (`:2204`) + the Lesson Studio modal (`:2209`, `lesson-content-modal.tsx`) all edit lesson material. Functional but dilutes the "one obvious place" principle.
-- **Fix (later):** make the Lesson Studio modal the single canonical lesson editor; demote the aside uploader to a course-level media library (covers/general files) and route per-lesson uploads through the modal.
+- **What shipped (2 commits, non-destructive):**
+  - `56cb4a5` — Retitled aside from "Lesson upload" / "Attach videos and materials" to **"Course media library"** with updated copy directing teachers to the Lesson Studio for per-lesson content. Copy-only, no logic changed.
+  - `e98939c` — Scoped `CourseAssetUploader` to `course_cover` + `module_cover` only. Removed `lesson_video`, `live_recording`, `lesson_material`, `lesson_thumbnail` from `assetKinds`, `uploadPresets`, and `moduleTargetKinds`; removed `lessonId` state + `requiresLessonTarget` + lesson `<select>` JSX. `lessonId: null` is now hardcoded in the upload call. The asset list view (`AssetGroup`) still shows all existing lesson assets (read-only display — `allLessons` retained for name resolution). Net: 5 insertions, 91 deletions. ESLint 0, `next build` EXIT 0, 70/70 tests.
+- **Result:** Per-lesson uploads (video, materials, thumbnail) are now exclusively in the Lesson Studio modal. The aside is the course-level media library. One obvious place per concern.
 
 ### 3.5 — Minor
 - No "level" (beginner/…/advanced) field (prototype Step 01). Low value, backend-coordinated — note only.
@@ -107,7 +111,7 @@ All validated: ESLint 0 problems, `next build` EXIT 0, **functions `tsc --noEmit
 |---|----------|------|------|----------|--------|
 | 1 | **P0** | Course cover field in Details tab (preview + inline upload, reuse `uploadCourseAsset`) | Low | No | ✅ Shipped `d35b524` |
 | 2 | P1 | Honest stepper → section anchors + live summary counter | Low | No | ✅ Shipped `a191da7` |
-| 3 | P2 | Single canonical lesson editor (Lesson Studio modal); demote aside uploader | Medium | No | 🔶 Step 1 shipped `56cb4a5` (relabel to media library). Relocation needs founder OK — risk of breaking module-cover / thumbnail / video uploads. |
+| 3 | P2 | Single canonical lesson editor (Lesson Studio modal); demote aside uploader | Medium | No | ✅ Shipped `56cb4a5` + `e98939c` — aside scoped to `course_cover` + `module_cover` only; per-lesson uploads exclusively in Lesson Studio modal. |
 | 4 | P2 | Structured "what you'll learn" outcomes (field + CF validator + public render) | Medium | **Yes** | ✅ Shipped `e8989fe` — full vertical slice (domain + CF + builder editor + public/preview/workspace render + 3 unit tests), loop-safe. **⚠️ Deploy functions+hosting together (functions-first if separate) — a hosting-only deploy would loop autosave. See §3.3.** |
 | 6 | P1 | `beforeunload` guard for unsaved builder edits | Low | No | ✅ Shipped `b075927` — completes the data-loss-prevention story (autosave + manual recovery + tab-close guard). |
 | 5 | P3 | Course "level" field | Low | Yes | ⏸ Note only — backend-coordinated. |
