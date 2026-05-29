@@ -26,10 +26,32 @@ const teacherId = "teacher-1";
 const enrolledStudentId = "student-1";
 const otherStudentId = "student-2";
 const assetPath = `courses/${courseId}/assets/${teacherId}/asset-1/lesson.mp4`;
+const draftCourseId = "course-draft";
+const coverPath = `courses/${draftCourseId}/assets/${teacherId}/cover-1/cover.png`;
 
 const verifiedAuth = {
   email: "learner@example.com",
   email_verified: true,
+};
+
+const draftCourseSeed = {
+  ownerId: teacherId,
+  title: "Draft Course",
+  summary: "A draft course being built in the studio.",
+  category: "Design",
+  status: "draft",
+  modules: [],
+  lessonCount: 0,
+  priceAmountMinor: 0,
+  currency: "USD",
+  platformFeeBps: 800,
+  dripStrategy: "instant",
+  dripIntervalDays: 1,
+  freePreviewLessonId: null,
+  coverImageUrl: null,
+  reviewNote: null,
+  createdAt: Timestamp.now(),
+  updatedAt: Timestamp.now(),
 };
 
 beforeAll(async () => {
@@ -66,6 +88,24 @@ describe("Storage course asset rules", () => {
     const storage = testEnv.authenticatedContext("teacher-2", verifiedAuth).storage(bucketUrl);
 
     await assertFails(uploadVideoAsset(storage.ref(assetPath)));
+  });
+
+  it("allows a course owner to upload an image/png cover to a draft course", async () => {
+    const storage = testEnv.authenticatedContext(teacherId, verifiedAuth).storage(bucketUrl);
+
+    await assertSucceeds(uploadImageAsset(storage.ref(coverPath)));
+  });
+
+  it("blocks cover uploads once the course is locked in review", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), `courses/${draftCourseId}`), {
+        ...draftCourseSeed,
+        status: "in_review",
+      });
+    });
+    const storage = testEnv.authenticatedContext(teacherId, verifiedAuth).storage(bucketUrl);
+
+    await assertFails(uploadImageAsset(storage.ref(coverPath)));
   });
 
   it("blocks SVG uploads for protected course assets", async () => {
@@ -125,6 +165,15 @@ function uploadSvgAsset(reference: firebase.storage.Reference): Promise<unknown>
   });
 }
 
+function uploadImageAsset(reference: firebase.storage.Reference): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    // PNG magic bytes (\x89PNG) so the payload is a non-empty, valid image.
+    reference.put(new Uint8Array([137, 80, 78, 71]), {
+      contentType: "image/png",
+    }).then(resolve, reject);
+  });
+}
+
 async function seedCourseAccessData() {
   await testEnv.withSecurityRulesDisabled(async (context) => {
     const adminDb = context.firestore();
@@ -158,6 +207,7 @@ async function seedCourseAccessData() {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+    await setDoc(doc(adminDb, `courses/${draftCourseId}`), draftCourseSeed);
     await setDoc(doc(adminDb, `enrollments/${enrolledStudentId}__${courseId}`), {
       id: `${enrolledStudentId}__${courseId}`,
       userId: enrolledStudentId,
