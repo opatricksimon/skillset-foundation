@@ -277,6 +277,42 @@ describe("Firestore course publishing rules", () => {
       }),
     );
   });
+
+  it("allows owner to create the lesson_video asset doc (lesson video upload)", async () => {
+    // Lesson videos write only the asset doc — no course update and no public
+    // download URL (downloadUrl stays null). Prove the owner can create it so
+    // the end-to-end video upload path is provably green.
+    await seedTeacher("teacher-1");
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), "courses/course-asset-vid"),
+        createCourse("teacher-1", "draft"),
+      );
+    });
+
+    const db = testEnv.authenticatedContext("teacher-1", verifiedAuth).firestore();
+
+    await assertSucceeds(
+      setDoc(doc(db, "courses/course-asset-vid/assets/asset-vid-1"), {
+        id: "asset-vid-1",
+        courseId: "course-asset-vid",
+        ownerId: "teacher-1",
+        kind: "lesson_video",
+        fileName: "lesson.mp4",
+        contentType: "video/mp4",
+        size: 52_428_800,
+        storagePath:
+          "courses/course-asset-vid/assets/teacher-1/asset-vid-1/lesson.mp4",
+        downloadUrl: null,
+        isPreview: false,
+        lessonId: "lesson-1",
+        moduleId: "module-1",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
 });
 
 describe("Firestore course review rules", () => {

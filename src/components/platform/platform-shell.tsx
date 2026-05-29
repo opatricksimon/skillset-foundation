@@ -1,6 +1,8 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
@@ -127,20 +129,35 @@ export function PlatformShell({
 }
 
 function SidebarBrand({ collapsed }: { collapsed: boolean }) {
+  if (collapsed) {
+    return (
+      <div className="platform-sidebar-brand">
+        <LogoWordmark
+          href="/"
+          nav
+          variant="mark"
+          className="platform-sidebar-brand__mark"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="platform-sidebar-brand">
-      <LogoWordmark
+      <Link
         href="/"
-        nav
-        variant="mark"
-        className="platform-sidebar-brand__mark"
-      />
-      {!collapsed ? (
-        <>
-          <span className="platform-sidebar-brand__name">Skillset</span>
-          <span className="platform-sidebar-brand__badge">Beta</span>
-        </>
-      ) : null}
+        aria-label="Skillset USA"
+        className="platform-sidebar-brand__lockup-link"
+      >
+        <Image
+          src="/brand/skillset-usa-lockup.png"
+          alt="Skillset USA"
+          width={2190}
+          height={524}
+          priority
+          className="platform-sidebar-brand__lockup"
+        />
+      </Link>
     </div>
   );
 }

@@ -71,11 +71,6 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
     <nav className="platform-sidebar-nav mt-3 flex flex-col gap-4" aria-label="Workspace">
       {sections.map((section) => (
         <div key={section.label} className="grid gap-1">
-          {!collapsed ? (
-            <p className="px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-              {section.label}
-            </p>
-          ) : null}
           {section.items.map((item) => (
             <PlatformNavLink
               key={item.href}

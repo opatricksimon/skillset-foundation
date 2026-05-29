@@ -1387,6 +1387,18 @@ select {
   text-transform: uppercase;
 }
 
+/* Maximized sidebar header: the "Skillset USA" lockup replaces the mark + name.
+   White wordmark on the navy rail; height-constrained, width follows aspect. */
+.platform-sidebar-brand__lockup-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.platform-sidebar-brand__lockup {
+  height: 30px;
+  width: auto;
+}
+
 .platform-sidebar > button[aria-label="Collapse sidebar"],
 .platform-sidebar > button[aria-label="Expand sidebar"] {
   position: absolute;
@@ -2828,6 +2840,44 @@ select {
 .platform-sidebar .rounded-\[10px\].border {
   border-color: rgba(255, 255, 255, 0.10) !important;
   background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ─── Collapsed rail: ONE square per icon ─────────────────────────────────
+   In the 64px collapsed rail the icon chip is the only square. The link's own
+   rounded-border box is neutralized (4-class selector beats the rule above)
+   so icons never show a nested double frame. Inactive chips get a clear white
+   outline; the active chip becomes a solid white button with a navy icon.
+   The expanded sidebar is untouched. */
+.sidebar-collapsed .platform-nav-link.rounded-\[10px\].border {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-collapsed .platform-nav-icon-chip {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 10px;
+}
+
+.sidebar-collapsed .platform-nav-link:not(.platform-nav-active) .platform-nav-icon-chip {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32) !important;
+}
+
+.sidebar-collapsed .platform-nav-link:not(.platform-nav-active) .platform-nav-icon-chip svg {
+  color: #ffffff !important;
+  opacity: 0.95;
+}
+
+.sidebar-collapsed .platform-nav-active .platform-nav-icon-chip {
+  background: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(7, 23, 42, 0.34) !important;
+}
+
+.sidebar-collapsed .platform-nav-active .platform-nav-icon-chip svg {
+  color: var(--color-primary) !important;
 }
 
 .platform-sidebar .grid.grid-cols-2 {
