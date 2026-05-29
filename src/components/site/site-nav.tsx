@@ -14,9 +14,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-// Trimmed: "Courses" (marketplace) and "Instructors" were removed from the
-// global nav — Marketplace lives in the in-app sidebar and the public
-// /courses page is currently empty (would mislead visitors).
+// The marketing nav is deliberately lean. "Courses" and "Instructors" are
+// not surfaced here: the marketplace lives at /courses and inside the in-app
+// sidebar, so the public header focuses on the conversion path (creators,
+// pricing, promise, help) instead of duplicating in-app discovery.
 const navItems = [
   { href: "/for-creators", label: "For creators" },
   { href: "/pricing", label: "Pricing" },

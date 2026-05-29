@@ -20,6 +20,11 @@ function formatMoney(amountMinor: number, currency: string) {
   }).format(amountMinor / 100);
 }
 
+function formatOrderRef(id: string) {
+  const tail = id.slice(-8).toUpperCase();
+  return tail ? `#${tail}` : `#${id.toUpperCase()}`;
+}
+
 function formatDate(value: unknown) {
   const maybeTimestamp = value as { toDate?: () => Date; seconds?: number } | undefined;
   const date =
@@ -175,8 +180,12 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
                 Sale
               </p>
               <h2 className="display-title mt-3 text-4xl text-[var(--color-primary)]">
-                Order #{order.id}
+                Order {formatOrderRef(order.id)}
               </h2>
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-xs leading-6 text-[var(--color-ink-soft)]">
+                Full order ID
+                <CopyIdButton value={order.id} label="order ID" />
+              </p>
               <p className="mt-3 text-xs leading-6 text-[var(--color-ink-soft)]">
                 Created {formatDate(order.createdAt)} - Updated{" "}
                 {formatDate(order.updatedAt ?? order.createdAt)}
@@ -194,8 +203,13 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
             <p className="text-sm font-semibold text-[var(--color-ink)]">
               Learner account
             </p>
-            <p className="mt-2 break-all text-xs leading-5 text-[var(--color-ink-soft)]">
-              User ID {order.userId}
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs leading-5 text-[var(--color-ink-soft)]">
+              Account ID
+              <CopyIdButton value={order.userId} label="learner account ID" />
+            </p>
+            <p className="mt-3 text-xs leading-5 text-[var(--color-ink-soft)]">
+              The learner&apos;s name and email are not attached to this order.
+              Use the account ID when contacting support about it.
             </p>
           </div>
         </section>

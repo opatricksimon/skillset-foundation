@@ -259,7 +259,11 @@ function LearnerEventCard({
           Attendance
         </p>
         <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-          {isLoadingRsvp ? "Checking your RSVP..." : rsvpLabel}
+          {!currentUser
+            ? "Sign in to RSVP"
+            : isLoadingRsvp
+              ? "Checking your RSVP..."
+              : rsvpLabel}
         </p>
         {rsvpError ? (
           <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-3 py-2 text-sm font-semibold text-[var(--color-accent)]">

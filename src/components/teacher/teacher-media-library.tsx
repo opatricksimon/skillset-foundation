@@ -181,7 +181,7 @@ export function TeacherMediaLibrary() {
               private learner materials.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Link href="/teach?newCourse=1" className="button-solid px-4 py-3 text-sm">
+              <Link href="/teach/builder?newCourse=1" className="button-solid px-4 py-3 text-sm">
                 Create first course
               </Link>
               <Link href="/teach" className="button-outline px-4 py-3 text-sm">

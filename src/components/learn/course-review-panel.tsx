@@ -90,11 +90,13 @@ export function CourseReviewPanel({
       </div>
 
       <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
-        <div className="flex flex-wrap gap-2" aria-label="Course rating">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Course rating">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
               type="button"
+              role="radio"
+              aria-checked={value === rating}
               onClick={() => setRating(value)}
               disabled={!canReview || isSaving}
               className={`member-review-star ${value <= rating ? "is-active" : ""}`}
