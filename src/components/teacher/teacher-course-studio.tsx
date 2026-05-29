@@ -199,44 +199,21 @@ export function TeacherCourseStudio({
               </p>
             ) : courses.length === 0 ? (
               <div className="course-empty-showcase rounded-[18px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 sm:p-8">
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_250px] lg:items-center">
-                  <div>
-                    <span className="grid size-12 place-items-center rounded-[14px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
-                      <BookOpenCheck aria-hidden="true" size={21} strokeWidth={1.8} />
-                    </span>
-                    <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
-                      First course
-                    </p>
-                    <h4 className="display-title mt-3 max-w-sm text-4xl leading-[1.05] text-[var(--color-primary)]">
-                      Your course list is empty because no draft exists yet.
-                    </h4>
-                    <p className="mt-4 max-w-xs text-sm leading-7 text-[var(--color-ink-soft)]">
-                      Create a draft first. Then the builder opens with modules,
-                      lessons, pricing, uploads, preview, and review controls.
-                    </p>
-                  </div>
-                  <div className="grid gap-3">
-                    <Link href="/teach/builder?newCourse=1" className="button-solid px-5 py-3 text-center text-sm">
-                      New course
-                    </Link>
-                  </div>
-                </div>
-                <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ["Structure", "Add modules and organize the learning path."],
-                    ["Lessons", "Add videos, embeds, text, and materials."],
-                    ["Review", "Select a free preview and submit for approval."],
-                  ].map(([title, detail], index) => (
-                    <div key={title} className="rounded-[12px] border border-[var(--color-line)] bg-white p-4">
-                      <p className="text-sm font-bold text-[var(--color-ink)]">
-                        {index + 1}. {title}
-                      </p>
-                      <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
-                        {detail}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <span className="grid size-12 place-items-center rounded-[14px] bg-white text-[var(--color-primary)] shadow-[var(--shadow-avatar)]">
+                  <BookOpenCheck aria-hidden="true" size={21} strokeWidth={1.8} />
+                </span>
+                <p className="mt-5 text-xs font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                  First course
+                </p>
+                <h4 className="mt-3 max-w-sm text-xl font-bold leading-tight text-[var(--color-ink)]">
+                  No courses yet.
+                </h4>
+                <p className="mt-3 max-w-md text-sm leading-7 text-[var(--color-ink-soft)]">
+                  Use{" "}
+                  <span className="font-semibold text-[var(--color-ink)]">New course</span>{" "}
+                  to create your first draft. It opens the builder for modules, lessons,
+                  pricing, uploads, preview, and review — and your draft will appear here.
+                </p>
               </div>
             ) : statusFilteredCourses.length === 0 ? (
               <p className="rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
