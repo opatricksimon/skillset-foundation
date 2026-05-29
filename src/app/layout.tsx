@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ConsoleSignature } from "@/components/shared/console-signature";
+import { CookieConsent } from "@/components/site/cookie-consent";
 import { PostHogProvider } from "@/app/posthog-provider";
 import { brand } from "@/data/brand";
 import "./globals.css";
@@ -40,6 +41,7 @@ export default function RootLayout({
         <ConsoleSignature />
         <PostHogProvider>
           <AuthProvider>{children}</AuthProvider>
+          <CookieConsent />
         </PostHogProvider>
       </body>
     </html>
