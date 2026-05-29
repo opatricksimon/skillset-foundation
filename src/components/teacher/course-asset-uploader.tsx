@@ -2,12 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  Clapperboard,
-  FileText,
-  Image as ImageIcon,
   Layers3,
   UploadCloud,
-  Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,21 +22,8 @@ import {
   type UploadCourseAssetProgress,
 } from "@/lib/data/course-assets";
 
-const assetKinds: CourseAssetKind[] = [
-  "course_cover",
-  "module_cover",
-  "lesson_thumbnail",
-  "lesson_material",
-  "lesson_video",
-  "live_recording",
-];
+const assetKinds: CourseAssetKind[] = ["course_cover", "module_cover"];
 
-const lessonTargetKinds: CourseAssetKind[] = [
-  "lesson_thumbnail",
-  "lesson_material",
-  "lesson_video",
-  "live_recording",
-];
 const moduleTargetKinds: CourseAssetKind[] = ["module_cover"];
 
 const uploadPresets: Array<{
@@ -49,30 +32,6 @@ const uploadPresets: Array<{
   detail: string;
   icon: LucideIcon;
 }> = [
-  {
-    kind: "lesson_video",
-    label: "Lesson video",
-    detail: "Upload the main video students will watch inside the classroom.",
-    icon: Video,
-  },
-  {
-    kind: "lesson_material",
-    label: "Materials",
-    detail: "PDF, Word, slides, spreadsheets, ZIPs, audio, images, or text files.",
-    icon: FileText,
-  },
-  {
-    kind: "lesson_thumbnail",
-    label: "Lesson thumbnail",
-    detail: "Optional visual cover for a specific lesson.",
-    icon: ImageIcon,
-  },
-  {
-    kind: "live_recording",
-    label: "Live recording",
-    detail: "Replay from a cohort, class, webinar, or mentorship call.",
-    icon: Clapperboard,
-  },
   {
     kind: "module_cover",
     label: "Module cover",
@@ -96,7 +55,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
   const [assets, setAssets] = useState<CourseAsset[]>([]);
   const [kind, setKind] = useState<CourseAssetKind>("course_cover");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [lessonId, setLessonId] = useState("");
   const [moduleId, setModuleId] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -114,11 +72,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
     id: module.id,
     title: module.title,
   }));
-  const requiresLessonTarget = lessonTargetKinds.includes(kind);
   const requiresModuleTarget = moduleTargetKinds.includes(kind);
-  const selectedLesson = lessonId
-    ? allLessons.find((lesson) => lesson.id === lessonId)
-    : null;
   const courseLevelAssets = assets.filter((asset) => !asset.lessonId && !asset.moduleId);
   const moduleAssets = assets.filter((asset) => asset.moduleId);
   const lessonAssets = assets.filter((asset) => asset.lessonId);
@@ -150,11 +104,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       return;
     }
 
-    if (requiresLessonTarget && !lessonId) {
-      setError("Choose the lesson this asset belongs to.");
-      return;
-    }
-
     if (requiresModuleTarget && !moduleId) {
       setError("Choose the module this cover belongs to.");
       return;
@@ -169,13 +118,12 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
         kind,
         file: selectedFile,
         isPreview,
-        lessonId: requiresLessonTarget ? lessonId : null,
+        lessonId: null,
         moduleId: requiresModuleTarget ? moduleId : null,
         onProgress: setUploadProgress,
       });
       setSuccess("Asset uploaded.");
       setSelectedFile(null);
-      setLessonId("");
       setModuleId("");
       setIsPreview(false);
       setUploadProgress(null);
@@ -198,11 +146,9 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             Upload covers, videos, and materials for this course.
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-ink-soft)]">
-            The home for every course file: module covers, lesson thumbnails,
-            videos, and downloads. Pick what you are uploading, choose the module
-            or lesson target, and send it to Skillset Storage. (A lesson&apos;s own
-            video, text, and settings also live inside its lesson studio.) This
-            powers the student classroom and keeps private files protected.
+            Upload and manage media for this course and its modules. For
+            per-lesson videos, materials, and thumbnails, open the Lesson
+            Studio by clicking any lesson in the Curriculum tab.
           </p>
         </div>
         <span className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
@@ -228,7 +174,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
                 role="listitem"
                 onClick={() => {
                   setKind(preset.kind);
-                  setLessonId("");
                   setModuleId("");
                   setSelectedFile(null);
                   setFileInputKey((current) => current + 1);
@@ -268,7 +213,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
           onChange={(event) => {
             setKind(event.target.value as CourseAssetKind);
             setSelectedFile(null);
-            setLessonId("");
             setModuleId("");
             setUploadProgress(null);
             setFileInputKey((current) => current + 1);
@@ -301,35 +245,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
                 </option>
               ))}
             </select>
-          </label>
-        ) : null}
-
-        {requiresLessonTarget ? (
-          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
-            Attach to lesson
-            <select
-              value={lessonId}
-              onChange={(event) => setLessonId(event.target.value)}
-              disabled={!isEditable || isUploading || allLessons.length === 0}
-              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
-            >
-              <option value="">
-                {allLessons.length === 0 ? "Add lessons first" : "Choose lesson"}
-              </option>
-              {allLessons.map((lesson) => (
-                <option key={lesson.id} value={lesson.id}>
-                  {lesson.moduleTitle} - {lesson.title}
-                </option>
-              ))}
-            </select>
-            {selectedLesson ? (
-              <p className="rounded-[10px] border fine-rule bg-[var(--color-surface-soft)] px-4 py-3 text-xs leading-5 text-[var(--color-ink-soft)]">
-                Upload target:{" "}
-                <strong className="text-[var(--color-ink)]">
-                  {selectedLesson.moduleTitle} - {selectedLesson.title}
-                </strong>
-              </p>
-            ) : null}
           </label>
         ) : null}
 
@@ -401,7 +316,6 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
             !isEditable
             || isUploading
             || !selectedFile
-            || (requiresLessonTarget && !lessonId)
             || (requiresModuleTarget && !moduleId)
           }
           className="button-solid px-4 py-3 text-sm disabled:opacity-60"
