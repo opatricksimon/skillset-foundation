@@ -15,12 +15,24 @@ const money = new Intl.NumberFormat("en", {
   maximumFractionDigits: 0,
 });
 
-const kpiSparks = [
-  "M0 38 C24 34 38 28 58 31 C82 34 90 16 112 18 C126 19 132 10 140 7",
-  "M0 36 C20 36 34 31 54 32 C78 33 86 20 106 21 C124 22 130 13 140 8",
-  "M0 39 C28 38 42 30 60 32 C82 35 90 18 110 20 C124 22 132 15 140 12",
-  "M0 25 C22 26 36 18 56 20 C78 22 88 34 108 34 C124 34 132 40 140 42",
-];
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+// A delta is shown ONLY when there is a real prior-period baseline to compare
+// against. With no baseline we return null and render no trend at all, rather
+// than a fabricated "+0.0% vs prev period".
+function percentDelta(
+  current: number,
+  prior: number,
+): { label: string; up: boolean } | null {
+  if (prior <= 0) {
+    return null;
+  }
+
+  const pct = ((current - prior) / prior) * 100;
+  const up = pct >= 0;
+
+  return { label: `${up ? "+" : ""}${pct.toFixed(1)}%`, up };
+}
 
 export function TeacherOverviewMetrics() {
   const { user } = useAuth();
@@ -89,14 +101,28 @@ export function TeacherOverviewMetrics() {
 
     return now - createdAt <= 30 * 24 * 60 * 60 * 1000;
   });
-  const grossMinor = paidOrders.reduce(
-    (sum, order) => sum + order.amountMinor,
-    0,
-  );
   const gross30dMinor = paidOrders30d.reduce(
     (sum, order) => sum + order.amountMinor,
     0,
   );
+
+  // Prior 30-day window (days 31-60), real timestamps only, so the deltas
+  // below compare against an actual baseline rather than a fabricated one.
+  const prevWindow = paidOrders.filter((order) => {
+    const createdAt = getTimestampMillis(order.createdAt);
+
+    return (
+      createdAt !== null &&
+      now - createdAt > THIRTY_DAYS_MS &&
+      now - createdAt <= 2 * THIRTY_DAYS_MS
+    );
+  });
+  const grossPrev30dMinor = prevWindow.reduce(
+    (sum, order) => sum + order.amountMinor,
+    0,
+  );
+  const newStudentsPrev30d = prevWindow.length;
+
   const ratingCount = courses.reduce(
     (sum, course) => sum + (course.ratingCount ?? 0),
     0,
@@ -107,29 +133,32 @@ export function TeacherOverviewMetrics() {
     0,
   );
   const averageRating = ratingCount ? ratingSum / ratingCount : null;
-  const hasRevenue = grossMinor > 0;
 
-  const cards = [
+  const cards: {
+    label: string;
+    value: string;
+    hint: string;
+    delta: { label: string; up: boolean } | null;
+  }[] = [
     {
       label: "Revenue, 30d",
       value: money.format(gross30dMinor / 100),
       hint: paidOrders30d.length ? "Paid checkout volume" : "Ready after first sale",
-      delta: hasRevenue ? "+0.0%" : "0.0%",
-      up: true,
+      delta: percentDelta(gross30dMinor, grossPrev30dMinor),
     },
     {
       label: "New students",
       value: String(paidOrders30d.length),
       hint: paidOrders30d.length ? "Paid enrollments" : "No new students yet",
-      delta: paidOrders30d.length ? "+0.0%" : "0.0%",
-      up: true,
+      delta: percentDelta(paidOrders30d.length, newStudentsPrev30d),
     },
     {
+      // Completion is not measured yet: show an honest placeholder, never 0%
+      // (which would read as a real measurement of zero progress).
       label: "Completion",
-      value: "0%",
+      value: "--",
       hint: "Unlocks after learners finish lessons",
-      delta: "0.0%",
-      up: true,
+      delta: null,
     },
     {
       label: "Avg rating",
@@ -137,17 +166,16 @@ export function TeacherOverviewMetrics() {
       hint: ratingCount
         ? `${ratingCount} learner review${ratingCount === 1 ? "" : "s"}`
         : "No published course ratings yet",
-      delta: ratingCount ? "+0.0" : "0.0",
-      up: true,
+      delta: null,
     },
   ];
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card, index) => (
+      {cards.map((card) => (
         <div
           key={card.label}
-          className="studio-kpi-card dash-card dash-card--strong relative overflow-hidden p-5"
+          className="studio-kpi-card dash-card dash-card--strong p-5"
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-ink-muted)]">
             {card.label}
@@ -159,35 +187,28 @@ export function TeacherOverviewMetrics() {
               {card.value}
             </p>
           )}
-          <div
-            className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${
-              card.up ? "text-[var(--color-success)]" : "text-[var(--color-accent)]"
-            }`}
-          >
-            {card.up ? (
-              <TrendingUp aria-hidden="true" size={13} />
-            ) : (
-              <TrendingDown aria-hidden="true" size={13} />
-            )}
-            {card.delta}
-            <span className="font-semibold text-[var(--color-ink-soft)]">vs prev period</span>
-          </div>
+          {!isLoading && card.delta ? (
+            <div
+              className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${
+                card.delta.up
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-accent)]"
+              }`}
+            >
+              {card.delta.up ? (
+                <TrendingUp aria-hidden="true" size={13} />
+              ) : (
+                <TrendingDown aria-hidden="true" size={13} />
+              )}
+              {card.delta.label}
+              <span className="font-semibold text-[var(--color-ink-soft)]">
+                vs prev 30d
+              </span>
+            </div>
+          ) : null}
           <p className="mt-2 max-w-[13rem] text-xs leading-5 text-[var(--color-ink-soft)]">
             {card.hint}
           </p>
-          <svg
-            viewBox="0 0 140 44"
-            aria-hidden="true"
-            className="absolute bottom-0 right-0 h-14 w-36 opacity-70"
-          >
-            <path
-              d={hasRevenue ? kpiSparks[index] : "M0 38 C24 38 46 38 70 38 C94 38 116 38 140 38"}
-              fill="none"
-              stroke={card.up ? "var(--color-primary)" : "var(--color-accent)"}
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-          </svg>
         </div>
       ))}
       <span className="sr-only">

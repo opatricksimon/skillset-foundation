@@ -14,6 +14,7 @@ import type {
   UpsertUserProfileInput,
   UpdateOnboardingAnswersInput,
   UserIdentityInput,
+  UserPreferences,
   UserProfile,
 } from "@/domain/user-profile";
 import { getFirestoreDb } from "@/lib/firebase/client";
@@ -159,6 +160,22 @@ export async function updateUserIdentity(uid: string, input: UserIdentityInput) 
     doc(getFirestoreDb(), usersCollection, uid),
     {
       ...buildIdentityPatch(input),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function updateUserPreferences(
+  uid: string,
+  preferences: UserPreferences,
+): Promise<void> {
+  // setDoc merge deep-merges nested maps, so passing only one section
+  // (e.g. { notifications }) preserves the other section already on the doc.
+  await setDoc(
+    doc(getFirestoreDb(), usersCollection, uid),
+    {
+      preferences,
       updatedAt: serverTimestamp(),
     },
     { merge: true },

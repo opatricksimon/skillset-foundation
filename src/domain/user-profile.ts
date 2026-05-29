@@ -24,6 +24,35 @@ export type OnboardingAnswers = {
   audienceSize?: string;
 };
 
+export type NotificationPreferences = {
+  productEmails: boolean;
+  courseActivity: boolean;
+  billingAlerts: boolean;
+  marketingEmails: boolean;
+};
+
+export type LearningPreferences = {
+  autoCaptions: boolean;
+  dailyDigest: boolean;
+};
+
+export type UserPreferences = {
+  notifications?: Partial<NotificationPreferences>;
+  learning?: Partial<LearningPreferences>;
+};
+
+export const defaultNotificationPreferences: NotificationPreferences = {
+  productEmails: true,
+  courseActivity: true,
+  billingAlerts: true,
+  marketingEmails: false,
+};
+
+export const defaultLearningPreferences: LearningPreferences = {
+  autoCaptions: true,
+  dailyDigest: false,
+};
+
 export type UserProfile = {
   uid: string;
   email: string | null;
@@ -59,6 +88,12 @@ export type UserProfile = {
   currentPlanId?: PlanId;
   /** Stripe Customer ID used for subscription billing (separate from Connect). */
   stripeCustomerId?: string | null;
+  /**
+   * Notification + learning preferences set from the Settings page. Client-
+   * writable on the user's own doc (covered by the relaxed update policy in
+   * firestore.rules — it is not a privilege-bearing field).
+   */
+  preferences?: UserPreferences;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string;

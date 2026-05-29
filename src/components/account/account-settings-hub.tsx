@@ -11,12 +11,22 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AccountDataPanel } from "@/components/account/account-data-panel";
 import { ProfileSettingsPanel } from "@/components/account/profile-settings-panel";
 import { SecuritySettingsPanel } from "@/components/account/security-settings-panel";
 import { useAuth } from "@/components/auth/auth-provider";
+import {
+  defaultLearningPreferences,
+  defaultNotificationPreferences,
+  type LearningPreferences,
+  type NotificationPreferences,
+} from "@/domain/user-profile";
+import {
+  subscribeToUserProfile,
+  updateUserPreferences,
+} from "@/lib/data/user-profiles";
 
 type SettingsTab =
   | "profile"
@@ -210,10 +220,48 @@ function AccountIdentityPanel() {
 }
 
 function NotificationPreferencesPanel() {
-  const [productEmails, setProductEmails] = useState(true);
-  const [courseActivity, setCourseActivity] = useState(true);
-  const [billingAlerts, setBillingAlerts] = useState(true);
-  const [marketingEmails, setMarketingEmails] = useState(false);
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<NotificationPreferences>(
+    defaultNotificationPreferences,
+  );
+  const [loaded, setLoaded] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToUserProfile(
+      user.uid,
+      (profile) => {
+        setPrefs({
+          ...defaultNotificationPreferences,
+          ...(profile?.preferences?.notifications ?? {}),
+        });
+        setLoaded(true);
+      },
+      // Couldn't load saved preferences: keep defaults but let the user act.
+      () => setLoaded(true),
+    );
+  }, [user]);
+
+  function toggle(key: keyof NotificationPreferences) {
+    if (!user) {
+      return;
+    }
+
+    const previous = prefs;
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    setSaveFailed(false);
+    updateUserPreferences(user.uid, { notifications: next }).catch(() => {
+      // Roll back the optimistic flip so the UI never claims a save that
+      // did not land.
+      setPrefs(previous);
+      setSaveFailed(true);
+    });
+  }
 
   return (
     <section className="settings-section-card">
@@ -224,34 +272,44 @@ function NotificationPreferencesPanel() {
         Decide what gets your attention.
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-        These preferences shape the product notification center. Transactional
+        Saved to your account and applied as each channel ships. Transactional
         security and payment emails stay enabled for account safety.
       </p>
+
+      {saveFailed ? (
+        <p className="mt-4 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          We could not save that change. Check your connection and try again.
+        </p>
+      ) : null}
 
       <div className="mt-6 divide-y divide-[var(--color-line)]">
         <ToggleRow
           label="Product emails"
           description="Important product updates and weekly summaries."
-          checked={productEmails}
-          onChange={() => setProductEmails((current) => !current)}
+          checked={prefs.productEmails}
+          disabled={!loaded}
+          onChange={() => toggle("productEmails")}
         />
         <ToggleRow
           label="Course activity"
           description="Course reviews, comments, lesson activity, and student milestones."
-          checked={courseActivity}
-          onChange={() => setCourseActivity((current) => !current)}
+          checked={prefs.courseActivity}
+          disabled={!loaded}
+          onChange={() => toggle("courseActivity")}
         />
         <ToggleRow
           label="Billing and payout alerts"
           description="Receipts, invoices, payout release, refund, and failed payment notices."
-          checked={billingAlerts}
-          onChange={() => setBillingAlerts((current) => !current)}
+          checked={prefs.billingAlerts}
+          disabled={!loaded}
+          onChange={() => toggle("billingAlerts")}
         />
         <ToggleRow
           label="Marketing emails"
           description="Launch announcements, promotions, and editorial campaigns."
-          checked={marketingEmails}
-          onChange={() => setMarketingEmails((current) => !current)}
+          checked={prefs.marketingEmails}
+          disabled={!loaded}
+          onChange={() => toggle("marketingEmails")}
         />
       </div>
     </section>
@@ -259,8 +317,45 @@ function NotificationPreferencesPanel() {
 }
 
 function LearningPreferencesPanel() {
-  const [autoCaptions, setAutoCaptions] = useState(true);
-  const [digest, setDigest] = useState(false);
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<LearningPreferences>(
+    defaultLearningPreferences,
+  );
+  const [loaded, setLoaded] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return subscribeToUserProfile(
+      user.uid,
+      (profile) => {
+        setPrefs({
+          ...defaultLearningPreferences,
+          ...(profile?.preferences?.learning ?? {}),
+        });
+        setLoaded(true);
+      },
+      () => setLoaded(true),
+    );
+  }, [user]);
+
+  function toggle(key: keyof LearningPreferences) {
+    if (!user) {
+      return;
+    }
+
+    const previous = prefs;
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    setSaveFailed(false);
+    updateUserPreferences(user.uid, { learning: next }).catch(() => {
+      setPrefs(previous);
+      setSaveFailed(true);
+    });
+  }
 
   return (
     <section className="settings-section-card">
@@ -271,21 +366,30 @@ function LearningPreferencesPanel() {
         Classroom defaults.
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-        Keep learner behavior separate from billing and creator payout setup.
+        Saved to your account so your classroom behaves the same on every
+        device. Billing and creator payout setup stay in their own sections.
       </p>
+
+      {saveFailed ? (
+        <p className="mt-4 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          We could not save that change. Check your connection and try again.
+        </p>
+      ) : null}
 
       <div className="mt-6 divide-y divide-[var(--color-line)]">
         <ToggleRow
           label="Auto-show captions"
           description="Show captions automatically when a lesson provides them."
-          checked={autoCaptions}
-          onChange={() => setAutoCaptions((current) => !current)}
+          checked={prefs.autoCaptions}
+          disabled={!loaded}
+          onChange={() => toggle("autoCaptions")}
         />
         <ToggleRow
           label="Daily learning digest"
           description="A lightweight daily reminder for unfinished lessons."
-          checked={digest}
-          onChange={() => setDigest((current) => !current)}
+          checked={prefs.dailyDigest}
+          disabled={!loaded}
+          onChange={() => toggle("dailyDigest")}
         />
       </div>
     </section>
@@ -326,11 +430,13 @@ function SettingsInfoRow({
 function ToggleRow({
   checked,
   description,
+  disabled = false,
   label,
   onChange,
 }: {
   checked: boolean;
   description: string;
+  disabled?: boolean;
   label: string;
   onChange: () => void;
 }) {
@@ -346,9 +452,12 @@ function ToggleRow({
       </span>
       <button
         type="button"
-        aria-pressed={checked}
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        disabled={disabled}
         onClick={onChange}
-        className={`settings-toggle ${checked ? "settings-toggle--on" : ""}`}
+        className={`settings-toggle ${checked ? "settings-toggle--on" : ""} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <span />
       </button>
