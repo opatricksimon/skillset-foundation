@@ -6,6 +6,7 @@ import { LogoWordmark } from "@/components/shared/logo-wordmark";
 import {
   ChevronDown,
   GraduationCap,
+  LayoutDashboard,
   Menu,
   Presentation,
   X,
@@ -13,6 +14,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type RefObject } from "react";
+
+import { getPrimaryWorkspaceHref } from "@/lib/auth/routing";
 
 // The marketing nav is deliberately lean. "Courses" and "Instructors" are
 // not surfaced here: the marketplace lives at /courses and inside the in-app
@@ -174,7 +177,16 @@ export function SiteNav({ landingNav }: SiteNavProps = {}) {
         </nav>
         <div className="site-header__actions">
           {isAuthenticated ? (
-            <AccountMenu user={user} onSignOut={signOut} />
+            <>
+              <Link
+                href={getPrimaryWorkspaceHref(user)}
+                className="btn-cta-hero hidden items-center gap-2 min-[941px]:inline-flex"
+              >
+                <LayoutDashboard aria-hidden="true" size={16} strokeWidth={1.9} />
+                Dashboard
+              </Link>
+              <AccountMenu user={user} onSignOut={signOut} />
+            </>
           ) : (
             <div className="hidden items-center gap-2 min-[941px]:flex">
               <SignInDropdown />
@@ -248,7 +260,24 @@ export function SiteNav({ landingNav }: SiteNavProps = {}) {
                   );
                 })}
               </nav>
-              {!isAuthenticated ? (
+              {isAuthenticated ? (
+                <div className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3">
+                  <Link
+                    href={getPrimaryWorkspaceHref(user)}
+                    onClick={() => setMobileOpen(false)}
+                    className="button-solid w-full px-4 py-2.5 text-sm"
+                  >
+                    Go to dashboard
+                  </Link>
+                  <Link
+                    href="/account"
+                    onClick={() => setMobileOpen(false)}
+                    className="button-outline w-full px-4 py-2.5 text-sm"
+                  >
+                    Account settings
+                  </Link>
+                </div>
+              ) : (
                 <div className="mt-3 grid gap-2 border-t border-[var(--color-line)] pt-3">
                   <Link
                     href="/auth?mode=signin"
@@ -263,7 +292,7 @@ export function SiteNav({ landingNav }: SiteNavProps = {}) {
                     Get started free
                   </Link>
                 </div>
-              ) : null}
+              )}
             </div>
           </>
         ) : null}

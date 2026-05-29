@@ -1,6 +1,27 @@
+import type { SkillsetUser } from "@/domain/auth";
 import type { UserProfile } from "@/domain/user-profile";
 
 export type AuthPathIntent = "student" | "teacher";
+
+/**
+ * Role → primary workspace (portal) entry. Used by the marketing header, the
+ * home hero, and the account menu so a signed-in visitor always has one clear
+ * path back to their dashboard. Mirrors getPostAuthRoute's role branch minus
+ * the onboarding/intent steps that only apply immediately after authentication.
+ */
+export function getPrimaryWorkspaceHref(
+  user: Pick<SkillsetUser, "roles">,
+): string {
+  if (user.roles.includes("admin") || user.roles.includes("support")) {
+    return "/ops";
+  }
+
+  if (user.roles.includes("teacher")) {
+    return "/teach";
+  }
+
+  return "/learn";
+}
 
 export function parseAuthPathIntent(value: string | null | undefined): AuthPathIntent | null {
   if (value === "student" || value === "teacher") {

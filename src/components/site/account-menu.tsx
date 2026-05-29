@@ -5,6 +5,7 @@ import {
   Bookmark,
   ChevronDown,
   FileText,
+  LayoutDashboard,
   LogOut,
   Settings,
   type LucideIcon,
@@ -15,24 +16,13 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { planById, type PlanId } from "@/data/plans";
 import { formatPrimaryRole, type SkillsetUser } from "@/domain/auth";
+import { getPrimaryWorkspaceHref } from "@/lib/auth/routing";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
 
 type AccountMenuProps = {
   user: SkillsetUser;
   onSignOut: () => Promise<void>;
 };
-
-export function getPrimaryWorkspaceHref(user: SkillsetUser) {
-  if (user.roles.includes("admin") || user.roles.includes("support")) {
-    return "/ops";
-  }
-
-  if (user.roles.includes("teacher")) {
-    return "/teach";
-  }
-
-  return "/learn";
-}
 
 function useDismissableLayer(
   ref: RefObject<HTMLElement | null>,
@@ -140,6 +130,17 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
               <p className="account-menu-context-chip">{accountRoleLabel}</p>
             </div>
           </div>
+
+          <div className="py-1">
+            <MenuLink
+              href={getPrimaryWorkspaceHref(user)}
+              icon={LayoutDashboard}
+              label="Go to dashboard"
+              onNavigate={() => setIsOpen(false)}
+            />
+          </div>
+
+          <div className="account-menu-separator" />
 
           <div className="py-1">
             <p className="account-menu-section-label">Account</p>

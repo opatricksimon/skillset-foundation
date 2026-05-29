@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HeroCtas } from "@/components/site/hero-ctas";
 
 export function MarketingHero() {
   // Keep the hero behind the floating nav while fitting the primary CTA
@@ -33,20 +33,7 @@ export function MarketingHero() {
               and your payouts - so you can spend your week teaching, not
               configuring software.
             </p>
-            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-              <Link
-                href="/auth?mode=signup&path=teacher"
-                className="button-solid-light px-5 py-3 text-sm"
-              >
-                Start teaching free
-              </Link>
-              <Link
-                href="/pricing"
-                className="button-outline-light px-5 py-3 text-sm"
-              >
-                See how you get paid
-              </Link>
-            </div>
+            <HeroCtas />
           </div>
           {/* Keep trust signals below the CTA on tablet/desktop; mobile prioritizes the primary action. */}
           <dl className="mt-7 hidden w-full max-w-2xl gap-4 border-t border-white/20 pt-4 text-left sm:grid sm:grid-cols-3 lg:mt-8">
