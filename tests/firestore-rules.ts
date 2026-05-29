@@ -214,6 +214,34 @@ describe("Firestore course publishing rules", () => {
       updatedAt: Timestamp.now(),
     }));
   });
+
+  it("allows owner to set the cover image on a Cloud Functions-created draft", async () => {
+    // Regression: the Cloud Functions write `learningOutcomes`, which was missing
+    // from the course-key allowlist in firestore.rules. That drift made the
+    // client-side cover-image updateDoc fail with permission-denied, blocking
+    // teachers from uploading a course cover (the launch blocker). Seed the
+    // course the way the Cloud Function does (admin context, with
+    // learningOutcomes) and assert the owner can update only the cover fields.
+    await seedTeacher("teacher-1");
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), "courses/course-cover"),
+        createCourse("teacher-1", "draft"),
+      );
+    });
+
+    const db = testEnv.authenticatedContext("teacher-1", verifiedAuth).firestore();
+    const courseRef = doc(db, "courses/course-cover");
+
+    await assertSucceeds(
+      updateDoc(courseRef, {
+        coverImageUrl:
+          "https://firebasestorage.googleapis.com/v0/b/skillsetusaofficial.firebasestorage.app/o/cover.png",
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
 });
 
 describe("Firestore course review rules", () => {
@@ -536,6 +564,7 @@ function createCourse(ownerId: string, status: "draft" | "published" | "in_revie
     title: "Professional Course",
     summary: "A structured professional course with a clear learning outcome.",
     category: "Leadership",
+    learningOutcomes: [],
     status,
     modules: [],
     lessonCount: 0,

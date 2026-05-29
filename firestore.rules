@@ -304,6 +304,7 @@ service cloud.firestore {
         'summary',
         'category',
         'categories',
+        'learningOutcomes',
         'status',
         'modules',
         'lessonCount',
@@ -365,6 +366,13 @@ service cloud.firestore {
           || (
             request.resource.data.categories is list
             && request.resource.data.categories.size() <= 5
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['learningOutcomes'])
+          || (
+            request.resource.data.learningOutcomes is list
+            && request.resource.data.learningOutcomes.size() <= 20
           )
         )
         && request.resource.data.modules.size() <= 30
@@ -585,7 +593,15 @@ service cloud.firestore {
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status in ['draft', 'needs_changes', 'published', 'inactive']
         && request.resource.data.status == resource.data.status
-        && courseChangedOnly(['coverImageUrl', 'updatedAt']);
+        && courseChangedOnly(['coverImageUrl', 'updatedAt'])
+        && (
+          request.resource.data.coverImageUrl == null
+          || (
+            request.resource.data.coverImageUrl is string
+            && request.resource.data.coverImageUrl.size() >= 8
+            && request.resource.data.coverImageUrl.size() <= 1200
+          )
+        );
     }
 
     function hasOnlyAllowedEnrollmentKeys() {
@@ -1391,13 +1407,19 @@ service cloud.firestore {
         && validCourseShape()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.status == 'draft';
+      // teacherCanUpdateOwnedCourseCover() and teacherCanSubmitOwnedCourseForReview()
+      // are self-contained (they restrict the diff via courseChangedOnly + validate
+      // ownership/status), so they MUST be evaluated before validCourseShape(). The
+      // latter validates ~26 fields and exceeds the Firestore 1000-expression budget
+      // on the update path; short-circuiting the cheap, scoped predicates first keeps
+      // the cover-image and submit-for-review paths from aborting with PERMISSION_DENIED.
       allow update: if teacherCanSubmitOwnedCourseForReview()
+        || teacherCanUpdateOwnedCourseCover()
         || (
           validCourseShape()
           && (
             isAdmin()
             || teacherCanSaveOwnedCourse()
-            || teacherCanUpdateOwnedCourseCover()
           )
         );
       allow delete: if isAdmin()
