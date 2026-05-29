@@ -96,3 +96,42 @@
 ## Execution mode
 
 **Execução Direta autônoma, esta sessão** (founder pré-autorizou sem pausas). Disciplina `executing-plans`: um sub-grupo por vez, validação incremental, commit atômico, sem pedir aprovação entre ondas.
+
+---
+
+## Execution Log — 2026-05-29 (COMPLETO)
+
+**Resultado:** todas as 6 ondas (0–5) executadas e deployadas. Gate final verde, produção confirmada.
+
+### Commits por onda
+
+| Onda | Commit(s) | Resumo |
+|------|-----------|--------|
+| 0 — Green tsc | `8c03a6f` | jest-dom matcher types → `tsc --noEmit` 0 erros |
+| 1 — Broken flows | `d6b6a25`, `d80ec0c`, `8c5eaed` | contato/suporte acessível + remoção do Apple sign-in inerte; enrollment demo → community por slug; `/teach/sales` list page (fecha 404 do wallet) |
+| 2 — No invented data | `88f9839` | métricas reais (deltas/sparklines/completion) + persistência real dos toggles de settings |
+| 3 — Async + correctness | `7ca7fb4` | onError em subscriptions (logSubscriptionError); skeletons; next-lesson real; billing/return condicional ao session_id; email tab fix; refund mailto; revenue range tabs; **guard de URL (getSafeExternalUrl) anti-stored-XSS em 5 sites** |
+| 4 — Polish/a11y | `63cf22e` | 5 stubs redirect → ComingSoonPanel (e `/teach/media` agora renderiza a media library real); rating radiogroup; community title real por slug; order ref amigável + account ID copiável; RSVP loading fix; deleta revenue-milestone-strip morto; comentário stale do site-nav |
+
+### Gate final (5.1)
+
+- lint: **0** · `tsc --noEmit`: **0** · vitest: **74/74** · `next build`: **EXIT 0**
+- (baseline da sessão era 70/70; +3 testes `getSafeExternalUrl` +1 `getNextCourseLessonAfter`)
+
+### Deploy (5.2) — functions + hosting JUNTOS
+
+- `firebase deploy --only functions,hosting --project skillsetusaofficial` → **EXIT 0**
+- 20 Cloud Functions atualizadas (stripeWebhook, createCheckoutSession, requestRefund, billing/connect, certificates, dailyReleaseTransfers, …) **+** SSR `ssrskillsetusaofficial` (Node 24)
+- Nunca `deploy:hosting` sozinho → landmine do loop de autosave dos outcomes evitada.
+- Hosting URL: https://skillsetusaofficial.web.app
+
+### Verificação de produção (5.3)
+
+- HTTP 200 em `/`, `/pricing`, `/courses`, `/promise`, `/auth`, `/legal/terms`, `/teach`, `/learn`, `/account` (SSR saudável, sem 500).
+- Home renderiza a landing real; `/courses` entrega heading + marketplace (cards hidratam client-side sob Suspense, por design).
+
+### Desvios deliberados (melhor resultado que o plano literal)
+
+1. **4.1 `/teach/media`**: em vez de ComingSoonPanel, passou a renderizar a `TeacherMediaLibrary` real (componente Firestore-backed completo, estava órfão) — mais honesto que "em breve".
+2. **4.7 `revenue-milestone-strip`**: deletado (não-usado; seedado em $0 renderizaria "$0/$100" decorativo) em vez de wire — alinhado ao guardrail no-invented-data.
+3. **3.4 billing/return** e **4.5 sale-detail learner**: resolvido server-side só o que existe honestamente (session_id presente; nenhum profile de learner exposto ao seller por rules/privacidade) — sem inventar dados.
