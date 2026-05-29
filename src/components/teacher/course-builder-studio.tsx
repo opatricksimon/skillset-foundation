@@ -16,7 +16,9 @@ import {
   Layers3,
   Loader2,
   PlayCircle,
+  Plus,
   Repeat,
+  Trash2,
   UploadCloud,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -49,8 +51,10 @@ import type {
 } from "@/domain/teacher-course";
 import {
   countCourseLessons,
+  MAX_LEARNING_OUTCOMES,
   normalizeCourseCategories,
   normalizeInstallmentsMax,
+  normalizeLearningOutcomes,
   normalizeTeacherCourseModules,
   skillsetCourseCategories,
   teacherCanEditCourse,
@@ -297,6 +301,7 @@ type BuilderDraftFields = {
   summary: string;
   category: string;
   selectedCategories: string[];
+  learningOutcomes: string[];
   modules: TeacherCourseModule[];
   priceAmount: string;
   currency: string;
@@ -336,6 +341,7 @@ function buildBuilderDraftPayload(input: BuilderDraftFields) {
     summary: input.summary.trim(),
     category: nextCategory,
     categories: nextCategories,
+    learningOutcomes: normalizeLearningOutcomes(input.learningOutcomes),
     modules: nextModules,
     priceAmountMinor: nextPriceAmountMinor,
     currency: input.currency,
@@ -361,6 +367,7 @@ function builderDraftSignatureFromCourse(course: TeacherCourse): string {
         ...(course.categories ?? []),
         course.category,
       ]),
+      learningOutcomes: course.learningOutcomes ?? [],
       modules: course.modules ?? [],
       priceAmount:
         typeof course.priceAmountMinor === "number"
@@ -391,6 +398,7 @@ export function CourseBuilderStudio() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
     skillsetCourseCategories[0],
   ]);
+  const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
   const [modules, setModules] = useState<TeacherCourseModule[]>([]);
   const [priceAmount, setPriceAmount] = useState("");
   const [currency, setCurrency] = useState(defaultSkillsetCurrency);
@@ -459,6 +467,7 @@ export function CourseBuilderStudio() {
             nextCourse.category,
           ]),
         );
+        setLearningOutcomes(nextCourse.learningOutcomes ?? []);
         setModules(nextCourse.modules ?? []);
         setPriceAmount(
           typeof nextCourse.priceAmountMinor === "number"
@@ -649,6 +658,7 @@ export function CourseBuilderStudio() {
         summary,
         category,
         selectedCategories,
+        learningOutcomes,
         modules,
         priceAmount,
         currency,
@@ -665,6 +675,7 @@ export function CourseBuilderStudio() {
       summary,
       category,
       selectedCategories,
+      learningOutcomes,
       modules,
       priceAmount,
       currency,
@@ -1443,6 +1454,85 @@ export function CourseBuilderStudio() {
                 : `${summary.trim().length}/20 characters minimum for review`}
             </span>
           </label>
+          <div id="builder-sec-outcomes" className="scroll-mt-24 grid gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="grid gap-1">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  What students will learn
+                </p>
+                <p className="text-xs text-[var(--color-ink-soft)]">
+                  Concrete outcomes shown as the &ldquo;What you&rsquo;ll
+                  learn&rdquo; list on the marketplace page. Aim for 4&ndash;6.
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold text-[var(--color-ink-soft)]">
+                {normalizeLearningOutcomes(learningOutcomes).length}/
+                {MAX_LEARNING_OUTCOMES}
+              </span>
+            </div>
+
+            {learningOutcomes.length > 0 ? (
+              <ul className="grid gap-2">
+                {learningOutcomes.map((outcome, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <input
+                      value={outcome}
+                      onChange={(event) =>
+                        setLearningOutcomes((previous) =>
+                          previous.map((item, itemIndex) =>
+                            itemIndex === index ? event.target.value : item,
+                          ),
+                        )
+                      }
+                      disabled={!isEditable}
+                      maxLength={120}
+                      placeholder="Example: Launch a paid cohort course end to end"
+                      className="min-w-0 flex-1 rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
+                    />
+                    {isEditable ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLearningOutcomes((previous) =>
+                            previous.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          )
+                        }
+                        aria-label={`Remove learning outcome ${index + 1}`}
+                        className="shrink-0 rounded-[8px] border border-[var(--color-line)] p-2.5 text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                      >
+                        <Trash2 aria-hidden="true" size={14} strokeWidth={1.8} />
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-[10px] border border-dashed border-[var(--color-line)] bg-[var(--color-surface-soft)] px-4 py-3 text-xs text-[var(--color-ink-soft)]">
+                No outcomes yet. Add the concrete results a student walks away
+                with.
+              </p>
+            )}
+
+            {isEditable ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setLearningOutcomes((previous) =>
+                    previous.length >= MAX_LEARNING_OUTCOMES
+                      ? previous
+                      : [...previous, ""],
+                  )
+                }
+                disabled={learningOutcomes.length >= MAX_LEARNING_OUTCOMES}
+                className="inline-flex w-fit items-center gap-1.5 rounded-[8px] border border-[var(--color-line)] px-3 py-2 text-xs font-semibold text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary-light)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus aria-hidden="true" size={14} strokeWidth={2} />
+                Add learning outcome
+              </button>
+            ) : null}
+          </div>
           <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
             Keep the title specific, the category clear, and the summary focused
             on learner outcomes. This copy will influence the marketplace page.

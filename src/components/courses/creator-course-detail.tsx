@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
 import type { TeacherCourse } from "@/domain/teacher-course";
+import { normalizeLearningOutcomes } from "@/domain/teacher-course";
 import { subscribeToPublishedTeacherCourse } from "@/lib/data/published-courses";
 import { isPublicFeatureEnabled } from "@/lib/feature-flags";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
@@ -134,6 +136,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     course.ratingCount && course.ratingAverage
       ? `${course.ratingAverage.toFixed(1)} / 5 from ${course.ratingCount} review${course.ratingCount === 1 ? "" : "s"}`
       : "No learner reviews yet";
+  const learningOutcomes = normalizeLearningOutcomes(course.learningOutcomes);
 
   async function handleCheckout() {
     if (!course || !canCheckout || !checkoutEnabled) {
@@ -191,6 +194,29 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
             {course.summary}
           </p>
         </div>
+
+        {learningOutcomes.length > 0 ? (
+          <section className="mt-8 rounded-[16px] border border-[var(--color-line)] bg-white p-5 shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              What you&apos;ll learn
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {learningOutcomes.map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[12px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                >
+                  <span className="grid size-7 shrink-0 place-items-center rounded-[8px] bg-white text-[var(--color-primary)]">
+                    <Target aria-hidden="true" size={14} strokeWidth={2.2} />
+                  </span>
+                  <p className="text-sm font-semibold leading-6 text-[var(--color-ink)]">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section
           id="free-preview"

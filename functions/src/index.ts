@@ -80,6 +80,7 @@ type TeacherCourseRecord = {
   summary?: string;
   category: string;
   categories?: string[];
+  learningOutcomes?: string[];
   status: string;
   modules?: unknown;
   lessonCount?: number;
@@ -229,6 +230,40 @@ function normalizeCourseCategories(categories: unknown): string[] {
     normalized.push(value.slice(0, 80));
 
     if (normalized.length >= 5) {
+      break;
+    }
+  }
+
+  return normalized;
+}
+
+const maxLearningOutcomes = 8;
+const maxLearningOutcomeLength = 120;
+
+// Mirror of normalizeLearningOutcomes in src/domain/teacher-course.ts. Kept as
+// a separate copy because functions/ cannot import from the Next app (@/...).
+// Same rules: trim, drop empty, cap each length, cap count. Order preserved.
+function normalizeLearningOutcomes(outcomes: unknown): string[] {
+  if (!Array.isArray(outcomes)) {
+    return [];
+  }
+
+  const normalized: string[] = [];
+
+  for (const outcome of outcomes) {
+    if (typeof outcome !== "string") {
+      continue;
+    }
+
+    const value = outcome.trim();
+
+    if (!value) {
+      continue;
+    }
+
+    normalized.push(value.slice(0, maxLearningOutcomeLength));
+
+    if (normalized.length >= maxLearningOutcomes) {
       break;
     }
   }
@@ -672,6 +707,7 @@ export const createTeacherCourseDraft = onCall(async (request) => {
       summary,
       category,
       categories,
+      learningOutcomes: [],
       status: "draft",
       modules: [],
       lessonCount: 0,
@@ -716,6 +752,7 @@ export const updateTeacherCourseBuilder = onCall(async (request) => {
       ? input.category.trim().slice(0, 80)
       : "Other";
   const category = categories[0] ?? fallbackCategory;
+  const learningOutcomes = normalizeLearningOutcomes(input.learningOutcomes);
   const { lessonCount, modules } = normalizeBuilderModules(input.modules);
   const paymentType =
     typeof input.paymentType === "string" && builderPaymentTypes.has(input.paymentType)
@@ -864,6 +901,7 @@ export const updateTeacherCourseBuilder = onCall(async (request) => {
       summary,
       category,
       categories,
+      learningOutcomes,
       modules,
       lessonCount,
       priceAmountMinor,

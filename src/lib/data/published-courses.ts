@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import type { TeacherCourse } from "@/domain/teacher-course";
+import { normalizeLearningOutcomes } from "@/domain/teacher-course";
 import type { Course } from "@/domain/learning";
 import type { CourseCard } from "@/lib/data/catalog";
 import { getFirestoreDb } from "@/lib/firebase/client";
@@ -112,6 +113,7 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
         }).format(course.priceAmountMinor / 100)
       : "Enrollment opening soon";
   const hasFreePreview = Boolean(course.freePreviewLessonId);
+  const teacherOutcomes = normalizeLearningOutcomes(course.learningOutcomes);
 
   return {
     id: course.id,
@@ -135,11 +137,14 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     freePreviewLabel: hasFreePreview
       ? "Free preview selected"
       : "Preview coming soon",
-    outcomes: [
-      "Complete the teacher-defined lesson path.",
-      "Use course events and community spaces to support progress.",
-      "Track completion toward Skillset credential eligibility.",
-    ],
+    outcomes:
+      teacherOutcomes.length > 0
+        ? teacherOutcomes
+        : [
+            "Complete the teacher-defined lesson path.",
+            "Use course events and community spaces to support progress.",
+            "Track completion toward Skillset credential eligibility.",
+          ],
     modules: course.modules.map((module) => ({
       id: module.id,
       title: module.title,

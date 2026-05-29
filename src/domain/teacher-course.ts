@@ -83,6 +83,7 @@ export type TeacherCourse = {
   summary: string;
   category: string;
   categories?: string[];
+  learningOutcomes?: string[];
   status: TeacherCourseStatus;
   modules: TeacherCourseModule[];
   lessonCount: number;
@@ -118,6 +119,7 @@ export type UpdateTeacherCourseBuilderInput = {
   summary: string;
   category: string;
   categories?: string[];
+  learningOutcomes: string[];
   modules: TeacherCourseModule[];
   priceAmountMinor: number | null;
   currency: string;
@@ -154,6 +156,40 @@ export function normalizeCourseCategories(categories: string[] = []): string[] {
       return true;
     })
     .slice(0, 5);
+}
+
+export const MAX_LEARNING_OUTCOMES = 8;
+export const MAX_LEARNING_OUTCOME_LENGTH = 120;
+
+// Shared by the builder (live payload + change-signature) and the public
+// course-page mapper, so the teacher sees exactly what students will see.
+// The Cloud Function keeps its own copy (separate runtime) with identical rules.
+export function normalizeLearningOutcomes(outcomes: unknown): string[] {
+  if (!Array.isArray(outcomes)) {
+    return [];
+  }
+
+  const normalized: string[] = [];
+
+  for (const outcome of outcomes) {
+    if (typeof outcome !== "string") {
+      continue;
+    }
+
+    const value = outcome.trim();
+
+    if (!value) {
+      continue;
+    }
+
+    normalized.push(value.slice(0, MAX_LEARNING_OUTCOME_LENGTH));
+
+    if (normalized.length >= MAX_LEARNING_OUTCOMES) {
+      break;
+    }
+  }
+
+  return normalized;
 }
 
 function normalizeNullableText(value: string | null | undefined): string | null {
