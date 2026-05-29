@@ -2824,13 +2824,11 @@ select {
 }
 
 /* Bulletproof active-state colors for nav items and the workspace switcher.
-   Tailwind arbitrary values (text-[var(--color-base)]) sometimes lose to
-   cascaded color, so we burn the rule in here with !important — same trick
-   .button-solid uses. color-base flips white↔near-black on theme, so this
-   stays high-contrast against bg-primary in both light and dark mode.
-   Icons inherit the same color-base — they used to live in a white badge
-   wrapper that visually swallowed the glyph on hi-DPI screens, so the
-   icon now sits inline and gets the same bright contrast as the text. */
+   The sidebar is ALWAYS the dark navy gradient (it does not flip with theme),
+   and the active pill background is hardcoded white. So the pill's text/icon
+   must ALSO be a fixed dark navy — NOT var(--color-primary), which flips to
+   light blue (#8fb4e4) in dark mode and renders blue-on-white (low contrast).
+   #0f2744 is deep navy with ~13:1 contrast on white in both themes. */
 .platform-sidebar .platform-nav-link {
   color: rgba(255, 255, 255, 0.78) !important;
 }
@@ -2843,11 +2841,11 @@ select {
 .platform-nav-active {
   background: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.95) !important;
-  color: var(--color-primary) !important;
+  color: #0f2744 !important;
 }
 
 .platform-nav-active .platform-sidebar-label {
-  color: var(--color-primary) !important;
+  color: #0f2744 !important;
 }
 
 .platform-nav-icon-chip {
@@ -2862,7 +2860,7 @@ select {
 }
 
 .platform-nav-active .platform-nav-icon-chip {
-  background: var(--color-primary);
+  background: #0f2744 !important;
   color: #ffffff !important;
 }
 
@@ -2923,7 +2921,7 @@ select {
 }
 
 .sidebar-collapsed .platform-nav-active .platform-nav-icon-chip svg {
-  color: var(--color-primary) !important;
+  color: #0f2744 !important;
 }
 
 .platform-sidebar .grid.grid-cols-2 {
