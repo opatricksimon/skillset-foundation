@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 
-import { AppleMark } from "@/components/auth/apple-mark";
 import { GoogleMark } from "@/components/auth/google-mark";
 import {
   isStrongPassword,
@@ -275,15 +274,6 @@ export function SignupForm() {
       >
         <GoogleMark />
         Continue with Google
-      </button>
-      <button
-        type="button"
-        disabled={isLoading || !legalAccepted}
-        onClick={() => setError("Apple sign-in opens next week.")}
-        className="button-outline px-5 py-3 text-sm disabled:opacity-60"
-      >
-        <AppleMark />
-        Continue with Apple
       </button>
       <Link
         href={signinHref}

@@ -27,7 +27,7 @@ const footerColumns = [
     title: "Help & legal",
     links: [
       ["Help center", "/help"],
-      ["Contact support", "/support"],
+      ["Contact support", "/contact"],
       ["Terms of service", "/legal/terms"],
       ["Privacy policy", "/legal/privacy"],
     ],
