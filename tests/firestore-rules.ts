@@ -242,6 +242,41 @@ describe("Firestore course publishing rules", () => {
       }),
     );
   });
+
+  it("allows owner to create the course_cover asset doc (first half of cover upload)", async () => {
+    // The cover upload writes the asset doc BEFORE the course cover update.
+    // Both must pass; cover this first write too so the end-to-end flow is green.
+    await seedTeacher("teacher-1");
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), "courses/course-asset"),
+        createCourse("teacher-1", "draft"),
+      );
+    });
+
+    const db = testEnv.authenticatedContext("teacher-1", verifiedAuth).firestore();
+
+    await assertSucceeds(
+      setDoc(doc(db, "courses/course-asset/assets/asset-1"), {
+        id: "asset-1",
+        courseId: "course-asset",
+        ownerId: "teacher-1",
+        kind: "course_cover",
+        fileName: "cover.png",
+        contentType: "image/png",
+        size: 204800,
+        storagePath: "courses/course-asset/assets/teacher-1/asset-1/cover.png",
+        downloadUrl:
+          "https://firebasestorage.googleapis.com/v0/b/skillsetusaofficial.firebasestorage.app/o/cover.png",
+        isPreview: false,
+        lessonId: null,
+        moduleId: null,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      }),
+    );
+  });
 });
 
 describe("Firestore course review rules", () => {
