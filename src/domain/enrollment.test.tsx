@@ -97,6 +97,19 @@ describe("enrollment helpers", () => {
         progressPercent: 0,
         lastLessonId: null,
       },
+      {
+        id: "enrollment-demo",
+        userId: "user-1",
+        courseId: "course-clinical-psychology",
+        courseSlug: "clinical-psychology",
+        courseTitle: "Clinical Psychology",
+        courseCategory: "Psychology",
+        courseImage: "https://example.com/clinical.jpg",
+        status: "active",
+        source: "manual_demo",
+        progressPercent: 10,
+        lastLessonId: null,
+      },
     ]);
 
     expect(cards).toEqual([
@@ -108,6 +121,16 @@ describe("enrollment helpers", () => {
           "A course-linked space for teacher announcements, learner questions, discussion, and shared resources.",
         href: "/learn/community/creator?courseId=course-1",
         name: "Leadership Development community",
+        visibility: "enrolled only",
+      },
+      {
+        id: "community-enrollment-demo",
+        categories: "course community",
+        courseTitle: "Clinical Psychology",
+        description:
+          "A course-linked space for teacher announcements, learner questions, discussion, and shared resources.",
+        href: "/learn/community/clinical-psychology",
+        name: "Clinical Psychology community",
         visibility: "enrolled only",
       },
     ]);

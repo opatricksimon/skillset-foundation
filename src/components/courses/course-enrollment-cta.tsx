@@ -142,6 +142,9 @@ export function CourseEnrollmentCta({ course }: CourseEnrollmentCtaProps) {
     );
   }
 
+  // The three access-mode guards above eliminate not_open and both paid modes,
+  // so TypeScript narrows accessDecision to `free_enrollment` here: only a
+  // genuinely free course can reach the manual-enroll action below.
   async function handleEnroll() {
     if (!user) {
       return;
