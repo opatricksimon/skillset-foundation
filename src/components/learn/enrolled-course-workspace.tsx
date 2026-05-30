@@ -27,16 +27,13 @@ import { getSafeExternalUrl } from "@/domain/external-url";
 import type { Course, Lesson, LessonType } from "@/domain/learning";
 import {
   getCourseProgressPercent,
-  getLastCompletedCourseLesson,
   getNextCourseLesson,
 } from "@/domain/lesson-progress";
 import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
 import { subscribeToEnrollment } from "@/lib/data/enrollments";
-import { updateEnrollmentProgress } from "@/lib/data/enrollments";
 import {
-  markLessonCompleted,
+  recordLessonProgress,
   subscribeToCompletedLessons,
-  unmarkLessonCompleted,
 } from "@/lib/data/lesson-progress";
 import {
   getProtectedCourseAssetObjectUrl,
@@ -327,17 +324,18 @@ export function EnrolledCourseWorkspace({
     setError("");
     setActiveLessonId(lessonId);
 
-    const nextCompletedLessonIds = completed
-      ? completedLessonIds.filter((id) => id !== lessonId)
-      : [...completedLessonIds, lessonId];
-    const nextProgressPercent = getCourseProgressPercent(course, nextCompletedLessonIds);
-    const lastCompletedLesson = getLastCompletedCourseLesson(course, nextCompletedLessonIds);
-
     try {
-      if (completed) {
-        await unmarkLessonCompleted(workspaceEnrollment.id, lessonId);
-      } else {
-        await markLessonCompleted(workspaceEnrollment.id, user.uid, lessonId);
+      // Progress is computed server-side: recordLessonProgress validates the
+      // lesson, writes the marker via the Admin SDK, and returns the
+      // authoritative progressPercent. The completedLessons subscription
+      // refreshes the UI checkmarks from the resulting Firestore write.
+      const result = await recordLessonProgress(
+        workspaceEnrollment.id,
+        lessonId,
+        !completed,
+      );
+
+      if (!completed) {
         // LESSON_COMPLETED — fired only on the mark→complete transition.
         // unmark (toggling off) is treated as a correction, not a milestone.
         const position = allLessons.findIndex((l) => l.id === lessonId);
@@ -348,21 +346,14 @@ export function EnrolledCourseWorkspace({
         });
       }
 
-      await updateEnrollmentProgress(
-        user.uid,
-        course.slug,
-        nextProgressPercent,
-        lastCompletedLesson?.lesson.id ?? null,
-        nextProgressPercent === 100 ? "completed" : "active",
-      );
-
-      if (!completed && nextProgressPercent === 100) {
+      if (!completed && result.progressPercent >= 100) {
         await issueSkillsetCertificate(workspaceEnrollment.id);
         // COURSE_COMPLETED + CREDENTIAL_ISSUED — fire after the certificate
         // is persisted so PostHog only sees credentials that actually exist.
+        // The 100% here is the server's authoritative figure, not a guess.
         track.courseCompleted({
           course_id: course.id,
-          lessons_completed: nextCompletedLessonIds.length,
+          lessons_completed: result.completedLessonCount,
         });
         track.credentialIssued({
           credential_id: `cred:${workspaceEnrollment.id}`,

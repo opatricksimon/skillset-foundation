@@ -148,6 +148,7 @@ type PayoutLedgerRecord = {
   releaseAttemptCount?: number;
   transferId?: string | null;
   transferReversedAmountMinor?: number | null;
+  refundedAmountMinor?: number | null;
 };
 
 type CourseReviewRecord = {
@@ -451,6 +452,43 @@ function normalizeBuilderModules(input: unknown) {
   });
 
   return { lessonCount, modules };
+}
+
+/**
+ * Walk a stored course's modules and return the set of real lesson ids. Used to
+ * validate client-supplied lessonIds and to derive the authoritative progress
+ * denominator server-side (clients can never set progressPercent directly).
+ */
+function extractCourseLessonIds(modules: unknown): Set<string> {
+  const ids = new Set<string>();
+
+  if (!Array.isArray(modules)) {
+    return ids;
+  }
+
+  for (const module of modules) {
+    if (!isRecord(module)) {
+      continue;
+    }
+
+    const lessons = module.lessons;
+
+    if (!Array.isArray(lessons)) {
+      continue;
+    }
+
+    for (const lesson of lessons) {
+      if (
+        isRecord(lesson)
+        && typeof lesson.id === "string"
+        && lesson.id.length > 0
+      ) {
+        ids.add(lesson.id);
+      }
+    }
+  }
+
+  return ids;
 }
 
 function validateCourseReadyForReview(course: TeacherCourseRecord) {
@@ -1816,7 +1854,7 @@ export const requestRefund = onCall(
     });
 
     await recordAuditEvent({
-      action: AUDIT_ACTIONS.REFUND_ISSUED,
+      action: AUDIT_ACTIONS.REFUND_REQUESTED,
       actorId: userId,
       actorEmail:
         typeof request.auth.token.email === "string"
@@ -1824,7 +1862,7 @@ export const requestRefund = onCall(
           : null,
       targetType: "order",
       targetId: orderDocument.id,
-      summary: `Refund issued for course ${enrollment.courseId}`,
+      summary: `Refund requested for course ${enrollment.courseId}`,
       metadata: {
         refundId: refund.id,
         enrollmentId,
@@ -1948,6 +1986,7 @@ async function releaseLedgerTransfer(
   ledgerId: string,
   ledger: PayoutLedgerRecord,
 ) {
+  const ledgerRef = db.collection("payoutLedger").doc(ledgerId);
   const destination = ledger.teacherStripeConnectedAccountId;
   const amount = Number(ledger.netAmountMinor || 0);
   const currency = normalizeSkillsetCurrency(ledger.currency).toLowerCase();
@@ -1957,7 +1996,7 @@ async function releaseLedgerTransfer(
   }
 
   if (amount <= 0) {
-    await db.collection("payoutLedger").doc(ledgerId).set(
+    await ledgerRef.set(
       {
         status: "released",
         transferId: null,
@@ -1988,15 +2027,95 @@ async function releaseLedgerTransfer(
     },
   );
 
-  await db.collection("payoutLedger").doc(ledgerId).set(
-    {
-      status: "released",
+  // RACE GUARD: between transfers.create and persisting the result, a refund
+  // webhook (handleChargeRefunded) may have flipped this ledger to refunded.
+  // That handler could NOT reverse the transfer because transferId was not
+  // persisted yet. Re-read transactionally: if still releasing, mark released;
+  // if a refund raced in, record the transferId but keep the refunded status
+  // and reverse the transfer we just created (Stripe call lives OUTSIDE the txn).
+  const raceDecision = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ledgerRef);
+    const current = snapshot.exists
+      ? (snapshot.data() as PayoutLedgerRecord)
+      : null;
+    const refundedMidRelease =
+      current?.status === "refunded"
+      || current?.status === "partially_refunded";
+
+    if (refundedMidRelease) {
+      transaction.set(
+        ledgerRef,
+        {
+          transferId: transfer.id,
+          transferReleasedDuringRefund: true,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      return {
+        released: false as const,
+        refundedAmountMinor: Number(current?.refundedAmountMinor || 0),
+        alreadyReversedAmountMinor: Number(
+          current?.transferReversedAmountMinor || 0,
+        ),
+      };
+    }
+
+    transaction.set(
+      ledgerRef,
+      {
+        status: "released",
+        transferId: transfer.id,
+        releasedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return { released: true as const };
+  });
+
+  if (!raceDecision.released) {
+    // Buyer was refunded while we transferred funds to the teacher. Reverse the
+    // transfer so the platform does not pay out money it no longer holds.
+    const reversal = await createReleasedRefundTransferReversal({
+      stripe: stripe as unknown as TransferReversalStripeClient,
+      ledgerId,
       transferId: transfer.id,
-      releasedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
+      grossAmountMinor: Number(ledger.grossAmountMinor || 0),
+      refundedAmountMinor: raceDecision.refundedAmountMinor || amount,
+      releasedTransferAmountMinor: amount,
+      alreadyReversedAmountMinor: raceDecision.alreadyReversedAmountMinor,
+      idempotencyKey: `transfer_reversal_${ledgerId}_release_race`,
+      metadata: {
+        ledgerId,
+        orderId: ledger.orderId,
+        reason: "release_refund_race",
+      },
+    });
+
+    if (reversal.reversalAmountMinor > 0) {
+      await ledgerRef.set(
+        {
+          transferReversedAmountMinor: FieldValue.increment(
+            reversal.reversalAmountMinor,
+          ),
+          latestTransferReversalId: reversal.reversalId,
+          latestTransferReversalAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+
+    logger.warn("Payout transfer reversed due to refund race", {
+      ledgerId,
+      transferId: transfer.id,
+      reversalAmountMinor: reversal.reversalAmountMinor,
+    });
+    return;
+  }
 
   await captureServerEvent(ledger.teacherId, SERVER_EVENTS.PAYOUT_RELEASED, {
     ledger_id: ledgerId,
@@ -2104,6 +2223,311 @@ export const issueSkillsetCertificate = onCall(async (request) => {
     certificateId: certificateRef.id,
   };
 });
+
+/**
+ * Server-authoritative lesson progress. The client can no longer write
+ * `progressPercent`/`status` on an enrollment, nor the `progress` subcollection
+ * (both are admin-only in firestore.rules). All completion flows through here:
+ * we validate the lesson belongs to the course, write the marker via the Admin
+ * SDK, recompute the percentage from real markers, and persist it atomically.
+ * This closes the spoof that let a user forge 100% (free certificate) or forge
+ * low progress after consuming a course (gaming the refund progress cap).
+ */
+export const recordLessonProgress = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before tracking progress.");
+  }
+
+  const userId = request.auth.uid;
+  const enrollmentId = String(request.data?.enrollmentId || "").trim();
+  const lessonId = String(request.data?.lessonId || "").trim();
+  const completed = request.data?.completed === true;
+
+  if (!enrollmentId || enrollmentId.length > 220) {
+    throw new HttpsError("invalid-argument", "A valid enrollmentId is required.");
+  }
+
+  if (!lessonId || lessonId.length > 200) {
+    throw new HttpsError("invalid-argument", "A valid lessonId is required.");
+  }
+
+  const enrollmentRef = db.collection("enrollments").doc(enrollmentId);
+  const enrollmentSnapshot = await enrollmentRef.get();
+
+  if (!enrollmentSnapshot.exists) {
+    throw new HttpsError("not-found", "Enrollment not found.");
+  }
+
+  const enrollment = enrollmentSnapshot.data() as EnrollmentRecord;
+
+  if (enrollment.userId !== userId) {
+    throw new HttpsError(
+      "permission-denied",
+      "You can only update progress for your own enrollments.",
+    );
+  }
+
+  if (["refunded", "revoked", "expired"].includes(enrollment.status)) {
+    throw new HttpsError(
+      "failed-precondition",
+      "This enrollment is no longer active.",
+    );
+  }
+
+  const courseSnapshot = await db
+    .collection("courses")
+    .doc(enrollment.courseId)
+    .get();
+
+  if (!courseSnapshot.exists) {
+    throw new HttpsError("not-found", "Course not found.");
+  }
+
+  const course = courseSnapshot.data() as TeacherCourseRecord;
+  const validLessonIds = extractCourseLessonIds(course.modules);
+  const totalLessons = validLessonIds.size;
+
+  if (!validLessonIds.has(lessonId)) {
+    throw new HttpsError(
+      "invalid-argument",
+      "That lesson does not belong to this course.",
+    );
+  }
+
+  const progressCollectionRef = enrollmentRef.collection("progress");
+  const progressRef = progressCollectionRef.doc(lessonId);
+
+  const result = await db.runTransaction(async (transaction) => {
+    const freshEnrollmentSnapshot = await transaction.get(enrollmentRef);
+
+    if (!freshEnrollmentSnapshot.exists) {
+      throw new HttpsError("not-found", "Enrollment not found.");
+    }
+
+    const freshEnrollment = freshEnrollmentSnapshot.data() as EnrollmentRecord;
+
+    if (freshEnrollment.userId !== userId) {
+      throw new HttpsError(
+        "permission-denied",
+        "You can only update progress for your own enrollments.",
+      );
+    }
+
+    if (["refunded", "revoked", "expired"].includes(freshEnrollment.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "This enrollment is no longer active.",
+      );
+    }
+
+    const progressSnapshot = await transaction.get(progressCollectionRef);
+    const completedSet = new Set<string>();
+
+    for (const document of progressSnapshot.docs) {
+      if (validLessonIds.has(document.id)) {
+        completedSet.add(document.id);
+      }
+    }
+
+    if (completed) {
+      completedSet.add(lessonId);
+    } else {
+      completedSet.delete(lessonId);
+    }
+
+    const completedCount = completedSet.size;
+    const progressPercent =
+      totalLessons > 0
+        ? Math.min(
+            100,
+            Math.max(0, Math.round((completedCount / totalLessons) * 100)),
+          )
+        : 0;
+    const status = progressPercent >= 100 ? "completed" : "active";
+
+    if (completed) {
+      transaction.set(
+        progressRef,
+        {
+          lessonId,
+          userId,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } else {
+      transaction.delete(progressRef);
+    }
+
+    transaction.update(enrollmentRef, {
+      progressPercent,
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(completed ? { lastLessonId: lessonId } : {}),
+    });
+
+    return { progressPercent, status, completedCount };
+  });
+
+  return {
+    progressPercent: result.progressPercent,
+    status: result.status,
+    completedLessonCount: result.completedCount,
+    totalLessonCount: totalLessons,
+  };
+});
+
+/**
+ * Admin-initiated refund. Mirrors the buyer-facing requestRefund money path but
+ * gated on an admin role and able to refund partially. The state transition
+ * (order/payment/ledger/enrollment -> refunded, transfer reversal) flows through
+ * the existing charge.refunded webhook, so this only kicks off the Stripe refund
+ * and records the REQUEST in the audit trail.
+ */
+export const issueAdminRefund = onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in as an administrator.");
+    }
+
+    const callerId = request.auth.uid;
+    const callerSnapshot = await db.collection("users").doc(callerId).get();
+    const callerProfile = callerSnapshot.data() as UserProfileRecord | undefined;
+    const callerRoles = Array.isArray(callerProfile?.roles)
+      ? callerProfile.roles
+      : [];
+
+    if (!callerRoles.includes("admin")) {
+      throw new HttpsError(
+        "permission-denied",
+        "Administrator access is required.",
+      );
+    }
+
+    const orderId = String(request.data?.orderId || "").trim();
+
+    if (!orderId || orderId.length > 220) {
+      throw new HttpsError("invalid-argument", "A valid orderId is required.");
+    }
+
+    const rawAmount = request.data?.amountMinor;
+    let amountMinor: number | null = null;
+
+    if (rawAmount !== undefined && rawAmount !== null) {
+      const parsed = Number(rawAmount);
+
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new HttpsError(
+          "invalid-argument",
+          "amountMinor must be a positive integer in minor units.",
+        );
+      }
+
+      amountMinor = parsed;
+    }
+
+    await enforceRateLimit(`admin_refund_${callerId}`, 30, 60 * 60 * 1000);
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnapshot = await orderRef.get();
+
+    if (!orderSnapshot.exists) {
+      throw new HttpsError("not-found", "Order not found.");
+    }
+
+    const order = orderSnapshot.data() || {};
+
+    if (order.status !== "paid" && order.status !== "partially_refunded") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only paid orders can be refunded.",
+      );
+    }
+
+    const paymentIntentId = String(order.paymentIntentId || "");
+
+    if (!paymentIntentId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Payment intent not found for this order.",
+      );
+    }
+
+    const orderAmountMinor = Number(order.amountMinor || 0);
+
+    if (
+      amountMinor !== null
+      && orderAmountMinor > 0
+      && amountMinor > orderAmountMinor
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Refund amount exceeds the order total.",
+      );
+    }
+
+    const stripe = getStripeClient();
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: paymentIntentId,
+        ...(amountMinor !== null ? { amount: amountMinor } : {}),
+        metadata: {
+          orderId,
+          courseId: typeof order.courseId === "string" ? order.courseId : "",
+          userId: typeof order.userId === "string" ? order.userId : "",
+          source: "admin_request",
+          adminId: callerId,
+        },
+      },
+      {
+        idempotencyKey:
+          amountMinor !== null
+            ? `admin_refund_${orderId}_${amountMinor}`
+            : `admin_refund_${orderId}_full`,
+      },
+    );
+
+    await orderRef.set(
+      {
+        refundRequestedAt: FieldValue.serverTimestamp(),
+        refundRequestId: refund.id,
+        refundRequestedBy: callerId,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    await recordAuditEvent({
+      action: AUDIT_ACTIONS.REFUND_REQUESTED,
+      actorId: callerId,
+      actorEmail:
+        typeof request.auth.token.email === "string"
+          ? request.auth.token.email
+          : null,
+      targetType: "order",
+      targetId: orderId,
+      summary: `Admin refund requested for order ${orderId}`,
+      metadata: {
+        refundId: refund.id,
+        courseId: typeof order.courseId === "string" ? order.courseId : null,
+        userId: typeof order.userId === "string" ? order.userId : null,
+        amountMinor: amountMinor ?? orderAmountMinor,
+        partial:
+          amountMinor !== null
+          && orderAmountMinor > 0
+          && amountMinor < orderAmountMinor,
+        source: "admin_request",
+      },
+    });
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
+    };
+  },
+);
 
 export const verifySkillsetCertificate = onCall(async (request) => {
   const verificationCode = String(request.data?.verificationCode || "")
@@ -2308,6 +2732,38 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
   const ledgerRef = db.collection("payoutLedger").doc(orderId);
 
+  // Best-effort capture of the Stripe hosted receipt for this one-off
+  // purchase so the buyer's Billing -> Purchases tab can link straight to it.
+  // The receipt URL lives on the Charge, so we expand the PaymentIntent's
+  // latest charge. One-off course checkout uses `customer_email` (not a
+  // persistent Stripe Customer), so these charges never surface in the
+  // Customer Portal — the charge receipt_url is the only buyer-facing receipt.
+  // Isolated in its own try/catch: a failure here must never block the
+  // enrollment / payment / ledger writes below.
+  let receiptUrl: string | null = null;
+  const receiptIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+  if (receiptIntentId) {
+    try {
+      const intent = await getStripeClient().paymentIntents.retrieve(
+        receiptIntentId,
+        { expand: ["latest_charge"] },
+      );
+      const latestCharge = intent.latest_charge;
+      if (latestCharge && typeof latestCharge !== "string") {
+        receiptUrl = latestCharge.receipt_url ?? null;
+      }
+    } catch (error) {
+      logger.warn("Could not resolve Stripe receipt URL for order", {
+        orderId,
+        paymentIntentId: receiptIntentId,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+  }
+
   const checkoutAnalytics: {
     value:
       | {
@@ -2372,6 +2828,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         provider: "stripe",
         providerPaymentId: paymentIntentId,
         status: "succeeded",
+        ...(receiptUrl ? { receiptUrl } : {}),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
@@ -2382,6 +2839,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       status: "paid",
       checkoutSessionId: session.id,
       paymentIntentId,
+      ...(receiptUrl ? { receiptUrl } : {}),
       paidAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -2570,6 +3028,27 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
         updatedAt: FieldValue.serverTimestamp(),
       });
     }
+  });
+
+  // Authoritative audit point: the money actually moved back to the buyer.
+  // requestRefund/issueAdminRefund only log the REQUEST; Stripe confirming the
+  // refund via this webhook is what we record as REFUND_ISSUED.
+  await recordAuditEvent({
+    action: AUDIT_ACTIONS.REFUND_ISSUED,
+    actorId: "system:stripe-webhook",
+    actorEmail: null,
+    targetType: "order",
+    targetId: orderId,
+    summary: `Refund ${charge.refunded ? "completed" : "partially completed"} for order ${orderId}`,
+    metadata: {
+      paymentId: paymentIntentId,
+      chargeId: charge.id,
+      courseId: typeof order.courseId === "string" ? order.courseId : null,
+      userId: typeof order.userId === "string" ? order.userId : null,
+      refundedAmountMinor: charge.amount_refunded,
+      fullRefund: charge.refunded === true,
+      transferReversalAmountMinor: reversalResult.reversalAmountMinor,
+    },
   });
 }
 

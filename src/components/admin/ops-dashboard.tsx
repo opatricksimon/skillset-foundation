@@ -111,6 +111,7 @@ export function OpsDashboard() {
 }
 
 const auditActionLabels: Record<string, string> = {
+  "refund.requested": "Refund requested",
   "refund.issued": "Refund issued",
   "account.deletion_requested": "Account deletion requested",
   "account.data_export_requested": "Data export requested",

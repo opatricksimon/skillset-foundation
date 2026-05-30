@@ -7,7 +7,6 @@ import {
   query,
   serverTimestamp,
   setDoc,
-  updateDoc,
   where,
   collection,
   type Unsubscribe,
@@ -16,7 +15,6 @@ import {
 import {
   createEnrollmentSnapshot,
   getEnrollmentId,
-  type EnrollmentStatus,
   type Enrollment,
 } from "@/domain/enrollment";
 import type { Course } from "@/domain/learning";
@@ -126,23 +124,5 @@ export function subscribeToEnrollment(
       });
     },
     onError,
-  );
-}
-
-export async function updateEnrollmentProgress(
-  userId: string,
-  courseSlug: string,
-  progressPercent: number,
-  lastLessonId: string | null,
-  status: Extract<EnrollmentStatus, "active" | "completed">,
-) {
-  await updateDoc(
-    doc(getFirestoreDb(), enrollmentsCollection, getEnrollmentId(userId, courseSlug)),
-    {
-      progressPercent,
-      lastLessonId,
-      status,
-      updatedAt: serverTimestamp(),
-    },
   );
 }

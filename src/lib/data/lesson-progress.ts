@@ -2,15 +2,12 @@
 
 import {
   collection,
-  deleteDoc,
-  doc,
   onSnapshot,
-  serverTimestamp,
-  setDoc,
   type Unsubscribe,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
-import { getFirestoreDb } from "@/lib/firebase/client";
+import { getFirestoreDb, getFirebaseFunctions } from "@/lib/firebase/client";
 
 const enrollmentsCollection = "enrollments";
 const progressCollection = "progress";
@@ -29,28 +26,32 @@ export function subscribeToCompletedLessons(
   );
 }
 
-export async function markLessonCompleted(
-  enrollmentId: string,
-  userId: string,
-  lessonId: string,
-) {
-  await setDoc(
-    doc(getFirestoreDb(), enrollmentsCollection, enrollmentId, progressCollection, lessonId),
-    {
-      lessonId,
-      userId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
-}
+export type LessonProgressResult = {
+  progressPercent: number;
+  status: "active" | "completed";
+  completedLessonCount: number;
+  totalLessonCount: number;
+};
 
-export async function unmarkLessonCompleted(
+/**
+ * Record (or clear) lesson completion through the server-authoritative
+ * recordLessonProgress callable. The function validates the lesson belongs to
+ * the course, writes the marker via the Admin SDK, and recomputes the
+ * enrollment's progressPercent in one transaction. The client can no longer
+ * write progress markers or progressPercent directly (both are admin-only in
+ * firestore.rules), which closes the certificate/refund-cap spoof.
+ */
+export async function recordLessonProgress(
   enrollmentId: string,
   lessonId: string,
-) {
-  await deleteDoc(
-    doc(getFirestoreDb(), enrollmentsCollection, enrollmentId, progressCollection, lessonId),
-  );
+  completed: boolean,
+): Promise<LessonProgressResult> {
+  const callable = httpsCallable<
+    { enrollmentId: string; lessonId: string; completed: boolean },
+    LessonProgressResult
+  >(getFirebaseFunctions(), "recordLessonProgress");
+
+  const result = await callable({ enrollmentId, lessonId, completed });
+
+  return result.data;
 }

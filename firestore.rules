@@ -683,8 +683,14 @@ service cloud.firestore {
         && request.resource.data.courseImage == resource.data.courseImage
         && request.resource.data.source == resource.data.source
         && resource.data.status in ['active', 'completed']
-        && request.resource.data.status in ['active', 'completed']
-        && enrollmentChangedOnly(['status', 'progressPercent', 'lastLessonId', 'updatedAt']);
+        // progressPercent and status are server-authoritative: written only by
+        // the recordLessonProgress Cloud Function through the Admin SDK (which
+        // bypasses these rules). Clients may touch only the resume pointer, so a
+        // user can no longer forge 100% (free certificate) or forge low progress
+        // after consuming a course to game the refund progress cap.
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.progressPercent == resource.data.progressPercent
+        && enrollmentChangedOnly(['lastLessonId', 'updatedAt']);
     }
 
     function hasOnlyAllowedWishlistKeys() {
@@ -1499,10 +1505,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /progress/{lessonId} {
+        // Markers are written exclusively by the recordLessonProgress Cloud
+        // Function (Admin SDK), which validates the lesson belongs to the course
+        // and recomputes the enrollment's authoritative progressPercent in the
+        // same transaction. Clients read for the UI checkmarks but never write.
         allow read: if isAdmin() || ownsEnrollment(enrollmentId);
-        allow create, update: if ownsEnrollment(enrollmentId)
-          && validLessonProgressShape(enrollmentId, lessonId);
-        allow delete: if isAdmin() || ownsEnrollment(enrollmentId);
+        allow create, update, delete: if false;
       }
     }
 

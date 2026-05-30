@@ -13,6 +13,7 @@
 export const AUDIT_LOG_COLLECTION = "auditLog";
 
 export const AUDIT_ACTIONS = {
+  REFUND_REQUESTED: "refund.requested",
   REFUND_ISSUED: "refund.issued",
   ACCOUNT_DELETION_REQUESTED: "account.deletion_requested",
   ACCOUNT_DATA_EXPORT_REQUESTED: "account.data_export_requested",

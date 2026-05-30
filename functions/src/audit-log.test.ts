@@ -33,6 +33,32 @@ describe("audit log entry builder", () => {
     });
   });
 
+  it("builds a refund.requested entry distinct from refund.issued", () => {
+    const entry = buildAuditEntry({
+      action: AUDIT_ACTIONS.REFUND_REQUESTED,
+      actorId: "admin_1",
+      actorEmail: "ops@skillset.com",
+      targetType: "order",
+      targetId: "order_9",
+      summary: "Admin refund requested for order order_9",
+      metadata: {
+        refundId: "re_9",
+        amountMinor: 4900,
+        partial: true,
+        source: "admin_request",
+      },
+    });
+
+    expect(entry.action).toBe("refund.requested");
+    expect(AUDIT_ACTIONS.REFUND_REQUESTED).not.toBe(AUDIT_ACTIONS.REFUND_ISSUED);
+    expect(entry.metadata).toEqual({
+      refundId: "re_9",
+      amountMinor: 4900,
+      partial: true,
+      source: "admin_request",
+    });
+  });
+
   it("trims fields and defaults a blank email to null", () => {
     const entry = buildAuditEntry({
       action: AUDIT_ACTIONS.ACCOUNT_DELETION_REQUESTED,
