@@ -15,6 +15,10 @@ import {
   buildAuditEntry,
   type AuditEventInput,
 } from "./audit-log";
+import {
+  buildCoursePublishedProperties,
+  isCoursePublishTransition,
+} from "./course-analytics";
 import { setGlobalOptions } from "firebase-functions/v2";
 import {
   HttpsError,
@@ -23,6 +27,7 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import Stripe from "stripe";
 import {
   automaticRefundProgressCap,
@@ -1021,6 +1026,41 @@ export const submitTeacherCourseForReview = onCall(async (request) => {
 
   return { success: true };
 });
+
+/**
+ * Analytics-only Firestore trigger: emits the `course_published` funnel event
+ * when a course transitions into the published state. See course-analytics.ts
+ * for why this is a trigger (publishing is an admin moderation write, not a
+ * callable) and why the distinct_id is the teacher. Telemetry never throws
+ * (captureServerEvent swallows + no-ops without a key), so this never blocks or
+ * retries a course write.
+ */
+export const onCoursePublished = onDocumentUpdated(
+  "courses/{courseId}",
+  async (event) => {
+    const before = event.data?.before.data() as TeacherCourseRecord | undefined;
+    const after = event.data?.after.data() as TeacherCourseRecord | undefined;
+
+    if (!after || !isCoursePublishTransition(before?.status, after.status)) {
+      return;
+    }
+
+    const properties = buildCoursePublishedProperties(
+      event.params.courseId,
+      after,
+    );
+
+    if (!properties) {
+      return;
+    }
+
+    await captureServerEvent(
+      properties.teacher_id,
+      SERVER_EVENTS.COURSE_PUBLISHED,
+      { ...properties },
+    );
+  },
+);
 
 export const createCheckoutSession = onCall(
   { secrets: [stripeSecretKey] },
