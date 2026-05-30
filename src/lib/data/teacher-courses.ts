@@ -69,6 +69,15 @@ export async function deleteTeacherCourse(courseId: string) {
   await deleteDraft({ courseId });
 }
 
+export async function deleteCourseAsAdmin(courseId: string) {
+  const deleteCourse = httpsCallable<
+    { courseId: string },
+    { success: true }
+  >(getFirebaseFunctions(), "deleteCourseAsAdmin");
+
+  await deleteCourse({ courseId });
+}
+
 export async function updateCourseReviewStatus(
   courseId: string,
   status: Extract<TeacherCourseStatus, "published" | "needs_changes" | "inactive">,
@@ -160,6 +169,29 @@ export function subscribeToCoursesInReview(
 
   return onSnapshot(
     reviewQuery,
+    (snapshot) => {
+      callback(
+        snapshot.docs.map((document) => ({
+          id: document.id,
+          ...(document.data() as Omit<TeacherCourse, "id">),
+        })),
+      );
+    },
+    onError,
+  );
+}
+
+export function subscribeToManagedCourses(
+  callback: (courses: TeacherCourse[]) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  const managedQuery = query(
+    collection(getFirestoreDb(), coursesCollection),
+    where("status", "in", ["published", "inactive"]),
+  );
+
+  return onSnapshot(
+    managedQuery,
     (snapshot) => {
       callback(
         snapshot.docs.map((document) => ({

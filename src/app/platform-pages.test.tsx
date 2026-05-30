@@ -69,6 +69,10 @@ vi.mock("@/components/admin/course-review-queue", () => ({
   CourseReviewQueue: () => <div>Course review queue</div>,
 }));
 
+vi.mock("@/components/admin/managed-course-panel", () => ({
+  ManagedCoursePanel: () => <div>Managed course panel</div>,
+}));
+
 vi.mock("@/components/admin/admin-enrollment-panel", () => ({
   AdminEnrollmentPanel: () => <div>Admin enrollment panel</div>,
 }));

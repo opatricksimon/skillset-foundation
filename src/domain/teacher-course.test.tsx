@@ -4,6 +4,8 @@ import {
   countCourseLessons,
   normalizeCourseCategories,
   normalizeInstallmentsMax,
+  adminCanRepublishCourse,
+  adminCanUnpublishCourse,
   normalizeTeacherCourseModules,
   teacherCanDeleteCourse,
   teacherCanEditCourse,
@@ -50,6 +52,16 @@ describe("teacher course domain", () => {
     expect(teacherCanDeleteCourse("in_review")).toBe(false);
     expect(teacherCanDeleteCourse("published")).toBe(false);
     expect(teacherCanDeleteCourse("inactive")).toBe(false);
+  });
+
+  it("gates admin marketplace controls by status", () => {
+    expect(adminCanUnpublishCourse("published")).toBe(true);
+    expect(adminCanUnpublishCourse("inactive")).toBe(false);
+    expect(adminCanUnpublishCourse("draft")).toBe(false);
+
+    expect(adminCanRepublishCourse("inactive")).toBe(true);
+    expect(adminCanRepublishCourse("published")).toBe(false);
+    expect(adminCanRepublishCourse("in_review")).toBe(false);
   });
 
   it("normalizes installment limits for one-time courses", () => {

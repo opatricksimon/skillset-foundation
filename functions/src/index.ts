@@ -1072,6 +1072,62 @@ export const deleteTeacherCourseDraft = onCall(async (request) => {
   return { success: true };
 });
 
+export const deleteCourseAsAdmin = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in to manage courses.");
+  }
+
+  const uid = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+
+  const callerSnapshot = await db.collection("users").doc(uid).get();
+  const callerProfile = callerSnapshot.data() as UserProfileRecord | undefined;
+  const callerRoles = Array.isArray(callerProfile?.roles) ? callerProfile.roles : [];
+
+  if (!callerRoles.includes("admin")) {
+    throw new HttpsError("permission-denied", "Only Skillset admins can delete courses.");
+  }
+
+  // Safety guard: never hard-delete a course that carries real learners or
+  // sales. Orphaning enrollments/orders would corrupt course access and payout
+  // records, so such a course must be unpublished (status: inactive) instead.
+  const [enrollmentSnapshot, orderSnapshot] = await Promise.all([
+    db.collection("enrollments").where("courseId", "==", courseId).limit(1).get(),
+    db.collection("orders").where("courseId", "==", courseId).limit(1).get(),
+  ]);
+
+  if (!enrollmentSnapshot.empty || !orderSnapshot.empty) {
+    throw new HttpsError(
+      "failed-precondition",
+      "This course has enrollments or orders. Unpublish it to remove it from the marketplace; it cannot be permanently deleted.",
+    );
+  }
+
+  const courseRef = db.collection("courses").doc(courseId);
+
+  await db.runTransaction(async (transaction) => {
+    const courseSnapshot = await transaction.get(courseRef);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    // Release the unique-title reservation atomically, mirroring the teacher
+    // draft-delete path. courseTitleKeys cannot be deleted from the client
+    // (rules), so this admin-SDK transaction is the only correct path.
+    if (course.titleKey) {
+      transaction.delete(db.collection("courseTitleKeys").doc(course.titleKey));
+    }
+
+    transaction.delete(courseRef);
+  });
+
+  return { success: true };
+});
+
 /**
  * Analytics-only Firestore trigger: emits the `course_published` funnel event
  * when a course transitions into the published state. See course-analytics.ts

@@ -253,3 +253,17 @@ export function teacherCanSubmitCourse(status: TeacherCourseStatus): boolean {
 export function teacherCanDeleteCourse(status: TeacherCourseStatus): boolean {
   return ["draft", "needs_changes"].includes(status);
 }
+
+/**
+ * Admin-only marketplace controls for courses that have left the review
+ * pipeline. Unpublishing takes a live course off the marketplace
+ * (published -> inactive); republishing restores it (inactive -> published).
+ * Both are reversible status flips with no data loss.
+ */
+export function adminCanUnpublishCourse(status: TeacherCourseStatus): boolean {
+  return status === "published";
+}
+
+export function adminCanRepublishCourse(status: TeacherCourseStatus): boolean {
+  return status === "inactive";
+}
