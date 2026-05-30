@@ -10,8 +10,12 @@ import { StatusChip } from "@/components/shared/status-chip";
 import { StatusFilterDropdown } from "@/components/shared/status-filter-dropdown";
 import { CreateCourseStart } from "@/components/teacher/create-course-start";
 import type { TeacherCourse } from "@/domain/teacher-course";
-import { teacherCanSubmitCourse } from "@/domain/teacher-course";
 import {
+  teacherCanDeleteCourse,
+  teacherCanSubmitCourse,
+} from "@/domain/teacher-course";
+import {
+  deleteTeacherCourse,
   subscribeToTeacherCourses,
   submitTeacherCourseForReview,
 } from "@/lib/data/teacher-courses";
@@ -37,6 +41,8 @@ export function TeacherCourseStudio({
   const [error, setError] = useState("");
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [reviewingCourseId, setReviewingCourseId] = useState<string | null>(null);
+  const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const normalizedCourseQuery = courseQuery.toLowerCase().trim();
   const visibleCourses = normalizedCourseQuery
     ? courses.filter((course) =>
@@ -77,6 +83,21 @@ export function TeacherCourseStudio({
       setError("We could not submit this course for review. Please try again or contact Skillset support.");
     } finally {
       setReviewingCourseId(null);
+    }
+  }
+
+  async function handleDeleteCourse(courseId: string) {
+    setError("");
+    setDeletingCourseId(courseId);
+
+    try {
+      await deleteTeacherCourse(courseId);
+      // The live subscription removes the course from the list automatically.
+    } catch {
+      setError("We could not delete this course. Please try again or contact Skillset support.");
+    } finally {
+      setDeletingCourseId(null);
+      setConfirmingDeleteId(null);
     }
   }
 
@@ -270,6 +291,38 @@ export function TeacherCourseStudio({
                           ? "Submitting..."
                           : "Send for review"}
                       </button>
+                    ) : null}
+                    {teacherCanDeleteCourse(course.status) ? (
+                      confirmingDeleteId === course.id ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCourse(course.id)}
+                            disabled={deletingCourseId === course.id}
+                            className="inline-flex items-center justify-center rounded-[8px] bg-[var(--color-accent)] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                          >
+                            {deletingCourseId === course.id
+                              ? "Deleting..."
+                              : "Confirm delete"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingDeleteId(null)}
+                            disabled={deletingCourseId === course.id}
+                            className="button-outline px-4 py-2 text-xs disabled:opacity-60"
+                          >
+                            Keep draft
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDeleteId(course.id)}
+                          className="button-outline px-4 py-2 text-xs text-[var(--color-accent)]"
+                        >
+                          Delete draft
+                        </button>
+                      )
                     ) : null}
                   </div>
                 </article>

@@ -5,6 +5,7 @@ import {
   normalizeCourseCategories,
   normalizeInstallmentsMax,
   normalizeTeacherCourseModules,
+  teacherCanDeleteCourse,
   teacherCanEditCourse,
   teacherCanSubmitCourse,
   type TeacherCourseModule,
@@ -43,6 +44,12 @@ describe("teacher course domain", () => {
     expect(teacherCanSubmitCourse("needs_changes")).toBe(true);
     expect(teacherCanSubmitCourse("inactive")).toBe(true);
     expect(teacherCanSubmitCourse("published")).toBe(false);
+
+    expect(teacherCanDeleteCourse("draft")).toBe(true);
+    expect(teacherCanDeleteCourse("needs_changes")).toBe(true);
+    expect(teacherCanDeleteCourse("in_review")).toBe(false);
+    expect(teacherCanDeleteCourse("published")).toBe(false);
+    expect(teacherCanDeleteCourse("inactive")).toBe(false);
   });
 
   it("normalizes installment limits for one-time courses", () => {

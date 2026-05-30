@@ -60,6 +60,15 @@ export async function submitTeacherCourseForReview(courseId: string) {
   await submitForReview({ courseId });
 }
 
+export async function deleteTeacherCourse(courseId: string) {
+  const deleteDraft = httpsCallable<
+    { courseId: string },
+    { success: true }
+  >(getFirebaseFunctions(), "deleteTeacherCourseDraft");
+
+  await deleteDraft({ courseId });
+}
+
 export async function updateCourseReviewStatus(
   courseId: string,
   status: Extract<TeacherCourseStatus, "published" | "needs_changes" | "inactive">,

@@ -1027,6 +1027,51 @@ export const submitTeacherCourseForReview = onCall(async (request) => {
   return { success: true };
 });
 
+export const deleteTeacherCourseDraft = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in before deleting a course.");
+  }
+
+  const uid = request.auth.uid;
+  const input = isRecord(request.data) ? request.data : {};
+  const courseId = cleanRequiredText(input.courseId, "Course id", 3, 160);
+
+  const courseRef = db.collection("courses").doc(courseId);
+
+  await db.runTransaction(async (transaction) => {
+    const courseSnapshot = await transaction.get(courseRef);
+
+    if (!courseSnapshot.exists) {
+      throw new HttpsError("not-found", "Course not found.");
+    }
+
+    const course = courseSnapshot.data() as TeacherCourseRecord;
+
+    if (course.ownerId !== uid) {
+      throw new HttpsError("permission-denied", "Only the course owner can delete it.");
+    }
+
+    if (!["draft", "needs_changes"].includes(course.status)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Only draft or needs-changes courses can be deleted. Submitted, published, or inactive courses are managed by Skillset.",
+      );
+    }
+
+    // Release the unique-title reservation in the same atomic write. Without
+    // this the courseTitleKeys/{titleKey} doc is orphaned and permanently
+    // blocks the teacher from reusing the title (createTeacherCourseDraft
+    // would throw already-exists).
+    if (course.titleKey) {
+      transaction.delete(db.collection("courseTitleKeys").doc(course.titleKey));
+    }
+
+    transaction.delete(courseRef);
+  });
+
+  return { success: true };
+});
+
 /**
  * Analytics-only Firestore trigger: emits the `course_published` funnel event
  * when a course transitions into the published state. See course-analytics.ts
