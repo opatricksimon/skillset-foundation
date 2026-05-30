@@ -254,7 +254,7 @@ export function PlansPanel() {
                       ? "button-solid mt-5 w-full justify-center px-3 py-2 text-xs disabled:opacity-60"
                       : "button-outline mt-5 w-full justify-center px-3 py-2 text-xs disabled:opacity-60"
                   }
-                  title={canPurchase ? undefined : "Stripe Price ID not configured yet."}
+                  title={canPurchase ? undefined : "This plan isn't available for purchase yet."}
                 >
                   {canPurchase ? `Upgrade to ${plan.name}` : "Unavailable"}
                 </button>
