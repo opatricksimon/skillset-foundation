@@ -6,7 +6,9 @@ import { SiteNav } from "@/components/site/site-nav";
 export default function VerifyPage() {
   return (
     <main className="min-h-screen bg-[var(--color-surface)]">
-      <SiteNav />
+      <div className="print:hidden">
+        <SiteNav />
+      </div>
       <div className="px-5 py-12 md:px-8 md:py-16">
         <Suspense
           fallback={

@@ -240,7 +240,7 @@ export function SecuritySettingsPanel() {
             disabled
             className="button-outline mt-4 px-4 py-2 text-xs opacity-60"
           >
-            Enable after Firebase MFA setup
+            Available soon
           </button>
         </div>
       </div>

@@ -48,13 +48,16 @@ export function CertificateVerificationPanel() {
       <h1 className="display-title mt-4 text-4xl text-[var(--color-ink)] md:text-6xl">
         Verify a credential.
       </h1>
-      <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+      <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)] print:hidden">
         Enter a Skillset verification code to confirm whether a certificate was
         issued by Skillset. This page returns only course-level verification
         data, not private learner records.
       </p>
 
-      <form className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]" onSubmit={handleVerify}>
+      <form
+        className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto] print:hidden"
+        onSubmit={handleVerify}
+      >
         <input
           value={verificationCode}
           onChange={(event) => setVerificationCode(event.target.value)}
@@ -113,10 +116,17 @@ export function CertificateVerificationPanel() {
           <p className="mt-4 rounded-[10px] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-primary)]">
             Code: {result.certificate.verificationCode}
           </p>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="button-solid mt-5 px-5 py-3 text-sm print:hidden"
+          >
+            Print / Save as PDF
+          </button>
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap gap-3 print:hidden">
         <Link href="/" className="button-outline px-5 py-3 text-sm">
           Back to homepage
         </Link>

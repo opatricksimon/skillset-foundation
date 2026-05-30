@@ -26,6 +26,13 @@ function getClient(): PostHog | null {
 
   const apiKey = process.env.POSTHOG_SERVER_KEY;
   if (!apiKey) {
+    // Fires once (guarded by `resolved`). Makes the disabled-telemetry state
+    // observable in Cloud Functions logs instead of silently swallowing every
+    // backend event, so an absent key during a deploy is diagnosable.
+    console.info(
+      "PostHog server telemetry disabled: POSTHOG_SERVER_KEY is not set. " +
+        "Backend events are a no-op until the key is provisioned.",
+    );
     cachedClient = null;
     return null;
   }

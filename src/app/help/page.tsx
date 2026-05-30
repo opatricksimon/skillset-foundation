@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
 
+import { HelpCenter } from "@/components/help/help-center";
 import { PublicPage } from "@/components/site/public-page";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
@@ -132,76 +132,7 @@ export default function HelpPage() {
       title="Help center."
       description="Short answers to the questions learners and creators ask most. Don't see your question? Contact support — a real person reads every message."
     >
-      {/* Visual search shell. Non-functional today (we don't have enough
-          content yet to justify search); the placeholder makes the intent
-          explicit and the keyboard tab order already includes it. Wire it
-          up to an in-page filter once the FAQ count crosses ~20. */}
-      <div className="mt-8 flex w-full items-center gap-3 rounded-[12px] border fine-rule bg-white p-3 shadow-[var(--shadow-soft)]">
-        <Search
-          aria-hidden="true"
-          size={16}
-          strokeWidth={1.8}
-          className="text-[var(--color-ink-muted)]"
-        />
-        <input
-          type="search"
-          disabled
-          placeholder="Search help articles (coming soon — for now, jump to a category below)"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-ink-muted)]"
-          aria-label="Search help"
-        />
-      </div>
-
-      {/* Category jump nav: 1-tap to a section. Maps to the same ids the
-          in-app components link to (#payouts, #integrations, etc.). */}
-      <nav
-        aria-label="Help categories"
-        className="mt-5 flex flex-wrap gap-2"
-      >
-        {categories.map((category) => (
-          <a
-            key={category.id}
-            href={`#${category.id}`}
-            className="rounded-full border fine-rule bg-white px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-primary)]"
-          >
-            {category.label}
-          </a>
-        ))}
-      </nav>
-
-      <div className="mt-10 space-y-12">
-        {categories.map((category) => (
-          <section
-            key={category.id}
-            id={category.id}
-            className="scroll-mt-28"
-            aria-labelledby={`${category.id}-heading`}
-          >
-            <h2
-              id={`${category.id}-heading`}
-              className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]"
-            >
-              {category.label}
-            </h2>
-            <div className="mt-4 grid gap-4">
-              {category.items.map((item) => (
-                <article
-                  key={item.q}
-                  id={item.id}
-                  className={`rounded-[16px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)] ${item.id ? "scroll-mt-28" : ""}`}
-                >
-                  <h3 className="text-lg font-bold text-[var(--color-ink)]">
-                    {item.q}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
-                    {item.a}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      <HelpCenter categories={categories} />
 
       <div className="mt-12 rounded-[18px] border fine-rule bg-[var(--color-surface-soft)] p-7 text-center sm:p-9">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
