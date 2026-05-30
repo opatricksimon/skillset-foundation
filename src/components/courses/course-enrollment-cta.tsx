@@ -12,6 +12,7 @@ import {
   subscribeToEnrollment,
 } from "@/lib/data/enrollments";
 import { isPublicFeatureEnabled } from "@/lib/feature-flags";
+import { startCourseCheckout } from "@/lib/payments/checkout";
 import { hasPermission } from "@/lib/permissions";
 
 type CourseEnrollmentCtaProps = {
@@ -30,7 +31,9 @@ export function CourseEnrollmentCta({ course }: CourseEnrollmentCtaProps) {
     ready: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [error, setError] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
   const accessKey = user ? `${user.uid}::${course.slug}` : null;
   const accessDecision = getCourseAccessDecision(
     course,
@@ -126,10 +129,7 @@ export function CourseEnrollmentCta({ course }: CourseEnrollmentCtaProps) {
     );
   }
 
-  if (
-    accessDecision.mode === "paid_checkout_disabled"
-    || accessDecision.mode === "paid_checkout_required"
-  ) {
+  if (accessDecision.mode === "paid_checkout_disabled") {
     return (
       <>
         <button type="button" disabled className="button-outline mt-6 w-full px-5 py-3 text-sm">
@@ -142,7 +142,56 @@ export function CourseEnrollmentCta({ course }: CourseEnrollmentCtaProps) {
     );
   }
 
-  // The three access-mode guards above eliminate not_open and both paid modes,
+  if (accessDecision.mode === "paid_checkout_required") {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={handleCheckout}
+          disabled={isCheckingOut}
+          className="button-solid mt-6 w-full px-5 py-3 text-sm disabled:opacity-60"
+        >
+          {isCheckingOut ? "Opening secure checkout..." : "Enroll with secure checkout"}
+        </button>
+        {checkoutError ? (
+          <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+            {checkoutError}
+          </p>
+        ) : (
+          <p className="mt-3 text-xs leading-6 text-[var(--color-ink-soft)]">
+            {accessDecision.detail}
+          </p>
+        )}
+      </>
+    );
+  }
+
+  // Hoisted so the paid_checkout_required branch above can call it. Mirrors
+  // CreatorCourseDetail.handleCheckout: startCourseCheckout navigates away on
+  // success (Stripe-hosted page), so we only clear the spinner in the failure
+  // path. The server surfaces honest precondition errors (course not found,
+  // teacher payouts not connected) which we show verbatim.
+  async function handleCheckout() {
+    if (!user) {
+      return;
+    }
+
+    setCheckoutError("");
+    setIsCheckingOut(true);
+
+    try {
+      await startCourseCheckout(course.id);
+    } catch (checkoutFailure) {
+      setCheckoutError(
+        checkoutFailure instanceof Error && checkoutFailure.message
+          ? checkoutFailure.message
+          : "We could not start secure checkout. Try again or contact support.",
+      );
+      setIsCheckingOut(false);
+    }
+  }
+
+  // The four access-mode guards above eliminate not_open and both paid modes,
   // so TypeScript narrows accessDecision to `free_enrollment` here: only a
   // genuinely free course can reach the manual-enroll action below.
   async function handleEnroll() {

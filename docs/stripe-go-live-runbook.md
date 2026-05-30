@@ -78,3 +78,60 @@ As chaves LIVE estão no vault local (arquivo de APIs do founder), conta "SKILLS
 - Verificar idempotência: webhook duplicado não cria enrollment duplicado (já há `idempotencyKey` no checkout; confirmar no webhook handler).
 - Rotacionar qualquer chave que tenha sido colada em lugar inseguro.
 - Manter `sk_live_` apenas em Firebase Secret Manager, jamais em `NEXT_PUBLIC_*` ou fonte.
+
+## Onda 5-B — Ativação do checkout de curso no catálogo (2026-05-30)
+
+O que mudou no código nesta onda:
+
+- **CTA de curso pago agora liga de fato.** `course-enrollment-cta.tsx` (páginas
+  de curso *showcase* estáticas — home featured / links diretos) tinha um botão
+  desabilitado no modo `paid_checkout_required`. Agora, com o flag de checkout
+  ligado, o botão chama `startCourseCheckout(course.id)` com spinner + erro
+  gracioso (espelha `creator-course-detail.tsx`). Se o curso não resolver no
+  backend, o servidor devolve mensagem honesta ("Course not found." / "teacher
+  has not connected Stripe payouts yet.") em vez de travar.
+
+Fato físico do fundador que isto expõe (precisa da sua máquina/credencial):
+
+- **O catálogo `/courses` (marketplace) só lista cursos publicados REAIS do
+  Firestore** (`subscribeToPublishedTeacherCourses` → `where status == published`).
+  Os 6 cursos demo estáticos (`src/data/demo/courses.ts`) NÃO são docs Firestore
+  e NÃO têm teacher com Stripe Connect — então clicar "comprar" num *showcase*
+  demo pago (`mental-health-foundations`, `effective-communication`) cai no erro
+  gracioso, não numa compra.
+- **Caminho de pagamento ao vivo para o demo (recomendado):** publicar UM curso
+  real pelo Teacher Studio com a conta de teacher conectada ao Stripe Connect.
+  Ele aparece automaticamente em `/courses` → investidor clica → `CreatorCourseDetail`
+  (já fiado, `startCourseCheckout`) → Stripe Checkout LIVE → webhook → enrollment
+  → `/learn`. Este é o fluxo autêntico do marketplace e exercita o loop
+  create→publish→buy que a Onda 3 endureceu.
+- **Alternativa (semear demos):** se quiser que os 2 *showcase* demos pagos também
+  sejam compráveis, criar docs Firestore `courses/{course-mental-health-foundations}`
+  e `courses/{course-effective-communication}` com shape `TeacherCourseRecord`
+  (`status: published`, `ownerId` = uid do teacher conectado). Opcional — o curso
+  real do Teacher Studio já cobre o momento de pagamento do demo.
+
+Pré-condições para o checkout ligar (todas físicas/do fundador):
+
+1. `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...` no ambiente de produção.
+2. `NEXT_PUBLIC_PAYMENTS_CHECKOUT_ENABLED=true` (default do flag é `false`;
+   `getPublicFeatureFlagOverrides` só liga se a env var for exatamente `"true"`).
+3. Teacher conectado ao Stripe Connect (`charges_enabled` + `payouts_enabled`).
+4. $1 LIVE smoke (passo 5 do runbook acima).
+
+> A mesma `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` também liga o checkout de
+> **assinatura** (`/account/billing/upgrade?plan=<id>` → `EmbeddedCheckoutPanel`).
+> Sem a key, esse painel mostra banner honesto "Checkout is being set up." —
+> não trava.
+
+### Deferido para Onda 6 (não fiz — risco no caminho crítico de auth)
+
+- **Threading do `plan` da pricing → signup → onboarding → billing/upgrade.** A
+  página `/account/billing/upgrade` JÁ consome `?plan=` e funciona. O que falta é
+  carregar o `plan` escolhido na `/pricing` através da máquina de estados de auth
+  (`src/lib/auth/routing.ts` — `getLoadingRoute`/`getPostAuthRoute`/`getAuthPathQuery`
+  só threadam `path`/`role`, sem passthrough genérico; + `auth-page`, `/loading`,
+  `welcome-choice.tsx`, `onboarding-choice.tsx`). Não é dead-end hoje: signup
+  funciona, teacher cai em `/teach`, e o upgrade é alcançável manualmente por
+  Account → Billing. Threading é continuidade (polish), não gap, e toca o caminho
+  de conversão mais crítico — deixado para depois do QA de browser.
