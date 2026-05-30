@@ -1879,6 +1879,53 @@ export const requestRefund = onCall(
   },
 );
 
+// Abandoned Checkout sessions leave a "pending" order behind (created before
+// the Stripe redirect). Sweep clearly-abandoned ones to "cancelled" so they
+// never linger in a buyer's purchase history as forever-pending.
+export const expireStalePendingOrders = onSchedule(
+  {
+    schedule: "every day 04:00",
+    timeZone: "Etc/UTC",
+  },
+  async () => {
+    const now = Date.now();
+    const staleThresholdMs = 48 * 60 * 60 * 1000;
+    const pendingSnapshot = await db
+      .collection("orders")
+      .where("status", "==", "pending")
+      .limit(300)
+      .get();
+
+    let cancelledCount = 0;
+    let skippedCount = 0;
+
+    for (const orderDocument of pendingSnapshot.docs) {
+      const createdAtMillis = timestampToMillis(
+        (orderDocument.data() as { createdAt?: unknown }).createdAt,
+      );
+
+      // Keep recent pending orders: the buyer may still be completing Checkout
+      // (Stripe sessions live ~24h). Only sweep clearly-abandoned ones.
+      if (createdAtMillis !== null && now - createdAtMillis < staleThresholdMs) {
+        skippedCount += 1;
+        continue;
+      }
+
+      await orderDocument.ref.update({
+        status: "cancelled",
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      cancelledCount += 1;
+    }
+
+    logger.info("Swept stale pending orders", {
+      cancelledCount,
+      skippedCount,
+      scanned: pendingSnapshot.size,
+    });
+  },
+);
+
 export const dailyReleaseTransfers = onSchedule(
   {
     schedule: "every day 03:00",

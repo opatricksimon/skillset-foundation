@@ -18,7 +18,10 @@ import {
   type CredentialCandidate,
 } from "@/domain/certificate";
 import type { Enrollment } from "@/domain/enrollment";
-import { subscribeToUserCertificates } from "@/lib/data/certificates";
+import {
+  issueSkillsetCertificate,
+  subscribeToUserCertificates,
+} from "@/lib/data/certificates";
 import { subscribeToUserEnrollments } from "@/lib/data/enrollments";
 
 export function LearnCredentialsHub() {
@@ -229,6 +232,22 @@ function CredentialMetric({
 function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
   const isEligible = candidate.status === "eligible";
   const isIssued = candidate.status === "issued";
+  const [isIssuing, setIsIssuing] = useState(false);
+  const [issueError, setIssueError] = useState("");
+
+  async function handleIssue() {
+    setIssueError("");
+    setIsIssuing(true);
+
+    try {
+      await issueSkillsetCertificate(candidate.enrollmentId);
+      // The certificates subscription flips this card to "issued" on success.
+    } catch {
+      setIssueError("We could not issue this certificate yet. Please try again.");
+    } finally {
+      setIsIssuing(false);
+    }
+  }
 
   return (
     <article className="credential-card rounded-[16px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
@@ -247,7 +266,7 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
       </div>
       <p className="mt-4 text-sm leading-7 text-[var(--color-ink-soft)]">
         {isEligible
-          ? "This course is complete. Certificate issuance will run automatically when completion is confirmed."
+          ? "This course is complete. Issue your Skillset Verified certificate below."
           : isIssued
             ? "Your Skillset Verified certificate has been issued and is ready for verification."
           : "Continue the course to unlock credential review eligibility."}
@@ -281,8 +300,13 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
           {isEligible ? "Review course" : "Continue course"}
         </Link>
         {isEligible ? (
-          <button type="button" disabled className="button-outline px-4 py-3 text-sm opacity-70">
-            Issuance queued
+          <button
+            type="button"
+            onClick={handleIssue}
+            disabled={isIssuing}
+            className="button-solid px-4 py-3 text-sm disabled:opacity-60"
+          >
+            {isIssuing ? "Issuing..." : "Issue certificate"}
           </button>
         ) : null}
         {isIssued ? (
@@ -294,6 +318,11 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
           </Link>
         ) : null}
       </div>
+      {issueError ? (
+        <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+          {issueError}
+        </p>
+      ) : null}
     </article>
   );
 }
