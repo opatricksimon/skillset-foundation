@@ -29,6 +29,7 @@ import type {
   TeacherLesson,
 } from "@/domain/teacher-course";
 import {
+  deleteCourseAsset,
   subscribeToCourseAssets,
   uploadCourseAsset,
   type UploadCourseAssetProgress,
@@ -116,6 +117,7 @@ export function LessonContentModal({
   const [uploadProgress, setUploadProgress] = useState<UploadCourseAssetProgress | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
   const lessonAssets = assets.filter((asset) => asset.lessonId === lesson.id);
   const videoAssets = lessonAssets.filter(
     (asset) => asset.kind === "lesson_video" || asset.kind === "live_recording",
@@ -196,6 +198,33 @@ export function LessonContentModal({
       setError("We could not upload this file. Check the file type and course permissions.");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleDeleteAsset(asset: CourseAsset) {
+    if (!isEditable) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${asset.fileName}"? This permanently removes the file.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setDeletingAssetId(asset.id);
+
+    try {
+      await deleteCourseAsset(asset);
+      setSuccess("Asset deleted.");
+    } catch {
+      setError("We could not delete this file. Check course ownership and current permissions.");
+    } finally {
+      setDeletingAssetId(null);
     }
   }
 
@@ -334,7 +363,13 @@ export function LessonContentModal({
                     : "No external embed URL yet."}
               </div>
 
-              <LessonAssetList assets={videoAssets} emptyLabel="No uploaded video file yet." />
+              <LessonAssetList
+                assets={videoAssets}
+                emptyLabel="No uploaded video file yet."
+                isEditable={isEditable}
+                deletingAssetId={deletingAssetId}
+                onDelete={handleDeleteAsset}
+              />
             </div>
           ) : null}
 
@@ -406,7 +441,13 @@ export function LessonContentModal({
                 success={success}
                 uploadKind="lesson_material"
               />
-              <LessonAssetList assets={materialAssets} emptyLabel="No complementary materials yet." />
+              <LessonAssetList
+                assets={materialAssets}
+                emptyLabel="No complementary materials yet."
+                isEditable={isEditable}
+                deletingAssetId={deletingAssetId}
+                onDelete={handleDeleteAsset}
+              />
             </div>
           ) : null}
 
@@ -507,7 +548,13 @@ export function LessonContentModal({
                 success={success}
                 uploadKind="lesson_thumbnail"
               />
-              <LessonAssetList assets={thumbnailAssets} emptyLabel="No lesson thumbnail yet." />
+              <LessonAssetList
+                assets={thumbnailAssets}
+                emptyLabel="No lesson thumbnail yet."
+                isEditable={isEditable}
+                deletingAssetId={deletingAssetId}
+                onDelete={handleDeleteAsset}
+              />
             </div>
           ) : null}
         </div>
@@ -598,9 +645,15 @@ function LessonUploadForm({
 function LessonAssetList({
   assets,
   emptyLabel,
+  isEditable,
+  deletingAssetId,
+  onDelete,
 }: {
   assets: CourseAsset[];
   emptyLabel: string;
+  isEditable: boolean;
+  deletingAssetId: string | null;
+  onDelete: (asset: CourseAsset) => void;
 }) {
   if (assets.length === 0) {
     return <p className="lesson-modal-empty">{emptyLabel}</p>;
@@ -616,7 +669,19 @@ function LessonAssetList({
               {courseAssetKindLabels[asset.kind]} - {formatCourseAssetSize(asset.size)}
             </span>
           </div>
-          <small>{asset.isPreview ? "Preview" : "Enrolled only"}</small>
+          <div className="flex items-center gap-3">
+            <small>{asset.isPreview ? "Preview" : "Enrolled only"}</small>
+            {isEditable ? (
+              <button
+                type="button"
+                onClick={() => onDelete(asset)}
+                disabled={deletingAssetId === asset.id}
+                className="button-outline px-3 py-1.5 text-xs text-[var(--color-accent)] disabled:opacity-60"
+              >
+                {deletingAssetId === asset.id ? "Deleting..." : "Delete"}
+              </button>
+            ) : null}
+          </div>
         </article>
       ))}
     </div>

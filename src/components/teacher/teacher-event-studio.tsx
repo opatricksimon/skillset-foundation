@@ -15,9 +15,12 @@ import {
 import { getSafeExternalUrl } from "@/domain/external-url";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import {
+  cancelCourseEvent,
   createCourseEvent,
+  deleteCourseEvent,
   subscribeToCourseEventRsvps,
   subscribeToTeacherCourseEvents,
+  updateCourseEvent,
 } from "@/lib/data/course-events";
 import { subscribeToTeacherCourses } from "@/lib/data/teacher-courses";
 
@@ -28,6 +31,20 @@ const eventTypes: CourseEventType[] = [
   "webinar",
   "deadline",
 ];
+
+// Convert a stored ISO timestamp into the local "YYYY-MM-DDTHH:mm" value a
+// datetime-local input expects, so editing an event pre-fills the right time.
+function toDateTimeLocalValue(iso: string): string {
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const offsetMs = date.getTimezoneOffset() * 60000;
+
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
 
 export function TeacherEventStudio() {
   const { user } = useAuth();
@@ -42,6 +59,8 @@ export function TeacherEventStudio() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [actioningEventId, setActioningEventId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -78,11 +97,30 @@ export function TeacherEventStudio() {
     [courseId, courses],
   );
 
+  function resetForm() {
+    setEditingEventId(null);
+    setTitle("");
+    setStartsAt("");
+    setExternalUrl("");
+    setDescription("");
+    setType("live_class");
+  }
+
+  function startEditing(event: CourseEvent) {
+    setEditingEventId(event.id);
+    setCourseId(event.courseId);
+    setType(event.type);
+    setTitle(event.title);
+    setStartsAt(toDateTimeLocalValue(event.startsAt));
+    setExternalUrl(event.externalUrl);
+    setDescription(event.description);
+    setError("");
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!user || !selectedCourse) {
-      setError("Create a course draft before scheduling a live session.");
+    if (!user) {
       return;
     }
 
@@ -100,28 +138,86 @@ export function TeacherEventStudio() {
     setIsSaving(true);
 
     try {
-      await createCourseEvent({
-        courseId: selectedCourse.id,
-        courseSlug: selectedCourse.id,
-        courseTitle: selectedCourse.title,
-        ownerId: user.uid,
-        title,
-        description,
-        type,
-        startsAt: new Date(startsAt).toISOString(),
-        externalUrl,
-      });
+      if (editingEventId) {
+        await updateCourseEvent(editingEventId, {
+          title,
+          description,
+          type,
+          startsAt: new Date(startsAt).toISOString(),
+          externalUrl,
+        });
+        resetForm();
+      } else {
+        if (!selectedCourse) {
+          setError("Create a course draft before scheduling a live session.");
+          return;
+        }
 
-      setTitle("");
-      setStartsAt("");
-      setExternalUrl("");
-      setDescription("");
-      setType("live_class");
-      setCourseId(selectedCourse.id);
+        await createCourseEvent({
+          courseId: selectedCourse.id,
+          courseSlug: selectedCourse.id,
+          courseTitle: selectedCourse.title,
+          ownerId: user.uid,
+          title,
+          description,
+          type,
+          startsAt: new Date(startsAt).toISOString(),
+          externalUrl,
+        });
+
+        resetForm();
+        setCourseId(selectedCourse.id);
+      }
     } catch {
-      setError("We could not schedule this session. Please check the details and try again.");
+      setError("We could not save this session. Please check the details and try again.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleCancelEvent(event: CourseEvent) {
+    const confirmed = window.confirm(
+      `Cancel "${event.title}"? Learners who RSVP'd will see it as cancelled.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setActioningEventId(event.id);
+
+    try {
+      await cancelCourseEvent(event.id);
+    } catch {
+      setError("We could not cancel this session.");
+    } finally {
+      setActioningEventId(null);
+    }
+  }
+
+  async function handleDeleteEvent(event: CourseEvent) {
+    const confirmed = window.confirm(
+      `Permanently delete "${event.title}"? This cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setActioningEventId(event.id);
+
+    try {
+      await deleteCourseEvent(event.id);
+
+      if (editingEventId === event.id) {
+        resetForm();
+      }
+    } catch {
+      setError("We could not delete this session.");
+    } finally {
+      setActioningEventId(null);
     }
   }
 
@@ -130,7 +226,7 @@ export function TeacherEventStudio() {
       <div className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <div className="flex items-baseline gap-2 border-b border-[var(--color-line)] pb-4">
           <h3 className="text-base font-bold text-[var(--color-ink)]">
-            Schedule an agenda item
+            {editingEventId ? "Edit agenda item" : "Schedule an agenda item"}
           </h3>
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-muted)]">
             Course agenda
@@ -147,7 +243,7 @@ export function TeacherEventStudio() {
             <select
               value={selectedCourse?.id ?? ""}
               onChange={(event) => setCourseId(event.target.value)}
-              disabled={courses.length === 0 || isLoading}
+              disabled={courses.length === 0 || isLoading || Boolean(editingEventId)}
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:opacity-60"
             >
               {courses.length === 0 ? (
@@ -231,16 +327,29 @@ export function TeacherEventStudio() {
             </p>
           ) : null}
 
-          <div>
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={isSaving || !selectedCourse}
+              disabled={isSaving || (!editingEventId && !selectedCourse)}
               className="button-solid px-5 py-3 text-sm disabled:opacity-60"
             >
-              {isSaving ? "Scheduling..." : "Schedule session"}
+              {isSaving
+                ? "Saving..."
+                : editingEventId
+                  ? "Update session"
+                  : "Schedule session"}
             </button>
-            {!selectedCourse && !isLoading ? (
-              <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+            {editingEventId ? (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="button-outline px-5 py-3 text-sm"
+              >
+                Cancel edit
+              </button>
+            ) : null}
+            {!editingEventId && !selectedCourse && !isLoading ? (
+              <p className="w-full text-xs text-[var(--color-ink-soft)]">
                 Create a course draft first — sessions are linked to a specific course.
               </p>
             ) : null}
@@ -302,6 +411,33 @@ export function TeacherEventStudio() {
                     Open external link
                   </a>
                 ) : null}
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--color-line)] pt-3">
+                  <button
+                    type="button"
+                    onClick={() => startEditing(event)}
+                    className="button-outline px-4 py-2 text-xs"
+                  >
+                    Edit
+                  </button>
+                  {event.status === "scheduled" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleCancelEvent(event)}
+                      disabled={actioningEventId === event.id}
+                      className="button-outline px-4 py-2 text-xs disabled:opacity-60"
+                    >
+                      {actioningEventId === event.id ? "Working..." : "Cancel session"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEvent(event)}
+                    disabled={actioningEventId === event.id}
+                    className="button-outline px-4 py-2 text-xs text-[var(--color-accent)] disabled:opacity-60"
+                  >
+                    Delete
+                  </button>
+                </div>
               </article>
             ))
           )}

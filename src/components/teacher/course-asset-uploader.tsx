@@ -17,6 +17,7 @@ import {
 } from "@/domain/course-asset";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import {
+  deleteCourseAsset,
   subscribeToCourseAssets,
   uploadCourseAsset,
   type UploadCourseAssetProgress,
@@ -62,6 +63,7 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
   const [uploadProgress, setUploadProgress] = useState<UploadCourseAssetProgress | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
   const allLessons = course.modules.flatMap((module) =>
     module.lessons.map((lesson) => ({
       ...lesson,
@@ -132,6 +134,33 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
       setError("We could not upload this asset. Check the file, course ownership, and current permissions.");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleDeleteAsset(asset: CourseAsset) {
+    if (!isEditable) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${asset.fileName}"? This permanently removes the file.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setDeletingAssetId(asset.id);
+
+    try {
+      await deleteCourseAsset(asset);
+      setSuccess("Asset deleted.");
+    } catch {
+      setError("We could not delete this asset. Check course ownership and current permissions.");
+    } finally {
+      setDeletingAssetId(null);
     }
   }
 
@@ -337,18 +366,27 @@ export function CourseAssetUploader({ course, isEditable }: CourseAssetUploaderP
               assets={courseLevelAssets}
               allModules={allModules}
               allLessons={allLessons}
+              isEditable={isEditable}
+              deletingAssetId={deletingAssetId}
+              onDelete={handleDeleteAsset}
             />
             <AssetGroup
               title="Module assets"
               assets={moduleAssets}
               allModules={allModules}
               allLessons={allLessons}
+              isEditable={isEditable}
+              deletingAssetId={deletingAssetId}
+              onDelete={handleDeleteAsset}
             />
             <AssetGroup
               title="Lesson assets"
               assets={lessonAssets}
               allModules={allModules}
               allLessons={allLessons}
+              isEditable={isEditable}
+              deletingAssetId={deletingAssetId}
+              onDelete={handleDeleteAsset}
             />
           </>
         )}
@@ -362,11 +400,17 @@ function AssetGroup({
   assets,
   allModules,
   allLessons,
+  isEditable,
+  deletingAssetId,
+  onDelete,
 }: {
   title: string;
   assets: CourseAsset[];
   allModules: Array<{ id: string; title: string }>;
   allLessons: Array<{ id: string; title: string; moduleTitle: string }>;
+  isEditable: boolean;
+  deletingAssetId: string | null;
+  onDelete: (asset: CourseAsset) => void;
 }) {
   return (
     <div className="grid gap-2">
@@ -417,6 +461,18 @@ function AssetGroup({
                   {asset.isPreview ? "Preview" : "Private"}
                 </span>
               </div>
+              {isEditable ? (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => onDelete(asset)}
+                    disabled={deletingAssetId === asset.id}
+                    className="button-outline px-3 py-1.5 text-xs text-[var(--color-accent)] disabled:opacity-60"
+                  >
+                    {deletingAssetId === asset.id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              ) : null}
             </article>
           );
         })

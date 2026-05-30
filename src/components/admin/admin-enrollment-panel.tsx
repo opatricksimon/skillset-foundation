@@ -2,10 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import type { Enrollment } from "@/domain/enrollment";
 import type { TeacherCourse } from "@/domain/teacher-course";
 import type { UserProfile } from "@/domain/user-profile";
 import { subscribeToAdminUserProfiles } from "@/lib/data/admin-users";
-import { createAdminEnrollmentForTeacherCourse } from "@/lib/data/enrollments";
+import {
+  createAdminEnrollmentForTeacherCourse,
+  revokeEnrollment,
+  subscribeToAdminGrantedEnrollments,
+} from "@/lib/data/enrollments";
 import { subscribeToPublishedTeacherCourses } from "@/lib/data/published-courses";
 
 export function AdminEnrollmentPanel() {
@@ -18,6 +23,9 @@ export function AdminEnrollmentPanel() {
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [grantedEnrollments, setGrantedEnrollments] = useState<Enrollment[]>([]);
+  const [isLoadingGranted, setIsLoadingGranted] = useState(true);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   useEffect(() => {
     return subscribeToAdminUserProfiles(
@@ -45,6 +53,19 @@ export function AdminEnrollmentPanel() {
     );
   }, []);
 
+  useEffect(() => {
+    return subscribeToAdminGrantedEnrollments(
+      (nextEnrollments) => {
+        setGrantedEnrollments(nextEnrollments);
+        setIsLoadingGranted(false);
+      },
+      () => {
+        setError("We could not load granted enrollments.");
+        setIsLoadingGranted(false);
+      },
+    );
+  }, []);
+
   const selectedCourse = useMemo(
     () => courses.find((course) => course.id === courseId) ?? null,
     [courseId, courses],
@@ -67,6 +88,29 @@ export function AdminEnrollmentPanel() {
       setError("We could not create this enrollment. Check admin role and rules.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleRevoke(enrollment: Enrollment) {
+    const confirmed = window.confirm(
+      `Revoke access to "${enrollment.courseTitle}" for this learner? They lose access immediately.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setRevokingId(enrollment.id);
+
+    try {
+      await revokeEnrollment(enrollment.id);
+      setSuccess("Enrollment revoked.");
+    } catch {
+      setError("We could not revoke this enrollment. Check admin role and rules.");
+    } finally {
+      setRevokingId(null);
     }
   }
 
@@ -150,6 +194,63 @@ export function AdminEnrollmentPanel() {
       >
         {isSaving ? "Creating enrollment..." : "Create admin enrollment"}
       </button>
+
+      <div className="mt-8 border-t border-[var(--color-line)] pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--color-brand)]">
+            Granted enrollments
+          </h4>
+          <span className="rounded-[8px] bg-[var(--color-surface-soft)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
+            {grantedEnrollments.length} active
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+          Admin and demo grants only. Revoking removes the learner&apos;s access
+          immediately.
+        </p>
+
+        <div className="mt-4 grid gap-3">
+          {isLoadingGranted ? (
+            <p className="text-sm text-[var(--color-ink-soft)]">
+              Loading granted enrollments...
+            </p>
+          ) : grantedEnrollments.length === 0 ? (
+            <p className="rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-ink-soft)]">
+              No admin or demo grants yet.
+            </p>
+          ) : (
+            grantedEnrollments.map((enrollment) => {
+              const learner = users.find((user) => user.uid === enrollment.userId);
+
+              return (
+                <article
+                  key={enrollment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[4px] border fine-rule bg-[var(--color-surface-soft)] p-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-ink)]">
+                      {enrollment.courseTitle}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-ink-soft)]">
+                      {learner?.displayName || learner?.email || enrollment.userId}
+                      {" - "}
+                      {enrollment.source === "admin" ? "Admin grant" : "Demo access"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(enrollment)}
+                    disabled={revokingId === enrollment.id}
+                    className="button-outline px-4 py-2 text-xs disabled:opacity-60"
+                  >
+                    {revokingId === enrollment.id ? "Revoking..." : "Revoke access"}
+                  </button>
+                </article>
+              );
+            })
+          )}
+        </div>
+      </div>
     </section>
   );
 }

@@ -2,7 +2,9 @@
 
 import {
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -176,4 +178,42 @@ export function subscribeToCourseAssets(
     },
     onError,
   );
+}
+
+/**
+ * Remove a course asset so a wrong video/PDF/cover is never stuck. Deletes the
+ * Storage object and the Firestore record, and clears the course cover when the
+ * asset being removed is the one currently in use. Owner only (enforced by
+ * firestore.rules assets delete == teacherCanManageCourseAssets), so callers
+ * must guard the UI behind an editable course state.
+ */
+export async function deleteCourseAsset(asset: CourseAsset) {
+  const db = getFirestoreDb();
+
+  // Drop the Storage blob first; a missing object must not block clearing the
+  // Firestore record (otherwise a half-deleted asset would be unremovable).
+  await deleteObject(ref(getFirebaseStorage(), asset.storagePath)).catch(
+    () => undefined,
+  );
+
+  await deleteDoc(
+    doc(db, coursesCollection, asset.courseId, assetsCollection, asset.id),
+  );
+
+  if (asset.kind === "course_cover") {
+    const courseRef = doc(db, coursesCollection, asset.courseId);
+    const courseSnapshot = await getDoc(courseRef);
+
+    // Only clear the cover when this asset is the one currently shown, so
+    // deleting an older cover never wipes a newer one.
+    if (
+      courseSnapshot.exists()
+      && courseSnapshot.data().coverImageUrl === asset.downloadUrl
+    ) {
+      await updateDoc(courseRef, {
+        coverImageUrl: null,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  }
 }

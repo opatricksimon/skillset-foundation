@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
@@ -102,6 +103,40 @@ export function subscribeToUserEnrollments(
     },
     onError,
   );
+}
+
+export function subscribeToAdminGrantedEnrollments(
+  callback: (enrollments: Enrollment[]) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  const grantedQuery = query(
+    collection(getFirestoreDb(), enrollmentsCollection),
+    where("source", "in", ["admin", "manual_demo"]),
+  );
+
+  return onSnapshot(
+    grantedQuery,
+    (snapshot) => {
+      callback(
+        snapshot.docs
+          .map((document) => ({
+            id: document.id,
+            ...(document.data() as Omit<Enrollment, "id">),
+          }))
+          .sort((left, right) => left.courseTitle.localeCompare(right.courseTitle)),
+      );
+    },
+    onError,
+  );
+}
+
+/**
+ * Revoke an admin/demo-granted enrollment. Hard-deletes the enrollment doc
+ * (admin only via firestore.rules enrollments delete == isAdmin()), the inverse
+ * of createManualEnrollment / createAdminEnrollmentForTeacherCourse.
+ */
+export async function revokeEnrollment(enrollmentId: string) {
+  await deleteDoc(doc(getFirestoreDb(), enrollmentsCollection, enrollmentId));
 }
 
 export function subscribeToEnrollment(

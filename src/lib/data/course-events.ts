@@ -3,12 +3,14 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -18,6 +20,7 @@ import type {
   CourseEvent,
   CourseEventRsvp,
   CourseEventRsvpStatus,
+  CourseEventType,
   CreateCourseEventInput,
 } from "@/domain/course-event";
 import { getFirestoreDb } from "@/lib/firebase/client";
@@ -42,6 +45,50 @@ export async function createCourseEvent(input: CreateCourseEventInput) {
   });
 
   return eventRef.id;
+}
+
+export type UpdateCourseEventInput = {
+  title: string;
+  description: string;
+  type: CourseEventType;
+  startsAt: string;
+  externalUrl: string;
+};
+
+/**
+ * Edit a scheduled event so a wrong date/link/topic is never stuck on a
+ * learner's agenda. Owner only (firestore.rules teacherCanUpdateOwnedCourseEvent
+ * restricts the diff to these fields and keeps courseId/slug/title pinned).
+ */
+export async function updateCourseEvent(
+  eventId: string,
+  input: UpdateCourseEventInput,
+) {
+  await updateDoc(doc(getFirestoreDb(), courseEventsCollection, eventId), {
+    title: input.title.trim(),
+    description: input.description.trim(),
+    type: input.type,
+    startsAt: input.startsAt,
+    externalUrl: input.externalUrl.trim(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Cancel an event without deleting it, so learners who already RSVP'd see the
+ * cancelled state. subscribeToCourseEvents filters to scheduled, so cancelled
+ * events drop off the learner agenda automatically.
+ */
+export async function cancelCourseEvent(eventId: string) {
+  await updateDoc(doc(getFirestoreDb(), courseEventsCollection, eventId), {
+    status: "cancelled",
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/** Permanently remove an event (use for mistakes with no RSVPs). Owner only. */
+export async function deleteCourseEvent(eventId: string) {
+  await deleteDoc(doc(getFirestoreDb(), courseEventsCollection, eventId));
 }
 
 export function subscribeToTeacherCourseEvents(

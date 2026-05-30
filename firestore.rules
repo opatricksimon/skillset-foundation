@@ -547,6 +547,16 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
+    // Admin moderation (approve / request changes / unpublish) only flips
+    // status + reviewNote. Evaluated BEFORE validCourseShape() so legacy or
+    // malformed course docs can still be moderated without tripping the
+    // ~26-field shape validator (which would PERMISSION_DENY on the update path).
+    function adminCanUpdateCourseStatus() {
+      return isAdmin()
+        && validCourseStatus()
+        && courseChangedOnly(['status', 'reviewNote', 'updatedAt']);
+    }
+
     function teacherCanSaveOwnedCourse() {
       return isTeacher()
         && (isAdmin() || currentUserHasAcceptedTeacherTerms())
@@ -1429,6 +1439,7 @@ service cloud.firestore {
       // the cover-image and submit-for-review paths from aborting with PERMISSION_DENIED.
       allow update: if teacherCanSubmitOwnedCourseForReview()
         || teacherCanUpdateOwnedCourseCover()
+        || adminCanUpdateCourseStatus()
         || (
           validCourseShape()
           && (
