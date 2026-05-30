@@ -9,6 +9,12 @@ import {
 import { logger } from "firebase-functions";
 import { defineSecret } from "firebase-functions/params";
 import { captureServerEvent, SERVER_EVENTS } from "./posthog";
+import {
+  AUDIT_ACTIONS,
+  AUDIT_LOG_COLLECTION,
+  buildAuditEntry,
+  type AuditEventInput,
+} from "./audit-log";
 import { setGlobalOptions } from "firebase-functions/v2";
 import {
   HttpsError,
@@ -587,6 +593,28 @@ async function enforceRateLimit(
   });
 }
 
+/**
+ * Best-effort write of a sensitive-action audit entry. NEVER throws: failing
+ * to record the trail must not roll back or break the operation being audited.
+ * The Admin SDK bypasses Firestore rules, which deny all client writes here.
+ */
+async function recordAuditEvent(input: AuditEventInput): Promise<void> {
+  try {
+    const entry = buildAuditEntry(input);
+    await db.collection(AUDIT_LOG_COLLECTION).add({
+      ...entry,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    logger.error("Failed to record audit event", {
+      action: input.action,
+      actorId: input.actorId,
+      targetId: input.targetId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 async function createAccountActionRequest(
   request: CallableRequest,
   type: AccountActionRequestType,
@@ -617,6 +645,25 @@ async function createAccountActionRequest(
     requestId: requestRef.id,
     requestedBy: uid,
     type,
+  });
+
+  await recordAuditEvent({
+    action:
+      type === "account_deletion"
+        ? AUDIT_ACTIONS.ACCOUNT_DELETION_REQUESTED
+        : AUDIT_ACTIONS.ACCOUNT_DATA_EXPORT_REQUESTED,
+    actorId: uid,
+    actorEmail: email,
+    targetType: "user",
+    targetId: uid,
+    summary:
+      type === "account_deletion"
+        ? "Account deletion requested"
+        : "Personal data export requested",
+    metadata: {
+      requestId: requestRef.id,
+      type,
+    },
   });
 
   return {
@@ -1625,6 +1672,25 @@ export const requestRefund = onCall(
       course_id: enrollment.courseId,
       reason: "student_request",
       progress_pct: enrollment.progressPercent ?? 0,
+    });
+
+    await recordAuditEvent({
+      action: AUDIT_ACTIONS.REFUND_ISSUED,
+      actorId: userId,
+      actorEmail:
+        typeof request.auth.token.email === "string"
+          ? request.auth.token.email
+          : null,
+      targetType: "order",
+      targetId: orderDocument.id,
+      summary: `Refund issued for course ${enrollment.courseId}`,
+      metadata: {
+        refundId: refund.id,
+        enrollmentId,
+        courseId: enrollment.courseId,
+        progressPercent: enrollment.progressPercent ?? 0,
+        source: "student_request",
+      },
     });
 
     return {
