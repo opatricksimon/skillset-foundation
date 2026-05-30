@@ -66,20 +66,18 @@ npm --prefix functions run build
 
 ## Deploy
 
-Recommended production deploy:
+> ⚠️ **App code and security rules deploy SEPARATELY**, and **functions+hosting
+> always ship together** (never hosting-only — it re-triggers the outcomes
+> autosave loop). Use the npm scripts; full reference in [`DEPLOY.md`](../../DEPLOY.md).
 
 ```bash
-firebase deploy
+npm run deploy:app      # functions + hosting (together)
+npm run deploy:rules    # storage + firestore rules  ← run whenever rules change
+npm run deploy:full     # app, then rules (recommended for releases)
 ```
 
-Targeted deploys:
-
-```bash
-firebase deploy --only hosting
-firebase deploy --only functions
-firebase deploy --only firestore:rules
-firebase deploy --only storage
-```
+> Avoid bare `firebase deploy` (full) and `firebase deploy --only hosting` alone.
+> Deploy `functions,hosting` together, and ship rules on their own.
 
 ---
 
