@@ -24,7 +24,14 @@ export type Order = {
   provider: PaymentProvider;
   checkoutSessionId: string | null;
   paymentIntentId: string | null;
+  /**
+   * Stripe hosted receipt URL (charge.receipt_url), captured by the checkout
+   * webhook for one-off course purchases. Absent on orders that predate
+   * receipt capture or that never reached a paid charge.
+   */
+  receiptUrl?: string | null;
   createdAt?: unknown;
+  paidAt?: unknown;
   updatedAt?: unknown;
 };
 
@@ -36,6 +43,7 @@ export type Payment = {
   currency: string;
   provider: PaymentProvider;
   providerPaymentId: string;
+  receiptUrl?: string | null;
   courseId?: string;
   refundedAmountMinor?: number;
   status: "succeeded" | "failed" | "refunded" | "partially_refunded";

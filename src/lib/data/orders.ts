@@ -60,6 +60,37 @@ export function subscribeToRecentOrders(
   );
 }
 
+export function subscribeToUserOrders(
+  userId: string,
+  callback: (orders: Order[]) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  // Buyer-scoped history for the Billing -> Purchases / Invoices tabs.
+  // Mirrors subscribeToTeacherOrders: an equality filter on the owning uid
+  // plus a bounded limit, with NO orderBy, so it relies only on Firestore's
+  // automatic single-field index (no composite index to deploy). Callers sort
+  // by createdAt client-side. The orders read rule already authorizes
+  // `resource.data.userId == request.auth.uid`, so this query is permitted.
+  const userOrdersQuery = query(
+    collection(getFirestoreDb(), ordersCollection),
+    where("userId", "==", userId),
+    limit(50),
+  );
+
+  return onSnapshot(
+    userOrdersQuery,
+    (snapshot) => {
+      callback(
+        snapshot.docs.map((document) => ({
+          id: document.id,
+          ...(document.data() as Omit<Order, "id">),
+        })),
+      );
+    },
+    onError,
+  );
+}
+
 export function subscribeToTeacherOrders(
   teacherId: string,
   callback: (orders: Order[]) => void,
