@@ -118,14 +118,21 @@ export function TeacherConnectOnboarding({
 
   if (!publishableKey) {
     return (
-      <div className="rounded-[3px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-5 text-sm leading-6 text-[var(--color-ink)]">
-        <p className="font-semibold text-[var(--color-accent)]">
-          Stripe publishable key not configured.
+      <div className="rounded-[3px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-5 text-sm leading-6 text-[var(--color-ink)]">
+        <p className="font-semibold text-[var(--color-ink)]">
+          Creator payouts are being set up.
         </p>
         <p className="mt-1 text-[var(--color-ink-soft)]">
-          Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
-          environment before creators can start in-app onboarding.
+          In-app onboarding will be available here shortly. Please check
+          back soon.
         </p>
+        {process.env.NODE_ENV === "development" ? (
+          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+            Developer note: set{" "}
+            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
+            environment to enable this flow.
+          </p>
+        ) : null}
       </div>
     );
   }

@@ -117,15 +117,21 @@ export function EmbeddedCheckoutPanel({
 
   if (!publishableKey) {
     return (
-      <div className="rounded-[4px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-6 text-sm leading-7 text-[var(--color-ink)]">
-        <p className="font-semibold text-[var(--color-accent)]">
-          Stripe publishable key not configured.
+      <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm leading-7 text-[var(--color-ink)]">
+        <p className="font-semibold text-[var(--color-ink)]">
+          Checkout is being set up.
         </p>
         <p className="mt-2 text-[var(--color-ink-soft)]">
-          Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
-          environment (test key for staging, live key for production) so
-          the embedded checkout can initialize.
+          Payments are not available just yet. Please check back in a
+          little while.
         </p>
+        {process.env.NODE_ENV === "development" ? (
+          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+            Developer note: set{" "}
+            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
+            environment (test key for staging, live key for production).
+          </p>
+        ) : null}
       </div>
     );
   }
