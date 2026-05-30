@@ -88,7 +88,7 @@ export function teacherCourseToCourseCard(course: TeacherCourse): CourseCard {
     status: "Creator course",
     summary: course.summary,
     image: course.coverImageUrl
-      || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+      || "/brand/logo-mark.png",
     detail: "Created by an approved Skillset educator.",
     priceLabel,
     freePreviewLabel: hasFreePreview
@@ -126,7 +126,7 @@ export function teacherCourseToLearningCourse(course: TeacherCourse): Course {
     summary: course.summary,
     detail: "This private workspace is connected to a teacher-published Skillset course.",
     image: course.coverImageUrl
-      || "https://placehold.co/900x675/0f2744/ffffff?text=Skillset+Course",
+      || "/brand/logo-mark.png",
     level: "Professional",
     priceLabel,
     priceAmountMinor: course.priceAmountMinor ?? null,
