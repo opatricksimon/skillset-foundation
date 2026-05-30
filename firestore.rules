@@ -979,6 +979,9 @@ service cloud.firestore {
         'subject',
         'message',
         'status',
+        'adminResponse',
+        'respondedBy',
+        'respondedAt',
         'createdAt',
         'updatedAt'
       ]);
@@ -1043,7 +1046,12 @@ service cloud.firestore {
         && request.resource.data.category == resource.data.category
         && request.resource.data.subject == resource.data.subject
         && request.resource.data.message == resource.data.message
-        && supportTicketChangedOnly(['status', 'updatedAt']);
+        // Support staff may move the ticket through its status workflow and/or
+        // post a reply the ticket owner can read back. Identity/content fields
+        // above stay immutable.
+        && supportTicketChangedOnly(
+          ['status', 'updatedAt', 'adminResponse', 'respondedBy', 'respondedAt'],
+        );
     }
 
     function hasOnlyAllowedCommunityReportKeys() {

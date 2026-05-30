@@ -2693,12 +2693,7 @@ export const stripeWebhook = onRequest(
       }
 
       if (event.type === "invoice.payment_failed") {
-        // Stripe Smart Retries handles the actual retry cadence.
-        // We log here so the wallet panel can surface a banner later.
-        logger.warn("Subscription invoice payment_failed", {
-          invoiceId: event.data.object.id,
-          customerId: event.data.object.customer,
-        });
+        await handleInvoicePaymentFailed(event.data.object);
       }
 
       response.json({ received: true });
@@ -3363,6 +3358,10 @@ async function syncSubscriptionFromStripe(
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       status: subscription.status,
+      // Self-healing dunning flag: true while Stripe reports the subscription
+      // past_due/unpaid, cleared automatically once it recovers to active.
+      pastDue:
+        subscription.status === "past_due" || subscription.status === "unpaid",
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
@@ -3384,6 +3383,42 @@ async function syncSubscriptionFromStripe(
     },
     { merge: true },
   );
+}
+
+/**
+ * Mark a subscription past-due the moment an invoice fails, before Stripe's
+ * smart retries flip the subscription status. Gives the billing panel an
+ * immediate dunning signal; syncSubscriptionFromStripe clears it on recovery.
+ */
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const subscriptionField = (invoice as { subscription?: string | { id: string } | null })
+    .subscription;
+  const subscriptionId =
+    typeof subscriptionField === "string"
+      ? subscriptionField
+      : subscriptionField?.id ?? null;
+
+  if (!subscriptionId) {
+    logger.warn("invoice.payment_failed without a subscription", {
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
+  await db.collection("subscriptions").doc(subscriptionId).set(
+    {
+      pastDue: true,
+      lastInvoicePaymentFailedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  logger.warn("Subscription invoice payment_failed", {
+    invoiceId: invoice.id,
+    subscriptionId,
+    customerId: invoice.customer,
+  });
 }
 
 async function uidFromCustomer(

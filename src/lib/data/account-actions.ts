@@ -2,9 +2,12 @@
 
 import {
   collection,
+  doc,
   limit,
   onSnapshot,
   query,
+  serverTimestamp,
+  updateDoc,
   type Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -15,6 +18,8 @@ import { getFirebaseFunctions, getFirestoreDb } from "@/lib/firebase/client";
 export type AccountActionRequestType = "account_deletion" | "data_export";
 export type AccountActionStatus = "pending" | "processing" | "completed" | "rejected";
 
+export type AccountActionResolution = Exclude<AccountActionStatus, "pending">;
+
 export type AccountActionRequest = {
   id: string;
   type: AccountActionRequestType;
@@ -23,6 +28,8 @@ export type AccountActionRequest = {
   status: AccountActionStatus;
   requestedAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
+  resolvedBy?: string | null;
+  resolvedAt?: Timestamp | null;
 };
 
 type AccountActionResult = {
@@ -76,4 +83,22 @@ export function subscribeToAccountActionRequests(
     },
     onError,
   );
+}
+
+/**
+ * Action a GDPR export/deletion request from the admin queue so it never sits
+ * unworked. Records who actioned it and when. Admin only (enforced by
+ * firestore.rules: accountActionRequests update == isAdmin()).
+ */
+export async function resolveAccountActionRequest(
+  requestId: string,
+  status: AccountActionResolution,
+  adminId: string,
+) {
+  await updateDoc(doc(getFirestoreDb(), "accountActionRequests", requestId), {
+    status,
+    resolvedBy: adminId,
+    resolvedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useAuth } from "@/components/auth/auth-provider";
 import { ExportTableButton } from "@/components/shared/export-table-button";
 import { StatusChip } from "@/components/shared/status-chip";
 import {
@@ -11,6 +12,7 @@ import {
   type SupportTicketStatus,
 } from "@/domain/support-ticket";
 import {
+  respondToSupportTicket,
   subscribeToAdminSupportTickets,
   updateSupportTicketStatus,
 } from "@/lib/data/support-tickets";
@@ -18,9 +20,12 @@ import {
 const nextStatuses: SupportTicketStatus[] = ["open", "in_review", "resolved"];
 
 export function SupportTicketQueue() {
+  const { user } = useAuth();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyingTicketId, setReplyingTicketId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -58,6 +63,26 @@ export function SupportTicketQueue() {
       setError("We could not update this support ticket.");
     } finally {
       setActiveTicketId(null);
+    }
+  }
+
+  async function handleReply(ticketId: string) {
+    const draft = (replyDrafts[ticketId] ?? "").trim();
+
+    if (!user || draft.length < 2) {
+      return;
+    }
+
+    setError("");
+    setReplyingTicketId(ticketId);
+
+    try {
+      await respondToSupportTicket(ticketId, draft, user.uid);
+      setReplyDrafts((drafts) => ({ ...drafts, [ticketId]: "" }));
+    } catch {
+      setError("We could not send this reply.");
+    } finally {
+      setReplyingTicketId(null);
     }
   }
 
@@ -123,6 +148,45 @@ export function SupportTicketQueue() {
               <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
                 {ticket.message}
               </p>
+              {ticket.adminResponse ? (
+                <div className="mt-3 rounded-[10px] border fine-rule bg-white p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand)]">
+                    Reply sent to user
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--color-ink)]">
+                    {ticket.adminResponse}
+                  </p>
+                </div>
+              ) : null}
+              <div className="mt-3 grid gap-2">
+                <textarea
+                  value={replyDrafts[ticket.id] ?? ""}
+                  onChange={(event) =>
+                    setReplyDrafts((drafts) => ({
+                      ...drafts,
+                      [ticket.id]: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                  placeholder="Write a reply the user will read, then resolve the ticket."
+                  className="resize-none rounded-[10px] border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--color-primary-light)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleReply(ticket.id)}
+                  disabled={
+                    replyingTicketId === ticket.id
+                    || (replyDrafts[ticket.id] ?? "").trim().length < 2
+                  }
+                  className="button-solid w-fit px-4 py-2 text-xs disabled:opacity-60"
+                >
+                  {replyingTicketId === ticket.id
+                    ? "Sending..."
+                    : ticket.adminResponse
+                      ? "Update reply"
+                      : "Send reply and resolve"}
+                </button>
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {nextStatuses.map((status) => (
                   <button

@@ -183,6 +183,16 @@ export function SupportTicketCenter() {
                 <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
                   {ticket.message}
                 </p>
+                {ticket.adminResponse ? (
+                  <div className="mt-3 rounded-[10px] border border-[rgba(26,54,93,0.14)] bg-white p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-brand)]">
+                      Skillset replied
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--color-ink)]">
+                      {ticket.adminResponse}
+                    </p>
+                  </div>
+                ) : null}
               </article>
             ))
           )}

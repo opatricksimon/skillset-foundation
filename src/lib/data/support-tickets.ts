@@ -75,6 +75,24 @@ export async function updateSupportTicketStatus(
   });
 }
 
+/**
+ * Post a support reply the ticket owner can read back, and resolve the ticket.
+ * Admin/support only (enforced by firestore.rules supportCanUpdateTicketStatus).
+ */
+export async function respondToSupportTicket(
+  ticketId: string,
+  response: string,
+  responderId: string,
+) {
+  await updateDoc(doc(getFirestoreDb(), supportTicketsCollection, ticketId), {
+    adminResponse: response.trim(),
+    respondedBy: responderId,
+    respondedAt: serverTimestamp(),
+    status: "resolved",
+    updatedAt: serverTimestamp(),
+  });
+}
+
 function mapSupportTicketSnapshot(
   docs: Array<{ id: string; data: () => unknown }>,
 ): SupportTicket[] {

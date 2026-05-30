@@ -16,6 +16,9 @@ export type SupportTicket = {
   subject: string;
   message: string;
   status: SupportTicketStatus;
+  adminResponse?: string | null;
+  respondedBy?: string | null;
+  respondedAt?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
 };
