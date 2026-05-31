@@ -2881,7 +2881,7 @@ select {
   opacity: 1;
 }
 
-.platform-sidebar .rounded-\[10px\].border {
+.platform-sidebar .rounded-\[10px\].border:not(.platform-nav-active) {
   border-color: rgba(255, 255, 255, 0.10) !important;
   background: rgba(255, 255, 255, 0.04) !important;
 }
