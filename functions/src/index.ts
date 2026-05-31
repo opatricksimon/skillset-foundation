@@ -467,12 +467,12 @@ function extractCourseLessonIds(modules: unknown): Set<string> {
     return ids;
   }
 
-  for (const module of modules) {
-    if (!isRecord(module)) {
+  for (const moduleEntry of modules) {
+    if (!isRecord(moduleEntry)) {
       continue;
     }
 
-    const lessons = module.lessons;
+    const lessons = moduleEntry.lessons;
 
     if (!Array.isArray(lessons)) {
       continue;
