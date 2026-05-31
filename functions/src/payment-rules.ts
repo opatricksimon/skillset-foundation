@@ -1,6 +1,28 @@
 export type SkillsetPlanId = "free" | "starter" | "pro" | "plus";
 
-export const payoutReleaseDelayDays = 10;
+export const payoutReleaseDelayDayOptions = [7, 10, 15, 30] as const;
+export type PayoutReleaseDelayDays = (typeof payoutReleaseDelayDayOptions)[number];
+
+/**
+ * Default payout clearance window in days. Founder-selected to start at 7 and be
+ * selectable among `payoutReleaseDelayDayOptions`. Every option is >= the refund
+ * window below, so cleared payouts never predate a still-refundable charge.
+ */
+export const payoutReleaseDelayDays: PayoutReleaseDelayDays = 7;
+
+/** Coerce an arbitrary stored config value to a supported payout delay. */
+export function resolvePayoutReleaseDelayDays(
+  value: unknown,
+): PayoutReleaseDelayDays {
+  if (
+    typeof value === "number" &&
+    (payoutReleaseDelayDayOptions as readonly number[]).includes(value)
+  ) {
+    return value as PayoutReleaseDelayDays;
+  }
+  return payoutReleaseDelayDays;
+}
+
 export const automaticRefundWindowDays = 7;
 export const automaticRefundProgressCap = 50;
 

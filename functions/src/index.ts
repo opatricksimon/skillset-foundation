@@ -36,6 +36,7 @@ import {
   createReleasedRefundTransferReversal,
   paidOrderRefundQuerySpec,
   payoutReleaseDelayDays,
+  resolvePayoutReleaseDelayDays,
   stripeProcessingFeeMinor as canonicalStripeProcessingFeeMinor,
   type TransferReversalStripeClient,
 } from "./payment-rules";
@@ -183,9 +184,9 @@ function sanitizeRateLimitKey(value: string) {
   return value.replace(/[^a-zA-Z0-9_.-]+/g, "_").slice(0, 220);
 }
 
-function getPayoutReleaseAt() {
+function getPayoutReleaseAt(delayDays: number = payoutReleaseDelayDays) {
   return Timestamp.fromMillis(
-    Date.now() + payoutReleaseDelayDays * 24 * 60 * 60 * 1000,
+    Date.now() + delayDays * 24 * 60 * 60 * 1000,
   );
 }
 
@@ -2818,6 +2819,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       | null;
   } = { value: null };
 
+  // Payout clearance window is platform-configurable (7/10/15/30 days, default 7).
+  // Read outside the transaction (Firestore requires reads before writes) and fall
+  // back to the default so a config miss can never block the money path.
+  let payoutDelayDays: number = payoutReleaseDelayDays;
+  try {
+    const paymentsConfigSnapshot = await db
+      .collection("platformConfig")
+      .doc("payments")
+      .get();
+    payoutDelayDays = resolvePayoutReleaseDelayDays(
+      paymentsConfigSnapshot.data()?.payoutReleaseDelayDays,
+    );
+  } catch (error) {
+    logger.warn("Could not read payout delay config; using default", {
+      orderId,
+      defaultDays: payoutReleaseDelayDays,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
   await db.runTransaction(async (transaction) => {
     const [orderSnapshot, courseSnapshot, enrollmentSnapshot] = await Promise.all([
       transaction.get(orderRef),
@@ -2903,7 +2924,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         currency: order.currency,
         platformFeeBps,
         status: "in_release",
-        releaseAt: getPayoutReleaseAt(),
+        releaseAt: getPayoutReleaseAt(payoutDelayDays),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
