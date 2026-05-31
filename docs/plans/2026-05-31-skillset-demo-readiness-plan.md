@@ -11,8 +11,10 @@
 
 | Mudança | Commit | Camada | Status |
 |---|---|---|---|
-| Contraste do item ativo no menu lateral (texto navy sobre navy = ilegível) | `f810798` | FE | ✅ live |
+| **Item ativo do menu (pílula "Studio"): label legível** — pílula agora fica branca de fato, label navy visível, ícone branco no chip navy | `da65534` | FE | ✅ live |
+| Tentativa anterior do mesmo bug (perdia guerra de especificidade — pílula nunca ficava branca) | `f810798` | FE | ⚠️ superada por `da65534` |
 | Gêmeo do bug no toggle de ciclo de cobrança | `f810798` | FE | ✅ live |
+| **FAQ de Integrations não aponta mais pra página coming-soon** (manda pro support) | `9b4d6bb` | FE | ✅ live |
 | Theme-toggle animado (cross-fade sol/lua + micro-interação) | `7b66c58` | FE | ✅ live |
 | **Payout configurável: padrão 7 dias, selecionável {7,10,15,30}** | `784e8a7` | BE | ✅ live |
 | **/promise enxuto: removido o que não está shipado** (affiliate, custom domains, analytics) | `257ff4c` | FE | ✅ live |
@@ -58,18 +60,19 @@
 2. **Caminho feliz do professor na conta de demo.** Logar como professor → ver Studio → ver curso publicado → ver carteira. Confirmar que nenhuma tela aparece vazia/quebrada. ~10 min.
 3. **(Se ainda não fez) rotação das chaves** que foram expostas em sessões anteriores (é sua tarefa, eu não toco em segredos).
 
-### 🟡 DECISÕES rápidas que preciso de você (destravam meu trabalho autônomo)
-- **A. Assinatura de curso:** confirmar que seguramos pra demo (recomendo **sim**) — ou você quer que eu comece o build completo agora (Wave 2)?
-- **B. `/teach/refunds`:** mostrar no menu do professor (é página real e pronta) ou deixar oculta?
-- **C. Stubs por URL:** redirecionar `/teach/{coupons,co-productions,team,integrations}` pra `/teach` (some até pela URL), ou deixar o painel "coming soon" (vende visão)?
-- **D. UI de seleção do payout:** construir a telinha no Ops pra você escolher 7/10/15/30 com clique — agora, ou depois?
+### ✅ DECISÕES A–D — RESOLVIDAS
+- **A. Assinatura de curso → SEGURAMOS pra demo.** ("como assim?": assinatura **de curso** está bloqueada ponta-a-ponta — o gate de submissão recusa e o checkout não cria assinatura no Stripe. "Habilitar" só a UI criaria um fluxo que trava no meio com **dinheiro LIVE** — pior que não ter. Decisão: mostrar **one-time** + **free**, que são sólidos. Assinatura de curso vira build de verdade no Wave 2.) **Sem mudança de código.**
+- **B. `/teach/refunds` → continua OCULTA.** Na real ela é só um `redirect("/account/payments")`, não uma página de verdade. Item de menu que rebate pra outro lugar confunde; o lar de refunds já é `/account/payments`. Melhor prática: não adicionar entrada de menu que é só redirect. **Sem mudança de código.**
+- **C. Stubs por URL → mantém os painéis "coming soon".** Verifiquei por grep: os 4 stubs têm `contexts: []` e **zero** `<Link>` em qualquer tela — só alcançáveis digitando a URL na mão. Painel "on the roadmap" vende visão e nunca parece quebrado (redirect silencioso pareceria bug). O único ponteiro in-product (FAQ de Integrations) foi corrigido e está **live** (`9b4d6bb`).
+- **D. UI de seleção do payout → ADIADA pro pós-demo.** Investidor não vai mexer no prazo de payout; o padrão é 7 e o caminho via doc de config já funciona. Construir a tela no Ops agora é esforço sem valor de demo. Recomendação: Wave 2.
 
-### 🟢 EU executo em seguida (autônomo, assim que você responder A–D)
-1. Aplicar as decisões A–D.
-2. **Auditoria de estados vazios/loading/erro** no caminho da demo (aluno: `src/app/learn/*`; professor: `src/app/teach/*`) — pra nada "parecer quebrado" se uma lista estiver vazia.
-3. **Sweep de dark-mode + focus-ring** além do nav já corrigido (consistência de acessibilidade nos dois temas).
-4. **Reescrever a FAQ do /help** que aponta pro stub de Integrations.
-5. **Estrutura de dados de demo** pra conta parecer viva: ≥1 curso publicado caprichado, ≥1 aluno matriculado com progresso, ≥1 certificado, carteira com saldo "cleared" + "pending". (O **conteúdo** do curso vem de você; eu monto a estrutura/seed.)
+### 🟢 EU executo (autônomo)
+1. ✅ **Decisões A–D aplicadas** (ver acima) — A/B/D sem código, C com a FAQ corrigida.
+2. ✅ **FAQ do /help** não aponta mais pro stub de Integrations → live (`9b4d6bb`).
+3. ⏳ **Auditoria de estados vazios/loading/erro** no caminho da demo (aluno: `src/app/learn/*`; professor: `src/app/teach/*`) — pra nada "parecer quebrado" se uma lista estiver vazia. *Posso fazer já; verificação final é melhor no seu walkthrough logado.*
+4. ⏳ **Sweep de dark-mode + focus-ring** além do nav já corrigido (consistência nos dois temas).
+5. 🔒 **Estrutura de dados de demo** (≥1 curso publicado caprichado, ≥1 aluno com progresso, ≥1 certificado, carteira "cleared" + "pending"). **Bloqueado em você:** preciso que escolha QUAL curso é o showcase (o conteúdo vem de você; eu monto a estrutura/seed).
+6. 🧹 Flag separada (chip): limpar 2 funções mortas em `firestore.rules` (validação de lesson-progress que nunca roda — progresso é server-authoritative). Não-bloqueador; sessão própria pra não mexer em security rules na véspera da demo.
 
 ### 🟣 Wave 2 — pós-demo (a real diferença vs Cakto; construir depois da conversa)
 - 2.1 Order bump no checkout · 2.2 Upsell/downsell pós-compra · 2.3 Programa de afiliados (links, atribuição, ledger) · 2.4 Assinatura de curso (o build de verdade por trás do "habilite") · 2.5 Analytics de profundidade (LTV, churn, coorte).
