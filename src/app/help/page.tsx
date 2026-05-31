@@ -112,7 +112,7 @@ const categories: ReadonlyArray<{
       {
         id: "integrations",
         q: "What integrations does Skillset support today?",
-        a: "Skillset connects natively with Stripe (checkout, multi-currency, Connect payouts) and Firebase Auth for sign-in. Course assets and media are stored in Firebase Storage. The Studio → Integrations page lists what is live and what is coming next — request a specific integration there if you don't see it.",
+        a: "Skillset connects natively with Stripe (checkout, multi-currency, Connect payouts) and Firebase Auth for sign-in. Course assets and media are stored in Firebase Storage. Need an integration you don't see yet? Contact support and we'll tell you where it sits on the roadmap.",
       },
     ],
   },
