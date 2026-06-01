@@ -61,6 +61,7 @@ service cloud.firestore {
         'goals',
         'credentials',
         'photoURL',
+        'teacherSignatureUrl',
         'roles',
         'onboardingCompleted',
         'onboardingAnswers',

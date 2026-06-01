@@ -65,6 +65,8 @@ export type UserProfile = {
   /** Short credibility lines for teachers (e.g. "Professor at University of X"). */
   credentials?: string[] | null;
   photoURL: string | null;
+  /** Optional handwritten-signature image printed on certificates the teacher issues. */
+  teacherSignatureUrl?: string | null;
   roles: Role[];
   onboardingCompleted: boolean;
   onboardingAnswers?: OnboardingAnswers;

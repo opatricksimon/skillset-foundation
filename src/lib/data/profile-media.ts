@@ -26,6 +26,9 @@ export const allowedAvatarTypes = [
 
 export const avatarRequirementLabel = "JPG, PNG, or WebP under 5 MB";
 
+export const signatureRequirementLabel =
+  "PNG, JPG, or WebP under 5 MB (transparent PNG looks best)";
+
 export type UploadAvatarProgress = {
   bytesTransferred: number;
   totalBytes: number;
@@ -112,4 +115,58 @@ export async function uploadUserAvatar(
   }
 
   return photoURL;
+}
+
+/**
+ * Uploads a teacher's handwritten-signature image and stores its URL on
+ * `users/{uid}.teacherSignatureUrl`. The certificate issuance function reads
+ * this value and snapshots it onto each issued credential. Unlike the avatar,
+ * there is no Firebase Auth mirror — the signature is profile-only data.
+ */
+export async function uploadTeacherSignature(
+  uid: string,
+  file: File,
+  onProgress?: (progress: UploadAvatarProgress) => void,
+) {
+  if (!isAllowedAvatarFile(file)) {
+    throw new Error(`Use a ${signatureRequirementLabel} image.`);
+  }
+
+  const safeFileName = sanitizeFileName(file.name);
+  const storagePath = `users/${uid}/signature/${Date.now()}-${safeFileName}`;
+  const storageRef = ref(getFirebaseStorage(), storagePath);
+  const uploadTask = uploadBytesResumable(storageRef, file, {
+    contentType: file.type,
+    customMetadata: {
+      uid,
+      kind: "teacher_signature",
+    },
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        onProgress?.({
+          bytesTransferred: snapshot.bytesTransferred,
+          totalBytes: snapshot.totalBytes,
+          percent: Math.round(
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+          ),
+        });
+      },
+      reject,
+      resolve,
+    );
+  });
+
+  const downloadURL = await getDownloadURL(storageRef);
+  const teacherSignatureUrl = `${downloadURL}${downloadURL.includes("?") ? "&" : "?"}v=${Date.now()}`;
+
+  await updateDoc(doc(getFirestoreDb(), "users", uid), {
+    teacherSignatureUrl,
+    updatedAt: serverTimestamp(),
+  });
+
+  return teacherSignatureUrl;
 }

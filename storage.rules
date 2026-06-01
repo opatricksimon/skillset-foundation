@@ -89,6 +89,16 @@ service firebase.storage {
         && validAvatarUpload();
     }
 
+    // Teacher's handwritten-signature image, printed on certificates they
+    // issue. Same constraints as avatars (image, <=5MB, no SVG); publicly
+    // readable so an issued certificate renders for anyone holding the link.
+    match /users/{uid}/signature/{fileName} {
+      allow read: if true;
+      allow write: if signedIn()
+        && uid == request.auth.uid
+        && validAvatarUpload();
+    }
+
     match /courses/{courseId}/assets/{ownerId}/{assetId}/{fileName} {
       allow read: if isAdmin() || ownsCourse(courseId) || hasEnrollmentForCourse(courseId);
       allow write: if signedIn()

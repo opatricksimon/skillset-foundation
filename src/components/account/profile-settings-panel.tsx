@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -24,6 +25,8 @@ import {
   allowedAvatarTypes,
   avatarRequirementLabel,
   isAllowedAvatarFile,
+  signatureRequirementLabel,
+  uploadTeacherSignature,
   uploadUserAvatar,
   type UploadAvatarProgress,
 } from "@/lib/data/profile-media";
@@ -59,6 +62,9 @@ export function ProfileSettingsPanel() {
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [avatarProgress, setAvatarProgress] = useState<UploadAvatarProgress | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [signatureProgress, setSignatureProgress] = useState<UploadAvatarProgress | null>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -89,6 +95,7 @@ export function ProfileSettingsPanel() {
         );
         setGoals(profile?.goals ?? []);
         setCredentials(profile?.credentials ?? []);
+        setSignatureUrl(profile?.teacherSignatureUrl ?? null);
         setIsTeacher(
           (profile?.roles ?? []).includes("teacher") ||
             (profile?.roles ?? []).includes("admin"),
@@ -228,6 +235,46 @@ export function ProfileSettingsPanel() {
     }
   }
 
+  async function handleSignatureChange(file: File | null) {
+    if (!user || !file) {
+      return;
+    }
+
+    if (!isAllowedAvatarFile(file)) {
+      setError(`Use a ${signatureRequirementLabel} image.`);
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setSignatureProgress(null);
+    setIsUploadingSignature(true);
+
+    try {
+      const uploadedSignatureUrl = await uploadTeacherSignature(
+        user.uid,
+        file,
+        setSignatureProgress,
+      );
+      setSignatureUrl(uploadedSignatureUrl);
+      setSuccess("Certificate signature updated.");
+    } catch (error) {
+      console.error(
+        "Teacher signature upload failed",
+        { uid: user.uid },
+        error,
+      );
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "We could not upload your signature. Please try again.";
+      setError(message);
+    } finally {
+      setIsUploadingSignature(false);
+      setSignatureProgress(null);
+    }
+  }
+
   if (isLoading) {
     return (
       <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
@@ -315,6 +362,7 @@ export function ProfileSettingsPanel() {
         </label>
 
         {isTeacher ? (
+          <>
           <div className="grid gap-2">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-semibold text-[var(--color-ink)]">
@@ -364,6 +412,48 @@ export function ProfileSettingsPanel() {
               </button>
             ) : null}
           </div>
+
+          <div className="flex flex-col gap-4 rounded-[4px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4 sm:flex-row sm:items-center">
+            <div className="relative grid h-16 w-32 shrink-0 place-items-center overflow-hidden rounded-[8px] border border-[var(--color-line)] bg-white">
+              {signatureUrl ? (
+                <Image
+                  src={signatureUrl}
+                  alt="Your certificate signature"
+                  fill
+                  sizes="128px"
+                  className="object-contain p-1"
+                  unoptimized
+                />
+              ) : (
+                <span className="px-2 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+                  No signature
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                Certificate signature
+              </p>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
+                Optional. Upload your handwritten signature ({signatureRequirementLabel}).
+                It prints on every certificate your students earn. Skip it and
+                your name is printed instead.
+              </p>
+              <input
+                type="file"
+                accept={allowedAvatarTypes.join(",")}
+                disabled={isUploadingSignature}
+                onChange={(event) => void handleSignatureChange(event.target.files?.[0] ?? null)}
+                className="mt-3 w-full rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white disabled:opacity-60"
+              />
+              {signatureProgress ? (
+                <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">
+                  Uploading {signatureProgress.percent}%
+                </p>
+              ) : null}
+            </div>
+          </div>
+          </>
         ) : null}
 
         <PhoneInput

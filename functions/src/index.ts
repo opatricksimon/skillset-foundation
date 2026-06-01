@@ -118,6 +118,9 @@ type UserProfileRecord = {
   username?: string | null;
   bio?: string | null;
   photoURL?: string | null;
+  // Optional handwritten-signature image a teacher uploads; snapshotted onto
+  // every certificate they issue (see issueSkillsetCertificate).
+  teacherSignatureUrl?: string | null;
   // Client-writable free-form list; the public-profile projector sanitizes it,
   // so it is intentionally typed `unknown` (never trusted as string[]).
   credentials?: unknown;
@@ -2291,6 +2294,20 @@ export const issueSkillsetCertificate = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "A valid enrollmentId is required.");
   }
 
+  // The learner types the name once; it is written to the certificate (an
+  // admin-SDK-only collection) and is therefore permanently locked — the
+  // client can never edit an issued credential.
+  const fullName = String(request.data?.fullName ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (fullName.length < 2 || fullName.length > 120) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Enter the full name (2-120 characters) to print on the certificate.",
+    );
+  }
+
   const enrollmentRef = db.collection("enrollments").doc(enrollmentId);
   const certificateRef = db.collection("certificates").doc(enrollmentId);
 
@@ -2351,6 +2368,33 @@ export const issueSkillsetCertificate = onCall(async (request) => {
       return;
     }
 
+    // Snapshot the teacher's identity at issuance time so the credential is a
+    // permanent record — a later display-name or signature change must not
+    // rewrite an already-issued certificate. These reads stay before the write
+    // to satisfy the transaction read-before-write contract (the re-issue
+    // branch above returns before reaching here, so no write has happened yet).
+    let teacherName: string | null = null;
+    let teacherSignatureUrl: string | null = null;
+    const courseSnapshot = await transaction.get(
+      db.collection("courses").doc(enrollment.courseId),
+    );
+
+    if (courseSnapshot.exists) {
+      const course = courseSnapshot.data() as TeacherCourseRecord;
+      const ownerSnapshot = await transaction.get(
+        db.collection("users").doc(course.ownerId),
+      );
+
+      if (ownerSnapshot.exists) {
+        const owner = ownerSnapshot.data() as UserProfileRecord;
+        teacherName = owner.displayName?.trim() || null;
+        teacherSignatureUrl =
+          typeof owner.teacherSignatureUrl === "string" && owner.teacherSignatureUrl
+            ? owner.teacherSignatureUrl
+            : null;
+      }
+    }
+
     const verificationCode = `SK-${enrollmentId
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 18)
@@ -2367,6 +2411,12 @@ export const issueSkillsetCertificate = onCall(async (request) => {
       authorityLabel: "Skillset Verified",
       status: "issued",
       verificationCode,
+      studentFullName: fullName,
+      teacherName,
+      teacherSignatureUrl,
+      // Optional partner/sponsor mark, rendered on the certificate when present.
+      // Left null until Skillset provides a co-brand asset.
+      sponsorLogoUrl: null,
       issuedAt: FieldValue.serverTimestamp(),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),

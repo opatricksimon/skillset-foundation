@@ -39,7 +39,6 @@ import {
   getProtectedCourseAssetObjectUrl,
   subscribeToCourseAssets,
 } from "@/lib/data/course-assets";
-import { issueSkillsetCertificate } from "@/lib/data/certificates";
 import {
   addLessonComment,
   deleteLessonComment,
@@ -358,18 +357,15 @@ export function EnrolledCourseWorkspace({
       }
 
       if (!completed && result.progressPercent >= 100) {
-        await issueSkillsetCertificate(workspaceEnrollment.id);
-        // COURSE_COMPLETED + CREDENTIAL_ISSUED — fire after the certificate
-        // is persisted so PostHog only sees credentials that actually exist.
-        // The 100% here is the server's authoritative figure, not a guess.
+        // COURSE_COMPLETED — the course is finished (100% is the server's
+        // authoritative figure, not a guess). The certificate is no longer
+        // auto-issued here: the learner claims it from the credentials page,
+        // where they enter the full legal name printed on the credential
+        // (captured once, then permanently locked). credentialIssued fires
+        // there, when a certificate actually exists.
         track.courseCompleted({
           course_id: course.id,
           lessons_completed: result.completedLessonCount,
-        });
-        track.credentialIssued({
-          credential_id: `cred:${workspaceEnrollment.id}`,
-          course_id: course.id,
-          user_id: user.uid,
         });
       }
     } catch {

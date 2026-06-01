@@ -234,13 +234,24 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
   const isIssued = candidate.status === "issued";
   const [isIssuing, setIsIssuing] = useState(false);
   const [issueError, setIssueError] = useState("");
+  const [isNaming, setIsNaming] = useState(false);
+  const [fullName, setFullName] = useState("");
 
   async function handleIssue() {
+    const trimmedName = fullName.replace(/\s+/g, " ").trim();
+
+    if (trimmedName.length < 2 || trimmedName.length > 120) {
+      setIssueError(
+        "Enter your full name (2-120 characters) as it should appear on the certificate.",
+      );
+      return;
+    }
+
     setIssueError("");
     setIsIssuing(true);
 
     try {
-      await issueSkillsetCertificate(candidate.enrollmentId);
+      await issueSkillsetCertificate(candidate.enrollmentId, trimmedName);
       // The certificates subscription flips this card to "issued" on success.
     } catch {
       setIssueError("We could not issue this certificate yet. Please try again.");
@@ -299,25 +310,71 @@ function CredentialCard({ candidate }: { candidate: CredentialCandidate }) {
         >
           {isEligible ? "Review course" : "Continue course"}
         </Link>
-        {isEligible ? (
+        {isEligible && !isNaming ? (
           <button
             type="button"
-            onClick={handleIssue}
-            disabled={isIssuing}
-            className="button-solid px-4 py-3 text-sm disabled:opacity-60"
+            onClick={() => setIsNaming(true)}
+            className="button-solid px-4 py-3 text-sm"
           >
-            {isIssuing ? "Issuing..." : "Issue certificate"}
+            Issue certificate
           </button>
+        ) : null}
+        {isIssued && candidate.certificateId ? (
+          <Link
+            href={`/learn/credentials/${candidate.certificateId}`}
+            className="button-solid px-4 py-3 text-sm"
+          >
+            View certificate
+          </Link>
         ) : null}
         {isIssued ? (
           <Link
             href={`/verify?code=${encodeURIComponent(candidate.verificationCode ?? "")}`}
-            className="button-solid px-4 py-3 text-sm"
+            className="button-outline px-4 py-3 text-sm"
           >
             Verify credential
           </Link>
         ) : null}
       </div>
+      {isEligible && isNaming ? (
+        <div className="mt-4 rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+            Full name on certificate
+            <input
+              value={fullName}
+              maxLength={120}
+              autoFocus
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="e.g. Maria Aparecida da Silva"
+              className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            />
+          </label>
+          <p className="mt-2 text-xs leading-5 text-[var(--color-ink-soft)]">
+            This is printed on your certificate and can&apos;t be changed after issuance.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleIssue}
+              disabled={isIssuing}
+              className="button-solid px-4 py-3 text-sm disabled:opacity-60"
+            >
+              {isIssuing ? "Issuing..." : "Confirm & issue"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsNaming(false);
+                setIssueError("");
+              }}
+              disabled={isIssuing}
+              className="button-outline px-4 py-3 text-sm disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
       {issueError ? (
         <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
           {issueError}

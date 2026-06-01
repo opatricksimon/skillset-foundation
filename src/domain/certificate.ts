@@ -13,6 +13,14 @@ export type Certificate = {
   authorityLabel: "Skillset Verified";
   status: Extract<CertificateStatus, "issued" | "revoked">;
   verificationCode: string;
+  /** Locked at issuance — the learner's full name printed on the credential. */
+  studentFullName?: string | null;
+  /** Snapshot of the course owner's display name at issuance. */
+  teacherName?: string | null;
+  /** Snapshot of the teacher's uploaded signature image at issuance, if any. */
+  teacherSignatureUrl?: string | null;
+  /** Optional partner/sponsor mark; null until a co-brand asset is provided. */
+  sponsorLogoUrl?: string | null;
   issuedAt?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
