@@ -7,6 +7,7 @@ export const roles = [
   "admin",
   "support",
   "moderator",
+  "ops",
 ] as const;
 
 export type Role = (typeof roles)[number];
@@ -284,6 +285,20 @@ const moderatorPermissions = [
   "community.moderate",
 ] as const satisfies readonly Permission[];
 
+// Operations team: reviews and blocks courses (non-blocking review) and opens
+// the /ops workspace. Deliberately WITHOUT users.manage (no role escalation),
+// payments.refund, or certificates.issue/revoke — those stay admin-only.
+const opsPermissions = [
+  ...studentPermissions,
+  "platform.viewOps",
+  "platform.accessAdmin",
+  "courses.publish",
+  "courses.manageAll",
+  "community.moderate",
+  "users.support",
+  "firebaseIntegration.read",
+] as const satisfies readonly Permission[];
+
 export const rolePermissionMatrix: Record<Role, readonly Permission[]> = {
   guest: guestPermissions,
   student: studentPermissions,
@@ -291,6 +306,7 @@ export const rolePermissionMatrix: Record<Role, readonly Permission[]> = {
   admin: permissionKeys,
   support: supportPermissions,
   moderator: moderatorPermissions,
+  ops: opsPermissions,
 };
 
 const roleSet: ReadonlySet<string> = new Set(roles);

@@ -38,6 +38,12 @@ service cloud.firestore {
       return hasRole('moderator') || isAdmin();
     }
 
+    // Operations team: can review/block courses (non-blocking review) but
+    // NOT escalate roles, refund, or delete — those stay isAdmin().
+    function isOps() {
+      return hasRole('ops') || isAdmin();
+    }
+
     function emailVerified() {
       return signedIn()
         && request.auth.token.email_verified == true;
@@ -547,12 +553,13 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
-    // Admin moderation (approve / request changes / unpublish) only flips
-    // status + reviewNote. Evaluated BEFORE validCourseShape() so legacy or
-    // malformed course docs can still be moderated without tripping the
-    // ~26-field shape validator (which would PERMISSION_DENY on the update path).
-    function adminCanUpdateCourseStatus() {
-      return isAdmin()
+    // Ops moderation (approve / request changes / block) only flips
+    // status + reviewNote. Any operations-team member can do this — review is
+    // non-blocking — not just the admin. Evaluated BEFORE validCourseShape() so
+    // legacy or malformed course docs can still be moderated without tripping
+    // the ~26-field shape validator (which would PERMISSION_DENY on update).
+    function opsCanUpdateCourseStatus() {
+      return isOps()
         && validCourseStatus()
         && courseChangedOnly(['status', 'reviewNote', 'updatedAt']);
     }
@@ -1435,7 +1442,7 @@ service cloud.firestore {
       // the cover-image and submit-for-review paths from aborting with PERMISSION_DENIED.
       allow update: if teacherCanSubmitOwnedCourseForReview()
         || teacherCanUpdateOwnedCourseCover()
-        || adminCanUpdateCourseStatus()
+        || opsCanUpdateCourseStatus()
         || (
           validCourseShape()
           && (

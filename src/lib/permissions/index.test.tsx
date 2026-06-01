@@ -32,6 +32,16 @@ describe("permissions", () => {
     expect(roleHasPermission("moderator", "certificates.revoke")).toBe(false);
   });
 
+  it("grants ops course review without escalation or destructive powers", () => {
+    expect(isRole("ops")).toBe(true);
+    expect(roleHasPermission("ops", "platform.accessAdmin")).toBe(true);
+    expect(roleHasPermission("ops", "courses.publish")).toBe(true);
+    expect(roleHasPermission("ops", "courses.manageAll")).toBe(true);
+    expect(roleHasPermission("ops", "users.manage")).toBe(false);
+    expect(roleHasPermission("ops", "payments.refund")).toBe(false);
+    expect(roleHasPermission("ops", "certificates.issue")).toBe(false);
+  });
+
   it("grants admins every declared permission", () => {
     expect(getRolePermissions("admin")).toEqual(permissionKeys);
   });
