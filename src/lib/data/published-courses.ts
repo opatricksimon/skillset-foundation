@@ -42,7 +42,16 @@ export function subscribeToPublishedTeacherCourses(
   );
 }
 
-export function subscribeToPublishedTeacherCourse(
+/**
+ * Subscribe to a single course doc for the public course-detail surface.
+ * Unlike the catalog list, this does NOT filter by published status: Firestore
+ * rules already gate reads to the public (published courses) plus the course
+ * owner and admins. Returning the raw doc lets the detail view tell an
+ * owner/admin that their not-yet-public course is awaiting approval instead of
+ * showing a generic dead-end. A non-authorized reader of an unpublished course
+ * is rejected by the rules and surfaces through `onError`.
+ */
+export function subscribeToViewableTeacherCourse(
   courseId: string,
   callback: (course: TeacherCourse | null) => void,
   onError: (error: Error) => void,
@@ -55,12 +64,10 @@ export function subscribeToPublishedTeacherCourse(
         return;
       }
 
-      const course = {
+      callback({
         id: snapshot.id,
         ...(snapshot.data() as Omit<TeacherCourse, "id">),
-      };
-
-      callback(course.status === "published" ? course : null);
+      });
     },
     onError,
   );

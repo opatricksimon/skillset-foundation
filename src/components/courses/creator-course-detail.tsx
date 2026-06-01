@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { getSafeExternalUrl } from "@/domain/external-url";
 import { getTrustedLessonEmbed } from "@/domain/lesson-embed";
-import type { TeacherCourse } from "@/domain/teacher-course";
+import type { TeacherCourse, TeacherCourseStatus } from "@/domain/teacher-course";
 import { normalizeLearningOutcomes } from "@/domain/teacher-course";
-import { subscribeToPublishedTeacherCourse } from "@/lib/data/published-courses";
+import { subscribeToViewableTeacherCourse } from "@/lib/data/published-courses";
+import { hasPermission } from "@/lib/permissions";
 import { isPublicFeatureEnabled } from "@/lib/feature-flags";
 import { getFirebaseClientConfig } from "@/lib/firebase/config";
 import {
@@ -42,7 +43,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
       return;
     }
 
-    return subscribeToPublishedTeacherCourse(
+    return subscribeToViewableTeacherCourse(
       courseId,
       (nextCourse) => {
         setCourse(nextCourse);
@@ -89,8 +90,19 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
   if (!course) {
     return (
       <CourseDetailState
-        title="Course is not public."
-        detail="This course may still be in review, inactive, or unavailable."
+        title="Course not found."
+        detail="This course may be unavailable or no longer listed in the marketplace."
+      />
+    );
+  }
+
+  if (course.status !== "published") {
+    const isOwner = user != null && course.ownerId === user.uid;
+    const isAdmin = hasPermission({ roles: user?.roles }, "platform.accessAdmin");
+
+    return (
+      <CourseDetailState
+        {...getUnpublishedCourseState(course.status, { isOwner, isAdmin })}
       />
     );
   }
@@ -439,13 +451,22 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
   );
 }
 
+type CourseDetailAction = {
+  label: string;
+  href: string;
+};
+
 function CourseDetailState({
   title,
   detail,
+  action,
 }: {
   title: string;
   detail: string;
+  action?: CourseDetailAction;
 }) {
+  const resolvedAction = action ?? { label: "Open marketplace", href: "/courses" };
+
   return (
     <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
@@ -457,9 +478,91 @@ function CourseDetailState({
       <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
         {detail}
       </p>
-      <Link href="/courses" className="button-solid mt-6 inline-flex px-5 py-3 text-sm">
-        Open marketplace
+      <Link
+        href={resolvedAction.href}
+        className="button-solid mt-6 inline-flex px-5 py-3 text-sm"
+      >
+        {resolvedAction.label}
       </Link>
     </section>
   );
+}
+
+/**
+ * Owner/admin-aware messaging for a course that exists but is not published.
+ * Strangers never reach this — Firestore rules reject their read of an
+ * unpublished course, which surfaces as the error state instead. So the only
+ * viewers here are the course owner, an admin, or (rarely) an enrolled learner.
+ */
+function getUnpublishedCourseState(
+  status: TeacherCourseStatus,
+  viewer: { isOwner: boolean; isAdmin: boolean },
+): { title: string; detail: string; action?: CourseDetailAction } {
+  if (viewer.isAdmin) {
+    if (status === "in_review") {
+      return {
+        title: "This course is awaiting approval.",
+        detail:
+          "It was submitted for review but is not public yet. Approve publication from the moderation queue to take it live.",
+        action: { label: "Review in moderation queue", href: "/ops" },
+      };
+    }
+
+    if (status === "inactive") {
+      return {
+        title: "This course is unpublished.",
+        detail:
+          "It was published before and is currently inactive. Republish it from the moderation queue to make it public again.",
+        action: { label: "Open moderation queue", href: "/ops" },
+      };
+    }
+
+    return {
+      title: "This course is not public yet.",
+      detail:
+        "The educator is still preparing it and has not submitted it for review, so there is nothing in the moderation queue to approve yet.",
+      action: { label: "Open moderation queue", href: "/ops" },
+    };
+  }
+
+  if (viewer.isOwner) {
+    if (status === "in_review") {
+      return {
+        title: "This course is under review.",
+        detail:
+          "You submitted it for approval. Skillset publishes it once review is complete — you'll be notified. Track its status from your teaching dashboard.",
+        action: { label: "Open teaching dashboard", href: "/teach" },
+      };
+    }
+
+    if (status === "needs_changes") {
+      return {
+        title: "This course needs changes before it goes live.",
+        detail:
+          "A reviewer asked for updates. Make the requested changes and resubmit it for approval from your teaching dashboard.",
+        action: { label: "Open teaching dashboard", href: "/teach" },
+      };
+    }
+
+    if (status === "inactive") {
+      return {
+        title: "This course is currently unpublished.",
+        detail:
+          "It is not visible to learners right now. Contact Skillset support if you need it republished.",
+        action: { label: "Open teaching dashboard", href: "/teach" },
+      };
+    }
+
+    return {
+      title: "This course is still a draft.",
+      detail:
+        "Finish building it and submit it for review from your teaching dashboard. It becomes public once Skillset approves it.",
+      action: { label: "Open teaching dashboard", href: "/teach" },
+    };
+  }
+
+  return {
+    title: "Course is not public.",
+    detail: "This course may still be in review, inactive, or unavailable.",
+  };
 }
