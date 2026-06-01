@@ -742,22 +742,6 @@ service cloud.firestore {
         && enrollmentData(enrollmentId).userId == request.auth.uid;
     }
 
-    function hasOnlyAllowedLessonProgressKeys() {
-      return request.resource.data.keys().hasOnly([
-        'lessonId',
-        'userId',
-        'createdAt',
-        'updatedAt'
-      ]);
-    }
-
-    function validLessonProgressShape(enrollmentId, lessonId) {
-      return hasOnlyAllowedLessonProgressKeys()
-        && request.resource.data.lessonId == lessonId
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.userId == enrollmentData(enrollmentId).userId;
-    }
-
     function hasEnrollmentForCourseSlug(courseSlug) {
       return signedIn()
         && exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '__' + courseSlug))
@@ -801,6 +785,10 @@ service cloud.firestore {
         && request.resource.data.authorName.size() <= 120
         && request.resource.data.authorRole.size() >= 3
         && request.resource.data.authorRole.size() <= 40
+        && (
+          request.resource.data.authorRole == 'student'
+          || request.resource.data.authorRole in currentUserRoles()
+        )
         && request.resource.data.body.size() >= 8
         && request.resource.data.body.size() <= 5000;
     }
@@ -839,6 +827,10 @@ service cloud.firestore {
         && request.resource.data.authorName.size() <= 120
         && request.resource.data.authorRole.size() >= 3
         && request.resource.data.authorRole.size() <= 40
+        && (
+          request.resource.data.authorRole == 'student'
+          || request.resource.data.authorRole in currentUserRoles()
+        )
         && request.resource.data.body.size() >= 3
         && request.resource.data.body.size() <= 3000;
     }
