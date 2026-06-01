@@ -153,37 +153,39 @@ export function SignupForm() {
   }
 
   return (
-    <form className="mt-6 grid gap-3" onSubmit={handleEmailSignup}>
+    <form className="mt-5 grid gap-3" onSubmit={handleEmailSignup}>
       <p className="text-xs leading-6 text-[var(--color-ink-soft)]">
         Continues into the {pathLabel} setup — you can add the other side later
         from your profile.
       </p>
 
-      <label className="grid gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
-        Full name
-        <input
-          type="text"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-          placeholder="Your name"
-          autoComplete="name"
-          required
-          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-        />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
+          Full name
+          <input
+            type="text"
+            value={displayName}
+            onChange={(event) => setDisplayName(event.target.value)}
+            placeholder="Your name"
+            autoComplete="name"
+            required
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          />
+        </label>
 
-      <label className="grid gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
-        Email
-        <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-          required
-          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
-        />
-      </label>
+        <label className="grid gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          />
+        </label>
+      </div>
 
       <label className="grid gap-1.5 text-sm font-semibold text-[var(--color-ink)]">
         Password
