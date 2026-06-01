@@ -9,12 +9,12 @@ import { redirect } from "next/navigation";
  * the app links here anymore, so we collapse it into a redirect: forward to the
  * canonical detail when a courseId is present, otherwise back to the marketplace.
  */
-export default function CreatorCoursePage({
+export default async function CreatorCoursePage({
   searchParams,
 }: {
-  searchParams: { courseId?: string | string[] };
+  searchParams: Promise<{ courseId?: string | string[] }>;
 }) {
-  const raw = searchParams.courseId;
+  const { courseId: raw } = await searchParams;
   const courseId = (Array.isArray(raw) ? raw[0] : raw)?.trim();
 
   redirect(courseId ? `/courses/${encodeURIComponent(courseId)}` : "/courses");

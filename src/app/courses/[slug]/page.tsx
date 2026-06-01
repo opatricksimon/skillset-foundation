@@ -12,12 +12,13 @@ export function generateStaticParams() {
   return getCourseSlugs().map((slug) => ({ slug }));
 }
 
-export default function CourseDetailPage({
+export default async function CourseDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const course = getCourseBySlug(params.slug);
+  const { slug } = await params;
+  const course = getCourseBySlug(slug);
 
   if (!course) {
     return (
@@ -33,7 +34,7 @@ export default function CourseDetailPage({
               </section>
             }
           >
-            <CreatorCourseDetail courseIdOverride={params.slug} />
+            <CreatorCourseDetail courseIdOverride={slug} />
           </Suspense>
         </main>
       </div>
