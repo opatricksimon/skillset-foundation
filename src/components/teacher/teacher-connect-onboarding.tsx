@@ -117,20 +117,44 @@ export function TeacherConnectOnboarding({
   }
 
   if (!publishableKey) {
+    // No client publishable key in this build, so the embedded component
+    // can't initialize. Instead of a dead-end "check back soon" message,
+    // offer Stripe's hosted onboarding — it only needs the server secret
+    // (already configured) and redirects back to Skillset when done. This
+    // keeps payout setup reachable even if the publishable key is missing.
     return (
-      <div className="rounded-[3px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-5 text-sm leading-6 text-[var(--color-ink)]">
-        <p className="font-semibold text-[var(--color-ink)]">
-          Creator payouts are being set up.
+      <div className="rounded-[14px] border fine-rule bg-white p-5 shadow-[var(--shadow-soft)]">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          Payout setup
         </p>
-        <p className="mt-1 text-[var(--color-ink-soft)]">
-          In-app onboarding will be available here shortly. Please check
-          back soon.
+        <h4 className="display-title mt-2 text-2xl text-[var(--color-primary)]">
+          Set up payouts with Stripe.
+        </h4>
+        <p className="mt-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+          Connect a payout account to start selling paid courses. Stripe
+          verifies your identity and bank details on a secure page and returns
+          you to Skillset the moment you finish.
         </p>
+        {error ? (
+          <p className="mt-3 rounded-[10px] border border-[rgba(178,34,52,0.2)] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={openHostedFallback}
+            disabled={isOpeningHosted}
+            className="button-solid px-4 py-2 text-sm disabled:opacity-60"
+          >
+            {isOpeningHosted ? "Opening Stripe..." : "Continue with Stripe"}
+          </button>
+        </div>
         {process.env.NODE_ENV === "development" ? (
-          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+          <p className="mt-3 text-xs text-[var(--color-ink-soft)]">
             Developer note: set{" "}
-            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
-            environment to enable this flow.
+            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to enable the in-app
+            embedded onboarding instead of this hosted redirect.
           </p>
         ) : null}
       </div>
