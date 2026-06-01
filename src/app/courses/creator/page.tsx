@@ -1,25 +1,21 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-import { CreatorCourseDetail } from "@/components/courses/creator-course-detail";
-import { SiteNav } from "@/components/site/site-nav";
+/**
+ * Compatibility redirect. The canonical public course-detail route is
+ * `/courses/[slug]`, which already resolves creator (Firestore) courses by id
+ * via its CreatorCourseDetail fallthrough. This legacy `/courses/creator` route
+ * used to render CreatorCourseDetail directly off `?courseId=`, but when reached
+ * without a courseId it dead-ended on a "Course not selected" state. Nothing in
+ * the app links here anymore, so we collapse it into a redirect: forward to the
+ * canonical detail when a courseId is present, otherwise back to the marketplace.
+ */
+export default function CreatorCoursePage({
+  searchParams,
+}: {
+  searchParams: { courseId?: string | string[] };
+}) {
+  const raw = searchParams.courseId;
+  const courseId = (Array.isArray(raw) ? raw[0] : raw)?.trim();
 
-export default function CreatorCoursePage() {
-  return (
-    <div className="page-shell">
-      <SiteNav />
-      <main className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-8 sm:py-14">
-        <Suspense
-          fallback={
-            <section className="rounded-[18px] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-sm text-[var(--color-ink-soft)]">
-                Loading creator course...
-              </p>
-            </section>
-          }
-        >
-          <CreatorCourseDetail />
-        </Suspense>
-      </main>
-    </div>
-  );
+  redirect(courseId ? `/courses/${encodeURIComponent(courseId)}` : "/courses");
 }
