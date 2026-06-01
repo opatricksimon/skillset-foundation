@@ -91,6 +91,17 @@ export const platformNav: PlatformNavItem[] = [
     section: "Learn",
     permission: "certificates.view",
   },
+  // --- Teacher-as-student: a teacher also buys courses. Pinned to the very top
+  // of the teacher workspace (its own "My Learning" section is ordered first in
+  // platform-nav.tsx), above the teaching tools. Reuses the learner classroom. ---
+  {
+    href: "/learn",
+    label: "My courses",
+    icon: "GraduationCap",
+    contexts: ["teacher"],
+    section: "My Learning",
+    permission: "courses.viewLearning",
+  },
   // --- Teacher workspace ---
   {
     href: "/teach",

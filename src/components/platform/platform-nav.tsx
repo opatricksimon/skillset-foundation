@@ -90,7 +90,7 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
 function groupBySection(items: PlatformNavItem[], context: PlatformNavContext) {
   const sectionOrder: Record<PlatformNavContext, string[]> = {
     learner: ["Discover", "Learn", "Account"],
-    teacher: ["Teach", "Discover", "Account", "Growth", "Setup"],
+    teacher: ["My Learning", "Teach", "Discover", "Account", "Growth", "Setup"],
     ops: ["Operations", "Discover", "Account"],
   };
   const groups = new Map<string, PlatformNavItem[]>();
