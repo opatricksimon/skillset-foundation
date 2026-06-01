@@ -4,7 +4,7 @@ import { Check, HelpCircle } from "lucide-react";
 import { PublicPage } from "@/components/site/public-page";
 import { Tooltip } from "@/components/shared/tooltip";
 import { formatUsd } from "@/data/platform";
-import { plans, refundWindowDays } from "@/data/plans";
+import { plans, payoutClearDays, refundWindowDays } from "@/data/plans";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata = buildPageMetadata({
@@ -243,9 +243,9 @@ export default function PricingPage() {
             Payout clearance
           </p>
           <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
-            Creator earnings clear from pending to available {refundWindowDays}{" "}
-            days after each sale — matching the refund window so payouts never
-            need to be clawed back.
+            Creator earnings clear from pending to available {payoutClearDays}{" "}
+            days after each sale — well past the {refundWindowDays}-day refund
+            window, so payouts never need to be clawed back.
           </p>
         </article>
         <article className="rounded-[16px] border fine-rule bg-[var(--color-surface-soft)] p-5">

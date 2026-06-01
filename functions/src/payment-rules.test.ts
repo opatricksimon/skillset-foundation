@@ -10,8 +10,8 @@ import {
 } from "./payment-rules";
 
 describe("functions payment rules", () => {
-  it("uses a 10 day payout release delay", () => {
-    expect(payoutReleaseDelayDays).toBe(10);
+  it("uses a 30 day payout release delay", () => {
+    expect(payoutReleaseDelayDays).toBe(30);
   });
 
   it("keeps plan commission canonical across Free, Starter, Pro, and Plus", () => {

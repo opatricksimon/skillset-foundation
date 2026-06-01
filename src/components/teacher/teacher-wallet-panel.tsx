@@ -266,8 +266,8 @@ export function TeacherWalletPanel() {
       </div>
 
       <InlineHelp topic="Payout schedule" href="/help#payouts">
-        Earnings clear from pending to available 7 days after each sale,
-        matching the refund window so cleared payouts never need to be clawed
+        Earnings clear from pending to available 30 days after each sale, well
+        past the 7-day refund window so cleared payouts never need to be clawed
         back.
       </InlineHelp>
 

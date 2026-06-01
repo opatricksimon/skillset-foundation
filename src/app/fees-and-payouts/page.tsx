@@ -20,7 +20,7 @@ const policies = [
   ],
   [
     "Payout clearance",
-    `Creator net moves from pending to available ${payoutClearDays} days after each sale, matched to the refund window so cleared earnings never need to be clawed back.`,
+    `Creator net moves from pending to available ${payoutClearDays} days after each sale, well past the ${refundWindowDays}-day refund window so cleared earnings never need to be clawed back.`,
   ],
   [
     "Payout account",

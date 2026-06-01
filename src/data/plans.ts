@@ -189,7 +189,8 @@ export const refundWindowDays = 7;
 
 /**
  * Days the creator's earnings stay in "pending" before clearing to
- * "available" in the wallet. This is longer than the automatic refund
- * window so delayed webhook delivery still has operational buffer.
+ * "available" in the wallet. Deliberately well past the 7-day refund window
+ * (`refundWindowDays`) so a cleared payout can never predate a still-
+ * refundable charge, with extra buffer for delayed webhook delivery.
  */
-export const payoutClearDays = 10;
+export const payoutClearDays = 30;

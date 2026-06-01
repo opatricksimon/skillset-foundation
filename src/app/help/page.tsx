@@ -77,7 +77,7 @@ const categories: ReadonlyArray<{
       {
         id: "payouts",
         q: "When do I receive my first payout?",
-        a: "Creator earnings move from pending to available 7 days after each sale — matching the refund window so cleared payouts never need to be clawed back. From there, transfers settle to your connected Stripe account on Stripe's standard payout schedule. The wallet panel in Studio shows the exact clearance date for every line item.",
+        a: "Creator earnings move from pending to available 30 days after each sale — well past the 7-day refund window, so cleared payouts never need to be clawed back. From there, transfers settle to your connected Stripe account on Stripe's standard payout schedule. The wallet panel in Studio shows the exact clearance date for every line item.",
       },
       {
         q: "How are creator payouts handled?",
