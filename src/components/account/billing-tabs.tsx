@@ -347,14 +347,20 @@ function InvoicesTab({
                     {formatMoney(order.amountMinor, order.currency)}
                   </p>
                 </div>
-                <a
-                  href={order.receiptUrl ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-                >
-                  View receipt &rarr;
-                </a>
+                {order.receiptUrl ? (
+                  <a
+                    href={order.receiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
+                  >
+                    View receipt &rarr;
+                  </a>
+                ) : (
+                  <span className="text-sm text-[var(--color-ink-soft)]">
+                    Receipt pending
+                  </span>
+                )}
               </li>
             ))}
           </ul>

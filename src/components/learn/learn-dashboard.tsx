@@ -70,6 +70,14 @@ export function LearnDashboard() {
           <p className="rounded-[10px] bg-[rgba(178,34,52,0.06)] px-4 py-3 text-sm font-semibold text-[var(--color-accent)]">
             {error}
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/courses" className="button-solid px-4 py-2 text-sm">
+              Explore courses
+            </Link>
+            <Link href="/support" className="button-outline px-4 py-2 text-sm">
+              Contact support
+            </Link>
+          </div>
         </div>
       </div>
     );
