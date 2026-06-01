@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { RevealSection } from "@/components/shared/reveal-section";
+import { payoutClearDays } from "@/data/plans";
 
 type Capability = {
   title: string;
@@ -42,9 +43,8 @@ const capabilities: ReadonlyArray<Capability> = [
     Icon: Globe,
   },
   {
-    title: "Creator wallet, 7-day clearance",
-    description:
-      "Earnings clear from pending to available 7 days after each sale. Transparent ledger with full audit trail.",
+    title: `Creator wallet, ${payoutClearDays}-day clearance`,
+    description: `Earnings clear from pending to available ${payoutClearDays} days after each sale. Transparent ledger with full audit trail.`,
     Icon: Wallet,
   },
   {

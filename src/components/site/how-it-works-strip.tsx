@@ -1,6 +1,7 @@
 import { PenLine, Send, Sparkles, type LucideIcon } from "lucide-react";
 
 import { RevealSection } from "@/components/shared/reveal-section";
+import { payoutClearDays } from "@/data/plans";
 
 type Step = {
   number: string;
@@ -27,8 +28,7 @@ const steps: ReadonlyArray<Step> = [
   {
     number: "03",
     title: "Sell globally",
-    description:
-      "Skillset reviews your program. Once approved, your course is live on the marketplace. Get paid in 30+ currencies, with earnings clearing 7 days after each sale.",
+    description: `Skillset reviews your program. Once approved, your course is live on the marketplace. Get paid in 30+ currencies, with earnings clearing ${payoutClearDays} days after each sale.`,
     Icon: Send,
   },
 ];
