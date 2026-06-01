@@ -1227,10 +1227,13 @@ export const createCheckoutSession = onCall(
 
     const course = courseSnapshot.data() as TeacherCourseRecord;
 
-    if (course.status !== "published") {
+    // Sell-on-submit: a course that left draft (in_review) is pre-validated and
+    // sells immediately; approval is non-blocking. A reviewer who finds a
+    // problem flips it to inactive/needs_changes, which blocks purchase again.
+    if (course.status !== "published" && course.status !== "in_review") {
       throw new HttpsError(
         "failed-precondition",
-        "Only published courses can be purchased.",
+        "This course is not available for purchase right now.",
       );
     }
 
@@ -1397,10 +1400,12 @@ export const createFreeCourseEnrollment = onCall(async (request) => {
 
     const course = courseSnapshot.data() as TeacherCourseRecord;
 
-    if (course.status !== "published") {
+    // Sell-on-submit: in_review courses are purchasable/enrollable; only
+    // draft / needs_changes / inactive block enrollment.
+    if (course.status !== "published" && course.status !== "in_review") {
       throw new HttpsError(
         "failed-precondition",
-        "Only published courses can be enrolled.",
+        "This course is not available for enrollment right now.",
       );
     }
 

@@ -96,7 +96,11 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
     );
   }
 
-  if (course.status !== "published") {
+  // Sell-on-submit: published AND in_review both render the full public sales
+  // page (a submitted course sells immediately; approval is non-blocking).
+  // Only draft / needs_changes / inactive fall through to owner/admin messaging.
+  const isSellable = course.status === "published" || course.status === "in_review";
+  if (!isSellable) {
     const isOwner = user != null && course.ownerId === user.uid;
     const isAdmin = hasPermission({ roles: user?.roles }, "platform.accessAdmin");
 
@@ -347,7 +351,10 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
         <dl className="mt-5 grid gap-4">
           {[
             ["Category", course.category],
-            ["Status", "Published"],
+            // Don't leak the internal "in_review" state to buyers, and don't
+            // falsely claim "Published" — an in_review course on sale is
+            // truthfully "Available".
+            ["Status", course.status === "published" ? "Published" : "Available"],
             ["Lessons", String(course.lessonCount)],
             ["Price", priceLabel],
             ["Rating", ratingLabel],

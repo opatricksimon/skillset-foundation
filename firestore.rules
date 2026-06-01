@@ -1414,7 +1414,11 @@ service cloud.firestore {
     }
 
     match /courses/{courseId} {
-      allow read: if resource.data.status == 'published'
+      // Sell-on-submit: published AND in_review are publicly readable so a
+      // just-submitted course is immediately visible + purchasable. Approval is
+      // non-blocking; draft / needs_changes / inactive stay private to the owner
+      // and admins (a reviewer "blocks" a course by flipping it out of these two).
+      allow read: if resource.data.status in ['published', 'in_review']
         || (signedIn() && hasEnrollmentForCourseSlug(courseId))
         || (signedIn() && resource.data.ownerId == request.auth.uid)
         || isAdmin();
@@ -1492,7 +1496,7 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (
           courseExists(resource.data.courseId)
-          && courseData(resource.data.courseId).status == 'published'
+          && courseData(resource.data.courseId).status in ['published', 'in_review']
         )
         || (
           signedIn()

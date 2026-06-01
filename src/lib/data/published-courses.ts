@@ -21,9 +21,14 @@ export function subscribeToPublishedTeacherCourses(
   callback: (courses: TeacherCourse[]) => void,
   onError: (error: Error) => void,
 ): Unsubscribe {
+  // Sell-on-submit: a course that left draft (status `in_review`) must be
+  // immediately listed AND purchasable — selling is NOT gated by approval.
+  // Review is non-blocking; a reviewer only *removes* a course from sale by
+  // flipping it out of these two states. draft / needs_changes / inactive
+  // stay hidden from the public marketplace.
   const coursesQuery = query(
     collection(getFirestoreDb(), coursesCollection),
-    where("status", "==", "published"),
+    where("status", "in", ["published", "in_review"]),
   );
 
   return onSnapshot(
