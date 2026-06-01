@@ -1234,6 +1234,15 @@ export const createCheckoutSession = onCall(
       );
     }
 
+    // A teacher buying their own course would pay themselves (minus the
+    // platform fee) and pollute their own enrollment/progress analytics.
+    if (course.ownerId === userId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "You can't purchase your own course.",
+      );
+    }
+
     const { amountMinor, currency } = normalizeCoursePrice(course);
     const enrollmentRef = db.collection("enrollments").doc(`${userId}__${courseId}`);
     const enrollmentSnapshot = await enrollmentRef.get();
@@ -1339,7 +1348,7 @@ export const createCheckoutSession = onCall(
         },
       },
       success_url: `${appUrl}/learn/courses/${encodeURIComponent(courseId)}?checkout=success`,
-      cancel_url: `${appUrl}/courses/creator?courseId=${encodeURIComponent(courseId)}&checkout=cancelled`,
+      cancel_url: `${appUrl}/courses/${encodeURIComponent(courseId)}?checkout=cancelled`,
     };
 
     const session = await stripe.checkout.sessions.create(sessionParams, {
@@ -2299,6 +2308,10 @@ export const recordLessonProgress = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "A valid lessonId is required.");
   }
 
+  // Generous cap (200/hr) — far above any real learner pace, but stops a
+  // runaway client loop from spamming Firestore progress writes.
+  await enforceRateLimit(`lesson_progress_${userId}`, 200, 60 * 60 * 1000);
+
   const enrollmentRef = db.collection("enrollments").doc(enrollmentId);
   const enrollmentSnapshot = await enrollmentRef.get();
 
@@ -2504,15 +2517,20 @@ export const issueAdminRefund = onCall(
     }
 
     const orderAmountMinor = Number(order.amountMinor || 0);
+    // For a partially_refunded order, cap against what is STILL refundable
+    // (total − already refunded), not the original total — otherwise repeated
+    // partial refunds could cumulatively exceed the original charge.
+    const alreadyRefundedMinor = Number(order.refundedAmountMinor || 0);
+    const remainingRefundableMinor = orderAmountMinor - alreadyRefundedMinor;
 
     if (
       amountMinor !== null
       && orderAmountMinor > 0
-      && amountMinor > orderAmountMinor
+      && amountMinor > remainingRefundableMinor
     ) {
       throw new HttpsError(
         "invalid-argument",
-        "Refund amount exceeds the order total.",
+        "Refund amount exceeds the remaining refundable balance.",
       );
     }
 
@@ -2857,10 +2875,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const order = orderSnapshot.data() || {};
     const course = courseSnapshot.data() as TeacherCourseRecord;
     const grossAmountMinor = Number(order.amountMinor || 0);
-    // Falls back to 800 bps (8%, Free plan) when an order pre-dates the
-    // subscription system. Once plans are live, every order writes its
-    // commission rate at sale time so historical math is preserved.
-    const platformFeeBps = Number(order.platformFeeBps || 800);
+    // Falls back to 800 bps (8%, Free plan) ONLY when the field is genuinely
+    // absent (order pre-dates the subscription system). Uses ?? not || so an
+    // explicit 0 (Plus plan, zero commission) survives — `0 || 800` would
+    // silently overcharge every Plus-tier sale the full 8%.
+    const platformFeeBps = Number(order.platformFeeBps ?? 800);
     const skillsetFeeMinor = Math.floor((grossAmountMinor * platformFeeBps) / 10000);
     const stripeFeeMinor = canonicalStripeProcessingFeeMinor(
       grossAmountMinor,
