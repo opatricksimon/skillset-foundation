@@ -9,6 +9,14 @@ import {
 } from "lucide-react";
 
 import { PublicPage } from "@/components/site/public-page";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata = buildPageMetadata({
+  title: "Trust and safety",
+  description:
+    "Skillset is built around controlled course publication, protected student access, transparent payments, moderation, and verifiable learning outcomes.",
+  path: "/trust",
+});
 
 type TrustLayer = {
   title: string;
