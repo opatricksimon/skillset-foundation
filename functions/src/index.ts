@@ -27,7 +27,10 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentUpdated,
+  onDocumentWritten,
+} from "firebase-functions/v2/firestore";
 import Stripe from "stripe";
 import {
   automaticRefundProgressCap,
@@ -112,6 +115,12 @@ type UserProfileRecord = {
   uid: string;
   email?: string | null;
   displayName?: string | null;
+  username?: string | null;
+  bio?: string | null;
+  photoURL?: string | null;
+  // Client-writable free-form list; the public-profile projector sanitizes it,
+  // so it is intentionally typed `unknown` (never trusted as string[]).
+  credentials?: unknown;
   roles?: string[];
   stripeConnectedAccountId?: string | null;
   stripeConnectStatus?: string;
@@ -1198,6 +1207,89 @@ export const onCoursePublished = onDocumentUpdated(
       properties.teacher_id,
       SERVER_EVENTS.COURSE_PUBLISHED,
       { ...properties },
+    );
+  },
+);
+
+type PublicProfileProjection = {
+  displayName: string | null;
+  username: string | null;
+  photoURL: string | null;
+  bio: string | null;
+  credentials: string[];
+};
+
+function projectPublicTeacherProfile(
+  data: UserProfileRecord | undefined,
+): PublicProfileProjection | null {
+  if (!data) {
+    return null;
+  }
+
+  const roles = Array.isArray(data.roles) ? data.roles : [];
+
+  // Only teachers (and admins) get a public profile. A user who is not a
+  // teacher returns null, which deletes any stale public doc.
+  if (!roles.includes("teacher") && !roles.includes("admin")) {
+    return null;
+  }
+
+  const credentials = Array.isArray(data.credentials)
+    ? data.credentials
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+        .slice(0, 6)
+    : [];
+
+  return {
+    displayName: data.displayName ?? null,
+    username: data.username ?? null,
+    photoURL: data.photoURL ?? null,
+    bio: data.bio ?? null,
+    credentials,
+  };
+}
+
+// Project a teacher's public-safe fields into `publicProfiles/{uid}`, which is
+// anonymously readable (see firestore.rules) and powers the public instructor
+// page. The `users/{uid}` doc stays private; this Admin-SDK write is the single
+// writer of the public mirror, so clients can never forge or edit it. Skips
+// no-op writes (e.g. lastLoginAt-only updates) by diffing the projection.
+export const syncPublicTeacherProfile = onDocumentWritten(
+  "users/{uid}",
+  async (event) => {
+    const uid = event.params.uid;
+    const publicRef = db.collection("publicProfiles").doc(uid);
+
+    const beforeProjection = projectPublicTeacherProfile(
+      event.data?.before.data() as UserProfileRecord | undefined,
+    );
+    const afterProjection = projectPublicTeacherProfile(
+      event.data?.after.data() as UserProfileRecord | undefined,
+    );
+
+    if (!afterProjection) {
+      if (beforeProjection) {
+        await publicRef.delete().catch(() => undefined);
+      }
+      return;
+    }
+
+    if (
+      beforeProjection &&
+      JSON.stringify(beforeProjection) === JSON.stringify(afterProjection)
+    ) {
+      return;
+    }
+
+    await publicRef.set(
+      {
+        uid,
+        ...afterProjection,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
     );
   },
 );

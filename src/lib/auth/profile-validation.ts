@@ -1,5 +1,9 @@
 import type { UserGoal } from "@/domain/user-profile";
-import { userGoalOptions } from "@/domain/user-profile";
+import {
+  maxCredentialEntries,
+  maxCredentialLength,
+  userGoalOptions,
+} from "@/domain/user-profile";
 
 const usernamePattern = /^[a-z0-9][a-z0-9-]{2,31}$/;
 const userGoalSet = new Set<UserGoal>(userGoalOptions);
@@ -46,5 +50,28 @@ export function validateBio(value: string) {
 
 export function normalizeGoals(values: string[]): UserGoal[] {
   return values.filter((value): value is UserGoal => userGoalSet.has(value as UserGoal));
+}
+
+export function normalizeCredentials(values: string[]): string[] {
+  return values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .slice(0, maxCredentialEntries);
+}
+
+export function validateCredentials(values: string[]): string {
+  const normalized = values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  if (normalized.length > maxCredentialEntries) {
+    return `Add up to ${maxCredentialEntries} credentials.`;
+  }
+
+  if (normalized.some((value) => value.length > maxCredentialLength)) {
+    return `Keep each credential under ${maxCredentialLength} characters.`;
+  }
+
+  return "";
 }
 

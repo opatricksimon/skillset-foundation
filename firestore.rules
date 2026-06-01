@@ -59,6 +59,7 @@ service cloud.firestore {
         'phoneNumber',
         'timezone',
         'goals',
+        'credentials',
         'photoURL',
         'roles',
         'onboardingCompleted',
@@ -138,6 +139,14 @@ service cloud.firestore {
               'live_mentorship',
               'business_training'
             ])
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['credentials'])
+          || request.resource.data.credentials == null
+          || (
+            request.resource.data.credentials is list
+            && request.resource.data.credentials.size() <= 6
           )
         )
         && (
@@ -1418,6 +1427,15 @@ service cloud.firestore {
         && userUpdateDoesNotEscalatePrivilege()
         && teacherTermsAcceptedAtOnUpdateIsImmutableOrFresh();
       allow delete: if false;
+    }
+
+    match /publicProfiles/{uid} {
+      // Public teacher profiles, projected from users/{uid} by the
+      // syncPublicTeacherProfile Cloud Function (Admin SDK). Anonymously
+      // readable so an instructor page renders for signed-out visitors; the
+      // function is the ONLY writer, so clients can never forge or edit them.
+      allow read: if true;
+      allow write: if false;
     }
 
     match /courses/{courseId} {

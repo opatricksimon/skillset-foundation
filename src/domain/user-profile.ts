@@ -62,6 +62,8 @@ export type UserProfile = {
   phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
+  /** Short credibility lines for teachers (e.g. "Professor at University of X"). */
+  credentials?: string[] | null;
   photoURL: string | null;
   roles: Role[];
   onboardingCompleted: boolean;
@@ -113,6 +115,7 @@ export type UserIdentityInput = {
   phoneNumber?: string | null;
   timezone?: string | null;
   goals?: UserGoal[];
+  credentials?: string[] | null;
 };
 
 export type UpdateOnboardingAnswersInput = {
@@ -120,4 +123,25 @@ export type UpdateOnboardingAnswersInput = {
   answers: OnboardingAnswers;
   path?: OnboardingPath;
   completed?: boolean;
+};
+
+/** Max number of credential lines surfaced on a public teacher profile. */
+export const maxCredentialEntries = 6;
+/** Max length of a single credential line. */
+export const maxCredentialLength = 120;
+
+/**
+ * Public, read-only projection of a teacher's profile. Written exclusively by
+ * the `syncPublicTeacherProfile` Cloud Function (projected from `users/{uid}`),
+ * so it is safe for anonymous reads on the public instructor page. Clients
+ * never write this document.
+ */
+export type PublicProfile = {
+  uid: string;
+  displayName: string | null;
+  username: string | null;
+  photoURL: string | null;
+  bio: string | null;
+  credentials: string[];
+  updatedAt?: unknown;
 };

@@ -7,9 +7,15 @@ import { isValidE164Phone, PhoneInput } from "@/components/shared/phone-input";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import type { UserGoal } from "@/domain/user-profile";
 import {
+  maxCredentialEntries,
+  maxCredentialLength,
+} from "@/domain/user-profile";
+import {
+  normalizeCredentials,
   normalizeGoals,
   normalizeUsername,
   validateBio,
+  validateCredentials,
   validateDisplayName,
   validateUsername,
 } from "@/lib/auth/profile-validation";
@@ -48,6 +54,8 @@ export function ProfileSettingsPanel() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
   const [goals, setGoals] = useState<UserGoal[]>([]);
+  const [credentials, setCredentials] = useState<string[]>([]);
+  const [isTeacher, setIsTeacher] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [avatarProgress, setAvatarProgress] = useState<UploadAvatarProgress | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -80,6 +88,11 @@ export function ProfileSettingsPanel() {
             "America/New_York",
         );
         setGoals(profile?.goals ?? []);
+        setCredentials(profile?.credentials ?? []);
+        setIsTeacher(
+          (profile?.roles ?? []).includes("teacher") ||
+            (profile?.roles ?? []).includes("admin"),
+        );
       })
       .catch(() => {
         if (mounted) {
@@ -113,6 +126,24 @@ export function ProfileSettingsPanel() {
     );
   }
 
+  function updateCredential(index: number, value: string) {
+    setCredentials((current) =>
+      current.map((entry, position) => (position === index ? value : entry)),
+    );
+  }
+
+  function addCredential() {
+    setCredentials((current) =>
+      current.length >= maxCredentialEntries ? current : [...current, ""],
+    );
+  }
+
+  function removeCredential(index: number) {
+    setCredentials((current) =>
+      current.filter((_, position) => position !== index),
+    );
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -125,6 +156,7 @@ export function ProfileSettingsPanel() {
       validateDisplayName(displayName) ||
       validateUsername(username) ||
       validateBio(bio) ||
+      validateCredentials(credentials) ||
       (!isValidE164Phone(phoneNumber) ? "Use a valid phone number." : "") ||
       (!timezone ? "Choose your timezone." : "");
 
@@ -145,6 +177,7 @@ export function ProfileSettingsPanel() {
         phoneNumber,
         timezone,
         goals,
+        ...(isTeacher ? { credentials: normalizeCredentials(credentials) } : {}),
       });
       setSuccess("Profile updated.");
     } catch {
@@ -280,6 +313,58 @@ export function ProfileSettingsPanel() {
             {bio.trim().length}/280 characters
           </span>
         </label>
+
+        {isTeacher ? (
+          <div className="grid gap-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                Credentials
+              </p>
+              <span className="text-xs font-normal text-[var(--color-ink-soft)]">
+                Shown on your public instructor profile
+              </span>
+            </div>
+            <p className="text-xs leading-5 text-[var(--color-ink-soft)]">
+              Short credibility lines &mdash; for example &ldquo;Professor at
+              University of S&atilde;o Paulo&rdquo; or &ldquo;15 years coaching
+              sales teams&rdquo;.
+            </p>
+            {credentials.length > 0 ? (
+              <div className="grid gap-2">
+                {credentials.map((credential, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      value={credential}
+                      maxLength={maxCredentialLength}
+                      onChange={(event) =>
+                        updateCredential(index, event.target.value)
+                      }
+                      placeholder="e.g. Professor at University of São Paulo"
+                      className="min-w-0 flex-1 rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeCredential(index)}
+                      className="shrink-0 rounded-[10px] border border-[var(--color-line)] px-3 py-3 text-xs font-semibold text-[var(--color-ink-soft)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                      aria-label={`Remove credential ${index + 1}`}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {credentials.length < maxCredentialEntries ? (
+              <button
+                type="button"
+                onClick={addCredential}
+                className="button-outline justify-self-start px-4 py-2 text-xs"
+              >
+                Add credential
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <PhoneInput
           value={phoneNumber}

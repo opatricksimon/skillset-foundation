@@ -1,13 +1,32 @@
-import { notFound } from "next/navigation";
+import { InstructorProfileView } from "@/components/instructors/instructor-profile-view";
+import { SiteNav } from "@/components/site/site-nav";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
-// No real instructors are published yet. Until verified instructors
-// (teachers with published courses) exist, no instructor detail page
-// should resolve — the listing shows an honest empty state and direct
-// URLs return 404 instead of fabricated profiles.
-export function generateStaticParams(): { slug: string }[] {
-  return [];
-}
+export const metadata = buildPageMetadata({
+  title: "Instructor",
+  description:
+    "An independent expert publishing reviewed professional courses on Skillset.",
+  path: "/instructors",
+});
 
-export default function InstructorDetailPage() {
-  notFound();
+// Public instructor profile. The route is dynamic (SSR): the public profile is
+// read client-side from `publicProfiles/{uid}` (anonymously readable), which is
+// projected from the teacher's private user doc by a Cloud Function. A uid with
+// no public profile renders an honest "unavailable" state instead of fabricated
+// data — so direct URLs never 404 to a dead end nor invent an instructor.
+export default async function InstructorDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  return (
+    <div className="page-shell">
+      <SiteNav />
+      <main className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-8 sm:py-20">
+        <InstructorProfileView key={slug} uid={slug} />
+      </main>
+    </div>
+  );
 }

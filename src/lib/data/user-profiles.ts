@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 
 import type {
+  PublicProfile,
   UpsertUserProfileInput,
   UpdateOnboardingAnswersInput,
   UserIdentityInput,
@@ -26,6 +27,7 @@ import {
 import type { Role } from "@/lib/permissions";
 
 const usersCollection = "users";
+const publicProfilesCollection = "publicProfiles";
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snapshot = await getDoc(doc(getFirestoreDb(), usersCollection, uid));
@@ -46,6 +48,34 @@ export function subscribeToUserProfile(
     doc(getFirestoreDb(), usersCollection, uid),
     (snapshot) => {
       callback(snapshot.exists() ? (snapshot.data() as UserProfile) : null);
+    },
+    onError,
+  );
+}
+
+export async function getPublicProfile(
+  uid: string,
+): Promise<PublicProfile | null> {
+  const snapshot = await getDoc(
+    doc(getFirestoreDb(), publicProfilesCollection, uid),
+  );
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return snapshot.data() as PublicProfile;
+}
+
+export function subscribeToPublicProfile(
+  uid: string,
+  callback: (profile: PublicProfile | null) => void,
+  onError: (error: Error) => void,
+): Unsubscribe {
+  return onSnapshot(
+    doc(getFirestoreDb(), publicProfilesCollection, uid),
+    (snapshot) => {
+      callback(snapshot.exists() ? (snapshot.data() as PublicProfile) : null);
     },
     onError,
   );
@@ -150,6 +180,13 @@ function buildIdentityPatch(input: UserIdentityInput) {
 
   if (input.goals !== undefined) {
     patch.goals = input.goals;
+  }
+
+  if (input.credentials !== undefined) {
+    patch.credentials =
+      input.credentials && input.credentials.length > 0
+        ? input.credentials
+        : null;
   }
 
   return patch;
