@@ -498,58 +498,68 @@ function getUnpublishedCourseState(
   status: TeacherCourseStatus,
   viewer: { isOwner: boolean; isAdmin: boolean },
 ): { title: string; detail: string; action?: CourseDetailAction } {
-  if (viewer.isAdmin) {
-    if (status === "in_review") {
+  const opsAction: CourseDetailAction = {
+    label: "Review in moderation queue",
+    href: "/ops",
+  };
+  const teachAction: CourseDetailAction = {
+    label: "Open teaching dashboard",
+    href: "/teach",
+  };
+
+  // in_review: the blocking step is admin approval, so an admin viewer (even if
+  // they also own it) is routed to the moderation queue to publish it.
+  if (status === "in_review") {
+    if (viewer.isAdmin) {
       return {
         title: "This course is awaiting approval.",
         detail:
           "It was submitted for review but is not public yet. Approve publication from the moderation queue to take it live.",
-        action: { label: "Review in moderation queue", href: "/ops" },
+        action: opsAction,
       };
     }
 
-    if (status === "inactive") {
-      return {
-        title: "This course is unpublished.",
-        detail:
-          "It was published before and is currently inactive. Republish it from the moderation queue to make it public again.",
-        action: { label: "Open moderation queue", href: "/ops" },
-      };
-    }
-
-    return {
-      title: "This course is not public yet.",
-      detail:
-        "The educator is still preparing it and has not submitted it for review, so there is nothing in the moderation queue to approve yet.",
-      action: { label: "Open moderation queue", href: "/ops" },
-    };
-  }
-
-  if (viewer.isOwner) {
-    if (status === "in_review") {
+    if (viewer.isOwner) {
       return {
         title: "This course is under review.",
         detail:
           "You submitted it for approval. Skillset publishes it once review is complete — you'll be notified. Track its status from your teaching dashboard.",
-        action: { label: "Open teaching dashboard", href: "/teach" },
+        action: teachAction,
+      };
+    }
+  }
+
+  // inactive: it was public before; the blocking step is an admin republish.
+  if (status === "inactive") {
+    if (viewer.isAdmin) {
+      return {
+        title: "This course is unpublished.",
+        detail:
+          "It was published before and is currently inactive. Republish it from the moderation queue to make it public again.",
+        action: { ...opsAction, label: "Open moderation queue" },
       };
     }
 
+    if (viewer.isOwner) {
+      return {
+        title: "This course is currently unpublished.",
+        detail:
+          "It is not visible to learners right now. Contact Skillset support if you need it republished.",
+        action: teachAction,
+      };
+    }
+  }
+
+  // draft / needs_changes: nothing is in the moderation queue yet — the blocking
+  // step belongs to the owner (build + submit, or revise + resubmit). Route the
+  // owner (incl. an owner who is also an admin) to their teaching dashboard.
+  if (viewer.isOwner) {
     if (status === "needs_changes") {
       return {
         title: "This course needs changes before it goes live.",
         detail:
           "A reviewer asked for updates. Make the requested changes and resubmit it for approval from your teaching dashboard.",
-        action: { label: "Open teaching dashboard", href: "/teach" },
-      };
-    }
-
-    if (status === "inactive") {
-      return {
-        title: "This course is currently unpublished.",
-        detail:
-          "It is not visible to learners right now. Contact Skillset support if you need it republished.",
-        action: { label: "Open teaching dashboard", href: "/teach" },
+        action: teachAction,
       };
     }
 
@@ -557,10 +567,21 @@ function getUnpublishedCourseState(
       title: "This course is still a draft.",
       detail:
         "Finish building it and submit it for review from your teaching dashboard. It becomes public once Skillset approves it.",
-      action: { label: "Open teaching dashboard", href: "/teach" },
+      action: teachAction,
     };
   }
 
+  if (viewer.isAdmin) {
+    return {
+      title: "This course is not public yet.",
+      detail:
+        "The educator has not submitted it for review, so there is nothing in the moderation queue to approve. It will appear here once they submit it.",
+      action: { ...opsAction, label: "Open moderation queue" },
+    };
+  }
+
+  // Fallback — unreachable for an unpublished course: Firestore rules reject the
+  // read for non-owner/non-admin viewers, which surfaces as the error state.
   return {
     title: "Course is not public.",
     detail: "This course may still be in review, inactive, or unavailable.",
