@@ -18,7 +18,7 @@ type CreateCourseStartProps = {
 
 const creationSteps = [
   ["01", "Course basics", "Title, promise, category"],
-  ["02", "Course shell", "Draft created in Firestore"],
+  ["02", "Course shell", "Draft saved automatically"],
   ["03", "Builder", "Modules, lessons, uploads"],
 ] as const;
 

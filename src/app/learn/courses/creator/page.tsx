@@ -10,7 +10,7 @@ export default function LearnCreatorCoursePage() {
       <PlatformShell
         eyebrow="Private creator course"
         title="Teacher-published course workspace."
-        description="This route keeps Firestore creator courses compatible with static Firebase Hosting while preserving enrollment checks."
+        description="Your enrolled course opens here once your access is confirmed."
       >
         <Suspense
           fallback={

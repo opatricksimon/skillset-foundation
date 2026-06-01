@@ -335,9 +335,9 @@ export function TeacherWalletPanel() {
             Tax center
           </h3>
           <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-            Tax forms appear after real payout volume exists. For MVP, Stripe
-            Connect collects tax details and Skillset keeps the payout ledger
-            transparent.
+            Tax forms appear once you have real payout volume. Stripe Connect
+            collects your tax details, and Skillset keeps the payout ledger
+            fully transparent.
           </p>
         </div>
       </section>

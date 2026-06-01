@@ -60,8 +60,8 @@ export function AccountDataPanel() {
       </h3>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
         Skillset Promise §03 and §04. Export your data or request account
-        deletion without retention games. These actions are processed manually
-        during the MVP window.
+        deletion without retention games. These requests are handled manually
+        and confirmed by our team.
       </p>
 
       <div className="mt-5 flex flex-wrap gap-3">

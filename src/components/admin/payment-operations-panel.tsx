@@ -78,9 +78,9 @@ export function PaymentOperationsPanel() {
             Stripe order monitor.
           </h3>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-            This panel tracks webhook-backed orders. It is intentionally
-            operational: no course access is granted unless the backend confirms
-            payment and creates the enrollment.
+            This panel tracks live Stripe orders. It is intentionally
+            operational: no course access is granted unless payment is
+            confirmed and the enrollment is created automatically.
           </p>
         </div>
         <div className="flex items-center gap-2">

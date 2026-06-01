@@ -10,7 +10,7 @@ export default function LearnCreatorCommunityPage() {
       <PlatformShell
         eyebrow="Creator course community"
         title="A private discussion space for teacher-published courses."
-        description="Firestore creator courses use this route so communities stay connected to enrollment without relying on static demo slugs."
+        description="Connect with other students in this course's private community space."
       >
         <Suspense
           fallback={

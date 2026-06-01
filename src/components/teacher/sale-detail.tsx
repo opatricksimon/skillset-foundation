@@ -328,19 +328,7 @@ export function SaleDetail({ orderId }: SaleDetailProps) {
           >
             View public course
           </Link>
-        </section>
-
-        <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-          <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
-            Related sales
-          </p>
-          <p className="mt-3 text-sm leading-6 text-[var(--color-ink-soft)]">
-            Course-level sales clustering is planned after the sales index is
-            promoted from operational view to analytics surface.
-          </p>
-          <StatusChip status="pending" label="Coming soon" className="mt-4" />
-        </section>
-      </aside>
+        </section>      </aside>
     </div>
   );
 }

@@ -9,7 +9,7 @@ export default function TeacherCouponsPage() {
         <TeacherComingSoonPanel
           eyebrow="Teacher Studio"
           title="Coupons & promotions are on the roadmap."
-          description="Discount codes, time-boxed launch pricing, and bundle offers will live here once checkout supports promotional pricing. Until then, set your course price directly in the builder."
+          description="Discount codes, time-boxed launch pricing, and bundle offers are coming to Skillset. For now, set your course price directly in the builder."
           primaryHref="/teach/builder"
           primaryLabel="Open Course Builder"
         />

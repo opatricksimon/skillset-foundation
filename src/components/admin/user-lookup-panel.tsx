@@ -29,7 +29,7 @@ export function UserLookupPanel() {
         setIsLoading(false);
       },
       () => {
-        setError("We could not load user records. Check admin role and Firestore rules.");
+        setError("We could not load user records. Confirm your admin access and try again.");
         setIsLoading(false);
       },
     );

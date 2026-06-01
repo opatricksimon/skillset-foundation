@@ -150,13 +150,6 @@ export function TeacherConnectOnboarding({
             {isOpeningHosted ? "Opening Stripe..." : "Continue with Stripe"}
           </button>
         </div>
-        {process.env.NODE_ENV === "development" ? (
-          <p className="mt-3 text-xs text-[var(--color-ink-soft)]">
-            Developer note: set{" "}
-            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to enable the in-app
-            embedded onboarding instead of this hosted redirect.
-          </p>
-        ) : null}
       </div>
     );
   }

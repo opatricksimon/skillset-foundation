@@ -157,9 +157,9 @@ function AuditLogPanel() {
         Sensitive actions across the platform.
       </h3>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-        Refunds and account requests are recorded here by the backend as they
-        happen, newest first. This log is read-only — entries are written
-        exclusively by Cloud Functions.
+        Refunds and account requests are recorded here automatically as they
+        happen, newest first. This log is read-only — entries are written by
+        the system and cannot be edited.
       </p>
 
       <div className="mt-5 grid gap-3">

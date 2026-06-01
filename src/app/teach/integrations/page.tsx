@@ -9,7 +9,7 @@ export default function TeacherIntegrationsPage() {
         <TeacherComingSoonPanel
           eyebrow="Teacher Studio"
           title="Integrations are on the roadmap."
-          description="Connecting email tools, webhooks, and analytics destinations needs an integrations framework we haven't built yet. Payouts already run through Stripe — manage your connected account from billing in the meantime."
+          description="Connect email tools, webhooks, and analytics destinations — it's on the Skillset roadmap. Payouts already run through Stripe, so you can manage your connected account from billing anytime."
           primaryHref="/account/payments"
           primaryLabel="Manage payouts"
         />

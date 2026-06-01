@@ -9,7 +9,7 @@ export default function TeacherCoProductionsPage() {
         <TeacherComingSoonPanel
           eyebrow="Teacher Studio"
           title="Co-productions are on the roadmap."
-          description="Splitting revenue with a co-creator and tracking each partner's share needs a payout-split engine on top of Stripe Connect. Until that lands, every payout routes to the course owner's connected account."
+          description="Split revenue with a co-creator and track each partner's share automatically — it's on the Skillset roadmap. Today, every payout routes to the course owner's connected account."
         />
       </PlatformShell>
     </ProtectedSurface>

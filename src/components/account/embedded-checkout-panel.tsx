@@ -153,17 +153,9 @@ export function EmbeddedCheckoutPanel({
   if (!publishableKey) {
     return (
       <BillingUnavailableNotice
-        title="Plan checkout is being set up."
+        title="Card checkout isn't available here yet."
         detail="Card payments for plan upgrades aren't available on this account just yet. Your current plan keeps working — head back to plans, or contact us and we'll switch it on."
-      >
-        {process.env.NODE_ENV === "development" ? (
-          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
-            Developer note: set{" "}
-            <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in the
-            environment (test key for staging, live key for production).
-          </p>
-        ) : null}
-      </BillingUnavailableNotice>
+      />
     );
   }
 

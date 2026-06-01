@@ -25,7 +25,7 @@ export default async function LearnCoursePage({
         <PlatformShell
           eyebrow="Private creator course"
           title="Teacher-published course workspace."
-          description="This workspace loads a real Firestore course directly from its course URL after enrollment is confirmed."
+          description="Your enrolled course opens here once your access is confirmed."
         >
           <Suspense
             fallback={
