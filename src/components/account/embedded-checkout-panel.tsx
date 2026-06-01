@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
 } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { plans, type PlanBillingCycle, type PlanId } from "@/data/plans";
 import { formatUsd } from "@/data/platform";
@@ -31,6 +32,39 @@ function getStripePromise(): Promise<Stripe | null> | null {
     stripePromise = loadStripe(publishableKey);
   }
   return stripePromise;
+}
+
+/**
+ * Terminal-state notice for the plan checkout that ALWAYS offers a way
+ * out. The rest of the app never strands a user in a dead state (every
+ * *State component ships forward links); the billing panel must match —
+ * otherwise a missing publishable key or unknown plan leaves the user
+ * with nowhere to go.
+ */
+function BillingUnavailableNotice({
+  title,
+  detail,
+  children,
+}: {
+  title: string;
+  detail: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm leading-7 text-[var(--color-ink)]">
+      <p className="font-semibold text-[var(--color-ink)]">{title}</p>
+      <p className="mt-2 text-[var(--color-ink-soft)]">{detail}</p>
+      {children}
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Link href="/account/plans" className="button-solid px-4 py-2 text-sm">
+          Back to plans
+        </Link>
+        <Link href="/support" className="button-outline px-4 py-2 text-sm">
+          Contact support
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 type EmbeddedCheckoutPanelProps = {
@@ -109,22 +143,19 @@ export function EmbeddedCheckoutPanel({
 
   if (!plan) {
     return (
-      <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm text-[var(--color-ink-soft)]">
-        Unknown plan: {planId}.
-      </div>
+      <BillingUnavailableNotice
+        title="We couldn't find that plan."
+        detail={`The "${planId}" plan isn't available for purchase. Head back to plans to choose a current tier.`}
+      />
     );
   }
 
   if (!publishableKey) {
     return (
-      <div className="rounded-[4px] border border-dashed border-[var(--color-line-strong)] bg-[var(--color-surface-soft)] p-6 text-sm leading-7 text-[var(--color-ink)]">
-        <p className="font-semibold text-[var(--color-ink)]">
-          Checkout is being set up.
-        </p>
-        <p className="mt-2 text-[var(--color-ink-soft)]">
-          Payments are not available just yet. Please check back in a
-          little while.
-        </p>
+      <BillingUnavailableNotice
+        title="Plan checkout is being set up."
+        detail="Card payments for plan upgrades aren't available on this account just yet. Your current plan keeps working — head back to plans, or contact us and we'll switch it on."
+      >
         {process.env.NODE_ENV === "development" ? (
           <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
             Developer note: set{" "}
@@ -132,7 +163,7 @@ export function EmbeddedCheckoutPanel({
             environment (test key for staging, live key for production).
           </p>
         ) : null}
-      </div>
+      </BillingUnavailableNotice>
     );
   }
 
@@ -146,6 +177,12 @@ export function EmbeddedCheckoutPanel({
           <div className="p-6 text-sm text-[var(--color-accent)]">
             <p className="font-semibold">Checkout could not start.</p>
             <p className="mt-2 text-[var(--color-ink-soft)]">{error}</p>
+            <Link
+              href="/account/plans"
+              className="button-outline mt-4 px-4 py-2 text-sm text-[var(--color-ink)]"
+            >
+              Back to plans
+            </Link>
           </div>
         ) : !options ? (
           <div
