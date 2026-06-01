@@ -1012,9 +1012,18 @@ export function CourseBuilderStudio() {
       setSavedSignature(signatureAtSave);
       setAutosaveState("saved");
       setSuccess("Draft saved.");
-    } catch {
+    } catch (caughtError) {
+      // Surface the duplicate-title block on rename the same way the create
+      // screen does — otherwise a colliding title is swallowed by the generic
+      // save error and the teacher can't tell why the save failed.
+      const message =
+        caughtError instanceof Error ? caughtError.message.toLowerCase() : "";
       setAutosaveState("error");
-      setError("We could not save this course. Please try again.");
+      setError(
+        message.includes("already")
+          ? "A course with this title already exists. Choose a different name."
+          : "We could not save this course. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
