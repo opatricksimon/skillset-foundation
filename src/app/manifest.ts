@@ -26,7 +26,7 @@ export default function manifest(): MetadataRoute.Manifest {
       },
       {
         src: brand.faviconUrl,
-        sizes: "any",
+        sizes: `${brand.faviconSize.width}x${brand.faviconSize.height}`,
         type: "image/png",
       },
     ],

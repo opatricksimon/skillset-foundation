@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -7,9 +8,37 @@ import { CourseEnrollmentCta } from "@/components/courses/course-enrollment-cta"
 import { CreatorCourseDetail } from "@/components/courses/creator-course-detail";
 import { SiteNav } from "@/components/site/site-nav";
 import { getCourseBySlug, getCourseSlugs } from "@/lib/data/catalog";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export function generateStaticParams() {
   return getCourseSlugs().map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const course = getCourseBySlug(slug);
+
+  if (course) {
+    return buildPageMetadata({
+      title: course.title,
+      description: course.summary,
+      path: `/courses/${slug}`,
+    });
+  }
+
+  // Creator (Firestore) courses resolve client-side, so their title is not
+  // available at build/SSR without the Admin SDK. Give a clean course-scoped
+  // fallback instead of inheriting the generic site-wide title.
+  return buildPageMetadata({
+    title: "Course",
+    description:
+      "Explore this Skillset course — curriculum, preview lessons, and enrollment.",
+    path: `/courses/${slug}`,
+  });
 }
 
 export default async function CourseDetailPage({

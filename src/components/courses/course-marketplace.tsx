@@ -8,6 +8,7 @@ import { startTransition, useDeferredValue, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import type { CourseCard } from "@/lib/data/catalog";
+import type { TeacherCourse } from "@/domain/teacher-course";
 import {
   subscribeToPublishedTeacherCourses,
   teacherCourseToCourseCard,
@@ -23,6 +24,14 @@ type CourseMarketplaceProps = {
 };
 
 const allCategoriesLabel = "All courses";
+
+// Internal live-checkout smoke-test courses (priced at $1, used to verify the
+// real Stripe pipeline end to end) are published under a deliberate `smoke-`
+// id prefix. They must stay published and reachable by direct URL for that
+// test, but must never surface in the public marketplace browse.
+function isInternalSmokeCourse(course: TeacherCourse): boolean {
+  return course.id.startsWith("smoke-");
+}
 
 export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
   const { status, user } = useAuth();
@@ -87,7 +96,11 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
 
     return subscribeToPublishedTeacherCourses(
       (nextCourses) => {
-        setPublishedCourses(nextCourses.map(teacherCourseToCourseCard));
+        setPublishedCourses(
+          nextCourses
+            .filter((course) => !isInternalSmokeCourse(course))
+            .map(teacherCourseToCourseCard),
+        );
         setPublishedCoursesError("");
         setIsLoadingPublishedCourses(false);
       },

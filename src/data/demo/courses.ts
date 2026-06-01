@@ -56,8 +56,7 @@ export const demoCourses: Course[] = [
     statusLabel: "Opening soon",
     summary:
       "A flagship psychology pathway for learners who want a serious, career-focused study experience.",
-    image:
-      "https://i.pinimg.com/1200x/99/10/0a/99100aa1ea4d3371864d4951a8215770.jpg",
+    image: "/courses/clinical-psychology.jpg",
     detail: "Built for structured learning, guided support, and clear progression.",
     level: "Advanced",
     priceLabel: "Price to be announced",
@@ -83,8 +82,7 @@ export const demoCourses: Course[] = [
     statusLabel: "Pilot cohort",
     summary:
       "Practical leadership development for professionals who want more confidence, clarity, and impact.",
-    image:
-      "https://i.pinimg.com/736x/f0/6b/80/f06b800d1dacab81f3e2e7f311f7797b.jpg",
+    image: "/courses/leadership-development.jpg",
     detail: "Focused on mentorship, live practice, and measurable growth.",
     level: "Professional",
     priceLabel: "$149 pilot access",
@@ -110,8 +108,7 @@ export const demoCourses: Course[] = [
     statusLabel: "Waitlist",
     summary:
       "Professional HR training designed for learners building practical business skills and workplace confidence.",
-    image:
-      "https://i.pinimg.com/736x/cb/9d/ae/cb9dae367287930bffa7e9c9cd17fac1.jpg",
+    image: "/courses/hr-management.jpg",
     detail: "A flexible track with room for applied learning and career growth.",
     level: "Professional",
     priceLabel: "Waitlist access",
@@ -137,8 +134,7 @@ export const demoCourses: Course[] = [
     statusLabel: "New",
     summary:
       "A shorter introduction to mental health topics for learners who want an accessible starting point.",
-    image:
-      "https://i.pinimg.com/736x/a6/f6/a8/a6f6a85a0295d422899e572b1d814a0d.jpg",
+    image: "/courses/mental-health-foundations.jpg",
     detail: "Short-form learning with clear outcomes and practical takeaways.",
     level: "Foundation",
     priceLabel: "$49 introductory access",
@@ -164,8 +160,7 @@ export const demoCourses: Course[] = [
     statusLabel: "Popular",
     summary:
       "A practical communication pathway for professionals who want stronger confidence and clearer influence.",
-    image:
-      "https://i.pinimg.com/1200x/6f/c4/bc/6fc4bcde2752500af3f65b9588bc02de.jpg",
+    image: "/courses/effective-communication.jpg",
     detail: "Built for everyday communication, presentation, and workplace clarity.",
     level: "Foundation",
     priceLabel: "$79 early access",
@@ -191,8 +186,7 @@ export const demoCourses: Course[] = [
     statusLabel: "Launch path",
     summary:
       "A management-focused route for learners who want practical planning and delivery skills.",
-    image:
-      "https://i.pinimg.com/1200x/4f/5a/2a/4f5a2a27a6db6238806ba41f88ffb974.jpg",
+    image: "/courses/project-management.jpg",
     detail: "A practical pathway built around real-world project delivery.",
     level: "Professional",
     priceLabel: "Price to be announced",

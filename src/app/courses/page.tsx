@@ -4,6 +4,7 @@ import { CourseMarketplace } from "@/components/courses/course-marketplace";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { getFeaturedCourseCards } from "@/lib/data/catalog";
 
 export const metadata = buildPageMetadata({
   title: "Browse courses",
@@ -34,7 +35,7 @@ export default function CoursesPage() {
         </div>
 
         <Suspense fallback={<MarketplaceSkeleton />}>
-          <CourseMarketplace />
+          <CourseMarketplace courses={getFeaturedCourseCards()} />
         </Suspense>
       </main>
       <SiteFooter />

@@ -14,4 +14,8 @@ export const brand = {
   // Round emblem only — theme-agnostic, used in the collapsed sidebar.
   logoMark: "/brand/logo-mark.png",
   logoMarkSize: { width: 290, height: 295 },
+  // Square-ish raster favicon. Declaring the real pixel size in the web
+  // manifest avoids the "Resource size is not correct" warning that
+  // `sizes: "any"` triggers on a non-vector icon.
+  faviconSize: { width: 120, height: 115 },
 };
