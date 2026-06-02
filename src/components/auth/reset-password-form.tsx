@@ -18,7 +18,9 @@ export function ResetPasswordForm() {
 
     try {
       await resetPassword(email);
-      setSuccess("If an account exists for this email, a reset link has been sent.");
+      setSuccess(
+        "If an account exists for this email, we've sent a reset link. It can take a minute to arrive — check your inbox and your spam or promotions folder. If you signed up with Google, use 'Continue with Google' to sign in instead.",
+      );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
