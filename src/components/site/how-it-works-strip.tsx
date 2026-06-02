@@ -58,7 +58,7 @@ export function HowItWorksStrip() {
                     <Icon size={20} strokeWidth={1.7} />
                   </span>
                   <p
-                    className="display-title text-5xl leading-none text-[var(--color-accent-soft)]"
+                    className="display-title text-6xl leading-none text-[var(--color-ink-muted)]"
                     aria-hidden="true"
                   >
                     {step.number}

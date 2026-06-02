@@ -96,6 +96,13 @@ body {
   font-family: var(--font-manrope), sans-serif;
   background: var(--color-base);
   color: var(--color-ink);
+  /* Crisper type: thinner, truer weights on macOS/iOS and ligature/kerning-
+     aware shaping everywhere. The single highest-leverage "feels designed"
+     detail, applied once at the root. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern", "liga", "calt";
 }
 
 /* Themed scrollbar — slim, rounded, on-brand. Inherits the palette tokens
@@ -143,6 +150,50 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* ─── Craft layer ─────────────────────────────────────────────────────────
+   Universal, layout-safe polish applied site-wide: branded text selection,
+   widow/orphan-resistant headings, and anchor offsets that clear the sticky
+   header. All progressive enhancements — unsupported browsers ignore them. */
+::selection {
+  background: rgba(26, 54, 93, 0.16);
+  color: var(--color-primary-dark);
+}
+
+::-moz-selection {
+  background: rgba(26, 54, 93, 0.16);
+  color: var(--color-primary-dark);
+}
+
+[data-theme="dark"] ::selection {
+  background: rgba(143, 180, 228, 0.28);
+  color: #ffffff;
+}
+
+[data-theme="dark"] ::-moz-selection {
+  background: rgba(143, 180, 228, 0.28);
+  color: #ffffff;
+}
+
+/* Balanced headings avoid a single orphaned word on the last line; pretty
+   body text trims short widows without balance's cost on long paragraphs. */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Anchor jumps on the single-page landing (#how-it-works, #pricing, …) must
+   clear the floating sticky header instead of tucking the section title under
+   it. Zero-specificity so it never fights a component's own scroll-margin. */
+:where([id]) {
+  scroll-margin-top: 96px;
 }
 
 .page-shell {
@@ -213,6 +264,12 @@ select {
 .display-title {
   font-family: var(--font-cormorant), serif;
   letter-spacing: 0;
+  /* Cormorant is a high-contrast display serif — let it use its true
+     ligatures, contextual/discretionary alternates and optical sizing so
+     large headings read as typeset, not merely "big text". */
+  font-optical-sizing: auto;
+  font-feature-settings: "kern", "liga", "dlig", "calt";
+  text-wrap: balance;
 }
 
 .pill {
