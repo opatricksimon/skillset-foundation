@@ -1,5 +1,6 @@
 "use client";
 
+import { UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -310,13 +311,30 @@ export function ProfileSettingsPanel() {
               Use a clear square image ({avatarRequirementLabel}). If you skip
               it, Skillset shows a neutral person icon instead of a letter badge.
             </p>
-            <input
-              type="file"
-              accept={allowedAvatarTypes.join(",")}
-              disabled={isUploadingAvatar}
-              onChange={(event) => void handleAvatarChange(event.target.files?.[0] ?? null)}
-              className="mt-3 w-full rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white disabled:opacity-60"
-            />
+            <label
+              className={`mt-3 inline-flex w-fit cursor-pointer items-center gap-2 rounded-[10px] border border-dashed border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary-light)] ${
+                isUploadingAvatar ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
+              <UploadCloud size={16} aria-hidden />
+              {isUploadingAvatar
+                ? "Uploading..."
+                : photoURL
+                  ? "Replace photo"
+                  : "Upload photo"}
+              <input
+                type="file"
+                accept={allowedAvatarTypes.join(",")}
+                disabled={isUploadingAvatar}
+                aria-label="Upload profile photo"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  event.target.value = "";
+                  void handleAvatarChange(file);
+                }}
+                className="hidden"
+              />
+            </label>
             {avatarProgress ? (
               <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">
                 Uploading {avatarProgress.percent}%
@@ -439,13 +457,30 @@ export function ProfileSettingsPanel() {
                 It prints on every certificate your students earn. Skip it and
                 your name is printed instead.
               </p>
-              <input
-                type="file"
-                accept={allowedAvatarTypes.join(",")}
-                disabled={isUploadingSignature}
-                onChange={(event) => void handleSignatureChange(event.target.files?.[0] ?? null)}
-                className="mt-3 w-full rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--color-primary)] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white disabled:opacity-60"
-              />
+              <label
+                className={`mt-3 inline-flex w-fit cursor-pointer items-center gap-2 rounded-[10px] border border-dashed border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary-light)] ${
+                  isUploadingSignature ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                <UploadCloud size={16} aria-hidden />
+                {isUploadingSignature
+                  ? "Uploading..."
+                  : signatureUrl
+                    ? "Replace signature"
+                    : "Upload signature"}
+                <input
+                  type="file"
+                  accept={allowedAvatarTypes.join(",")}
+                  disabled={isUploadingSignature}
+                  aria-label="Upload certificate signature"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    event.target.value = "";
+                    void handleSignatureChange(file);
+                  }}
+                  className="hidden"
+                />
+              </label>
               {signatureProgress ? (
                 <p className="mt-2 text-xs font-semibold text-[var(--color-primary)]">
                   Uploading {signatureProgress.percent}%
