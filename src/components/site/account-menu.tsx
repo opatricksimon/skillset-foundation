@@ -4,9 +4,12 @@ import {
   Award,
   Bookmark,
   ChevronDown,
+  ExternalLink,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   LogOut,
+  Presentation,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -66,6 +69,21 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
   const moneyLabel = user.roles.includes("teacher") ? "Payouts & tax" : "Billing";
   const currentPlanName = planById(currentPlanId).name;
   const accountRoleLabel = formatPrimaryRole(user.roles);
+  // One account, both roles: a teacher can drop into their student side; a
+  // learner can open the teacher application (the onboarding quiz). The switch
+  // opens in a new tab so each side keeps its own context — signalled by the
+  // external-link icon on the item.
+  const isStaff =
+    user.roles.includes("admin") || user.roles.includes("support");
+  const roleSwitch = isStaff
+    ? null
+    : user.roles.includes("teacher")
+      ? { href: "/learn", label: "Student view", icon: GraduationCap }
+      : {
+          href: "/onboarding?path=teacher",
+          label: "Become a teacher",
+          icon: Presentation,
+        };
 
   useDismissableLayer(wrapperRef, isOpen, () => setIsOpen(false));
 
@@ -140,6 +158,21 @@ export function AccountMenu({ onSignOut, user }: AccountMenuProps) {
             />
           </div>
 
+          {roleSwitch ? (
+            <>
+              <div className="account-menu-separator" />
+              <div className="py-1">
+                <p className="account-menu-section-label">Switch view</p>
+                <RoleSwitchItem
+                  href={roleSwitch.href}
+                  icon={roleSwitch.icon}
+                  label={roleSwitch.label}
+                  onNavigate={() => setIsOpen(false)}
+                />
+              </div>
+            </>
+          ) : null}
+
           <div className="account-menu-separator" />
 
           <div className="py-1">
@@ -211,6 +244,40 @@ function MenuLink({
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {chip ? <span className="account-menu-chip">{chip}</span> : null}
+    </Link>
+  );
+}
+
+function RoleSwitchItem({
+  href,
+  icon: Icon,
+  label,
+  onNavigate,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${label} (opens in a new tab)`}
+      className="account-menu-item"
+      onClick={onNavigate}
+    >
+      <span className="account-menu-icon">
+        <Icon aria-hidden="true" size={14} strokeWidth={1.9} />
+      </span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <ExternalLink
+        aria-hidden="true"
+        size={13}
+        strokeWidth={1.9}
+        className="shrink-0 text-[var(--color-ink-muted)]"
+      />
     </Link>
   );
 }
