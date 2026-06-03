@@ -5,7 +5,9 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarClock,
+  Check,
   CheckCircle2,
+  ChevronDown,
   CloudOff,
   CreditCard,
   ExternalLink,
@@ -109,6 +111,142 @@ const builderStages: Array<{
   { id: "pricing", label: "Pricing", sub: "Access model", target: "pricing", anchor: "builder-sec-pricing" },
   { id: "submit", label: "Submit", sub: "Review", target: "review", anchor: "builder-sec-review" },
 ];
+function CategoryMultiSelect({
+  options,
+  selected,
+  onToggle,
+  disabled,
+  max = 5,
+}: {
+  options: readonly string[];
+  selected: string[];
+  onToggle: (value: string) => void;
+  disabled: boolean;
+  max?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const atMax = selected.length >= max;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative font-normal">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center gap-2 rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-2.5 text-left text-sm outline-none transition-colors focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)] disabled:opacity-60"
+      >
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          {selected.length === 0 ? (
+            <span className="text-[var(--color-ink-muted)]">
+              Select categories
+            </span>
+          ) : (
+            selected.map((item, index) => (
+              <span
+                key={item}
+                className={`inline-flex items-center gap-1 rounded-[6px] px-2 py-0.5 text-xs font-semibold ${
+                  index === 0
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-[var(--color-surface-strong)] text-[var(--color-ink)]"
+                }`}
+              >
+                {item}
+                {index === 0 ? (
+                  <span className="text-[9px] font-bold uppercase tracking-wide opacity-80">
+                    Primary
+                  </span>
+                ) : null}
+              </span>
+            ))
+          )}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          size={16}
+          strokeWidth={1.8}
+          className={`shrink-0 text-[var(--color-ink-muted)] transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open ? (
+        <div
+          role="listbox"
+          aria-multiselectable="true"
+          className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-[12px] border border-[var(--color-line)] bg-white p-1.5 shadow-[var(--shadow-strong)]"
+        >
+          {options.map((item) => {
+            const isSelected = selected.includes(item);
+            const isLockedOut = !isSelected && atMax;
+
+            return (
+              <button
+                key={item}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                disabled={isLockedOut}
+                onClick={() => onToggle(item)}
+                className={`flex w-full items-center gap-2.5 rounded-[8px] px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  isSelected
+                    ? "bg-[var(--color-surface-soft)] font-semibold text-[var(--color-primary)]"
+                    : "text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)]"
+                }`}
+              >
+                <span
+                  className={`grid size-4 shrink-0 place-items-center rounded-[5px] border transition-colors ${
+                    isSelected
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                      : "border-[var(--color-line-strong)] bg-white"
+                  }`}
+                >
+                  {isSelected ? (
+                    <Check aria-hidden="true" size={11} strokeWidth={3} />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{item}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 type ActiveLessonStudio = {
   moduleId: string;
   lessonId: string;
@@ -1416,28 +1554,12 @@ export function CourseBuilderStudio() {
               Optional. Select up to five. The first selected category becomes
               the primary marketplace category.
             </p>
-            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3 sm:grid-cols-2 lg:grid-cols-3">
-              {skillsetCourseCategories.map((item) => {
-                const selected = selectedCategories.includes(item);
-
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => toggleCategory(item)}
-                    disabled={!isEditable}
-                    className={`rounded-[8px] border px-3 py-2 text-left text-xs font-semibold transition-colors disabled:opacity-60 ${
-                      selected
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                        : "border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:border-[var(--color-primary-light)]"
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
-            </div>
+            <CategoryMultiSelect
+              options={skillsetCourseCategories}
+              selected={selectedCategories}
+              onToggle={toggleCategory}
+              disabled={!isEditable}
+            />
           </div>
           <label
             id="builder-sec-about"
