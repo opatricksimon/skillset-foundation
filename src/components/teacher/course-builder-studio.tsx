@@ -11,13 +11,9 @@ import {
   CloudOff,
   CreditCard,
   ExternalLink,
-  Eye,
-  FileText,
   Gift,
   Image as ImageIcon,
-  Layers3,
   Loader2,
-  PlayCircle,
   Plus,
   Repeat,
   Trash2,
@@ -710,9 +706,6 @@ export function CourseBuilderStudio() {
     (readyItemCount / readinessItems.length) * 100,
   );
   const nextReadinessItem = readinessItems.find((item) => !item.ready);
-  const selectedPreviewLesson = allLessons.find(
-    (lesson) => lesson.id === freePreviewLessonId,
-  );
   const activeLessonStudioModule = activeLessonStudio
     ? modules.find((module) => module.id === activeLessonStudio.moduleId) ?? null
     : null;
@@ -1409,70 +1402,71 @@ export function CourseBuilderStudio() {
         </div>
       </section>
 
-      <div className="course-builder-grid">
-        <aside className="course-builder-rail">
-          <div>
+      <nav className="course-builder-stepper" aria-label="Course creation steps">
+        <div className="course-builder-stepper__head">
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-brand)]">
               Course creation
             </p>
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-strong)]">
-              <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent))] transition-[width] duration-300"
-                style={{ width: `${builderStepProgress}%` }}
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
+            <p className="mt-1 truncate text-sm font-semibold leading-snug text-[var(--color-ink-soft)]">
+              Next:{" "}
+              <span className="text-[var(--color-primary)]">
+                {nextReadinessItem?.label ?? "Course is ready to submit."}
+              </span>
+            </p>
+          </div>
+          <div className="course-builder-stepper__meter">
+            <div className="flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-soft)]">
               <span>{completedStageCount} of {builderStages.length} stages ready</span>
               <span className="text-[var(--color-primary)]">
                 Review readiness {readinessProgress}%
               </span>
             </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-strong)]">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-primary),var(--color-accent))] transition-[width] duration-300"
+                style={{ width: `${builderStepProgress}%` }}
+              />
+            </div>
           </div>
-          <div className="course-builder-steps mt-5">
-            {builderStages.map((stage, index) => {
-              const isActive = activeStageId === stage.id;
-              const isDone = stageCompletion[stage.id];
+        </div>
+        <div className="course-builder-steps">
+          {builderStages.map((stage, index) => {
+            const isActive = activeStageId === stage.id;
+            const isDone = stageCompletion[stage.id];
 
-              return (
-                <button
-                  key={stage.id}
-                  type="button"
-                  onClick={() => {
-                    pendingScrollRef.current = stage.anchor;
-                    if (activeTab === stage.target) {
-                      scrollPendingSectionIntoView();
-                    } else {
-                      setActiveTab(stage.target);
-                    }
-                  }}
-                  className={`course-builder-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
-                >
-                  <span className="course-builder-step__num">
-                    {isDone ? (
-                      <CheckCircle2 aria-hidden="true" size={13} strokeWidth={2} />
-                    ) : (
-                      String(index + 1).padStart(2, "0")
-                    )}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="course-builder-step__label">{stage.label}</span>
-                    <span className="course-builder-step__sub">{stage.sub}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="course-builder-tip">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-              Next best action
-            </p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-white">
-              {nextReadinessItem?.label ?? "Course is ready to submit."}
-            </p>
-          </div>
-        </aside>
+            return (
+              <button
+                key={stage.id}
+                type="button"
+                onClick={() => {
+                  pendingScrollRef.current = stage.anchor;
+                  if (activeTab === stage.target) {
+                    scrollPendingSectionIntoView();
+                  } else {
+                    setActiveTab(stage.target);
+                  }
+                }}
+                className={`course-builder-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
+              >
+                <span className="course-builder-step__num">
+                  {isDone ? (
+                    <CheckCircle2 aria-hidden="true" size={13} strokeWidth={2} />
+                  ) : (
+                    String(index + 1).padStart(2, "0")
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span className="course-builder-step__label">{stage.label}</span>
+                  <span className="course-builder-step__sub">{stage.sub}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
-        <section className="course-builder-panel">
+      <section className="course-builder-panel">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -2334,68 +2328,7 @@ export function CourseBuilderStudio() {
         </div>
       </section>
 
-      <aside className="course-builder-preview">
-        <section className="overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-soft)]">
-          <div className="relative min-h-52 bg-[linear-gradient(135deg,var(--color-primary-light),var(--color-primary)_58%,var(--color-primary-dark))] p-5 text-white">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(243,214,220,0.34),transparent_38%),radial-gradient(circle_at_20%_85%,rgba(255,255,255,0.18),transparent_35%)]" />
-            <div className="relative z-10 flex items-center justify-between gap-3">
-              <span className="rounded-[8px] bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                Live preview
-              </span>
-              <Eye aria-hidden="true" size={17} strokeWidth={1.8} />
-            </div>
-            <div className="relative z-10 mt-16">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
-                {category}
-              </p>
-              <h3 className="display-title mt-2 text-3xl leading-[1.05]">
-                {title.trim() || "Untitled course"}
-              </h3>
-            </div>
-          </div>
-          <div className="grid gap-4 p-5">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
-                <Layers3 aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
-                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
-                  {modules.length}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-                  Modules
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
-                <PlayCircle aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
-                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
-                  {lessonCount}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-                  Lessons
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[var(--color-surface-soft)] p-3">
-                <FileText aria-hidden="true" size={16} className="text-[var(--color-primary)]" />
-                <p className="mt-2 text-lg font-bold text-[var(--color-primary)]">
-                  {formattedPrice}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-                  Access
-                </p>
-              </div>
-            </div>
-            <div className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Student preview
-              </p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-[var(--color-ink)]">
-                {selectedPreviewLesson
-                  ? `${selectedPreviewLesson.moduleTitle} - ${selectedPreviewLesson.title}`
-                  : "Choose one free preview lesson before review."}
-              </p>
-            </div>
-          </div>
-        </section>
-
+      <div className="course-builder-footer">
         <section className="rounded-[4px] border border-[var(--color-line)] bg-white p-4 sm:p-6 shadow-[var(--shadow-soft)]">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-brand)]">
             Course structure
@@ -2523,9 +2456,10 @@ export function CourseBuilderStudio() {
         </section>
 
         {course ? (
-          <CourseAssetUploader course={course} isEditable={isEditable} />
+          <div className="course-builder-footer__full">
+            <CourseAssetUploader course={course} isEditable={isEditable} />
+          </div>
         ) : null}
-      </aside>
       </div>
       {course && activeLessonStudioModule && activeLessonStudioLesson ? (
         <LessonContentModal
