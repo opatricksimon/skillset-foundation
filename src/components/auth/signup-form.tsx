@@ -169,7 +169,7 @@ export function SignupForm() {
             placeholder="Your name"
             autoComplete="name"
             required
-            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            className="field-input"
           />
         </label>
 
@@ -182,7 +182,7 @@ export function SignupForm() {
             placeholder="you@example.com"
             autoComplete="email"
             required
-            className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+            className="field-input"
           />
         </label>
       </div>
@@ -212,11 +212,7 @@ export function SignupForm() {
           autoComplete="new-password"
           required
           aria-invalid={showMismatch}
-          className={`rounded-[10px] border bg-white px-4 py-3 text-sm font-normal outline-none ${
-            showMismatch
-              ? "border-[var(--color-accent)] focus:border-[var(--color-accent)]"
-              : "border-[var(--color-line)] focus:border-[var(--color-primary-light)]"
-          }`}
+          className="field-input"
         />
         {showMismatch ? (
           <span className="text-xs font-semibold text-[var(--color-accent)]">

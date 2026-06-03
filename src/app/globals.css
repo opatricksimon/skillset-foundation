@@ -1181,6 +1181,61 @@ p {
   }
 }
 
+/* ─── Form fields ─────────────────────────────────────────────────────────
+   Inputs must read as distinct, inset rectangles on a white card — never
+   white-on-white. A 1.5px line over a faintly tinted fill marks exactly where
+   to type; focus lifts the fill to white and adds a navy ring. Reusable across
+   every auth + platform form so all fields demarcate consistently. */
+.field-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-line-strong);
+  background: var(--color-surface-soft);
+  padding: 0.7rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-ink);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.field-input::placeholder {
+  color: var(--color-ink-muted);
+}
+
+.field-input:focus,
+.field-input:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.14);
+}
+
+.field-input[aria-invalid="true"] {
+  border-color: var(--color-accent);
+  background: rgba(178, 34, 52, 0.04);
+}
+
+.field-input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(178, 34, 52, 0.16);
+}
+
+[data-theme="dark"] .field-input {
+  background: rgba(143, 180, 228, 0.06) !important;
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .field-input:focus,
+[data-theme="dark"] .field-input:focus-visible {
+  background: rgba(143, 180, 228, 0.1) !important;
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px rgba(143, 180, 228, 0.2);
+}
+
 .auth-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -1227,21 +1282,27 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 24px;
+  justify-content: flex-start;
+  /* Bias the card toward the top: the form reads without scrolling into the
+     vertical center. Offset scales with viewport but never sinks to the
+     middle. */
+  padding: clamp(20px, 5vh, 56px) 24px 32px;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  /* margin:auto centers the card vertically when it fits, and collapses to
-     0 (scroll-from-top, no clipping) when the form is taller than the
-     viewport — unlike place-items:center, which hides the top on overflow. */
-  margin: auto;
-  padding: 28px 32px;
-  border: 1px solid rgba(26, 54, 93, 0.08);
+  /* Top-anchored (vertical offset lives on .auth-main); no full vertical
+     centering, so the form sits high and reads without scrolling on common
+     laptop heights. */
+  margin: 0 auto;
+  padding: 24px 30px;
+  border: 1px solid var(--color-line-strong);
   border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 24px 48px rgba(15, 39, 68, 0.06);
+  box-shadow:
+    0 1px 2px rgba(15, 39, 68, 0.05),
+    0 24px 48px rgba(15, 39, 68, 0.08);
 }
 
 .auth-tabs {

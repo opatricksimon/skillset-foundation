@@ -72,7 +72,7 @@ export function LoginForm() {
   }
 
   return (
-    <form className="mt-6 grid gap-4" onSubmit={handleEmailLogin}>
+    <form className="mt-5 grid gap-3.5" onSubmit={handleEmailLogin}>
       <div className="rounded-[12px] border border-[var(--color-line)] bg-[var(--color-surface-soft)] p-3">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
           {pathLabel} access
@@ -89,7 +89,7 @@ export function LoginForm() {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           required
-          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          className="field-input"
         />
       </label>
       <label className="grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
@@ -100,7 +100,7 @@ export function LoginForm() {
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Your password"
           required
-          className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[var(--color-primary-light)]"
+          className="field-input"
         />
       </label>
       {error ? (
