@@ -67,10 +67,10 @@ export function AuthPage() {
           <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             {isSignup ? "Join Skillset" : "Welcome back"}
           </p>
-          <h1 className="display-title mt-3 text-center text-[28px] leading-[1.15] text-[var(--color-primary)]">
+          <h1 className="display-title mt-2 text-center text-[26px] leading-[1.15] text-[var(--color-primary)]">
             {isSignup ? "Create your account." : "Sign in to Skillset."}
           </h1>
-          <p className="mx-auto mt-2 max-w-xs text-center text-[13px] leading-6 text-[var(--color-ink-soft)]">
+          <p className="mx-auto mt-1.5 max-w-xs text-center text-[13px] leading-5 text-[var(--color-ink-soft)]">
             {isSignup
               ? "Free to start. Browse programs, save progress, and open creator tools from the same account."
               : "Pick up where you left off."}

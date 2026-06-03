@@ -154,7 +154,7 @@ export function SignupForm() {
 
   return (
     <form className="mt-5 grid gap-3" onSubmit={handleEmailSignup}>
-      <p className="text-xs leading-6 text-[var(--color-ink-soft)]">
+      <p className="text-xs leading-5 text-[var(--color-ink-soft)]">
         Continues into the {pathLabel} setup — you can add the other side later
         from your profile.
       </p>

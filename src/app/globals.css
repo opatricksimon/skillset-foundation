@@ -76,6 +76,11 @@
    below overrides this to `auto` for accessibility. */
 html {
   scroll-behavior: smooth;
+  /* Reserve the scrollbar's width at all times so pages that overflow don't
+     shove centered layouts sideways when the bar appears (the auth card was
+     visibly jumping right — the "empty lateral gap" the founder flagged).
+     Pairs with the slim themed scrollbar defined below. */
+  scrollbar-gutter: stable;
 }
 
 /* Theme-aware full logo: render both, show the one matching the theme.
@@ -1278,15 +1283,20 @@ p {
 }
 
 .auth-main {
-  flex: 1;
+  /* Grow to fill tall viewports, but NEVER shrink below the form's own height.
+     That shrink (the old `flex: 1` resolves to flex-basis:0% + shrinkable) is
+     exactly what let the taller signup form get pinned inside the 100dvh column
+     so its last rows were unreachable at max scroll. flex-shrink:0 guarantees
+     the document grows past the viewport and the whole form stays
+     scroll-reachable on short laptops. */
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  /* Bias the card toward the top: the form reads without scrolling into the
-     vertical center. Offset scales with viewport but never sinks to the
-     middle. */
-  padding: clamp(20px, 5vh, 56px) 24px 32px;
+  /* Sit high (founder: "precisa subir") with generous bottom clearance so the
+     final "Already have an account?" link always clears the fold. */
+  padding: clamp(12px, 2.5vh, 28px) 24px 48px;
 }
 
 .auth-card {
