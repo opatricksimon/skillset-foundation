@@ -15,8 +15,8 @@
   --color-ink: #163252;
   --color-ink-soft: #4d6785;
   --color-ink-muted: #7a8fae;
-  --color-line: rgba(26, 54, 93, 0.12);
-  --color-line-strong: rgba(26, 54, 93, 0.18);
+  --color-line: rgba(26, 54, 93, 0.16);
+  --color-line-strong: rgba(26, 54, 93, 0.24);
   --color-success: #1f8a5b;
   --color-success-soft: #e4f3eb;
   --color-warning: #c07b0a;
@@ -25,7 +25,7 @@
   --color-info-soft: #ebf3fb;
   --color-danger: #b22234;
   --color-danger-soft: rgba(178, 34, 52, 0.06);
-  --shadow-soft: 0 12px 28px rgba(26, 54, 93, 0.06);
+  --shadow-soft: 0 1px 2px rgba(26, 54, 93, 0.06), 0 12px 28px rgba(26, 54, 93, 0.10);
   --shadow-strong: 0 18px 44px rgba(15, 39, 68, 0.14);
   --shadow-avatar: 0 8px 18px rgba(26, 54, 93, 0.14);
   --radius-sm: 8px;
@@ -48,14 +48,14 @@
   --color-ink: #e8edf5;
   --color-ink-soft: #a4b3c8;
   --color-ink-muted: #6b7e9a;
-  --color-line: rgba(255, 255, 255, 0.08);
-  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-line-strong: rgba(255, 255, 255, 0.18);
   --color-success-soft: rgba(31, 138, 91, 0.18);
   --color-warning-soft: rgba(192, 123, 10, 0.18);
   --color-info: #8fb4e4;
   --color-info-soft: rgba(143, 180, 228, 0.14);
   --color-danger-soft: rgba(178, 34, 52, 0.18);
-  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.20), 0 14px 34px rgba(0, 0, 0, 0.32);
   --shadow-strong: 0 22px 54px rgba(0, 0, 0, 0.42);
 }
 
@@ -196,6 +196,29 @@ p {
   scroll-margin-top: 96px;
 }
 
+/* ─── Surface demarcation ───────────────────────────────────────────────────
+   Reusable container treatments so every card, panel, and grouped control
+   reads as a distinct box against the page — crisp hairline + soft float,
+   never a heavy border. The shared vocabulary for segmentation across the app. */
+.surface-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+}
+
+.surface-card-soft {
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+
+.section-divider {
+  height: 1px;
+  border: 0;
+  background: var(--color-line);
+}
+
 .page-shell {
   position: relative;
   min-height: 100vh;
@@ -208,8 +231,8 @@ p {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 8% 0%, rgba(44, 82, 130, 0.07), transparent 28rem),
-    linear-gradient(180deg, #ffffff 0%, #fbfdff 50%, #f5f8fc 100%);
+    radial-gradient(circle at 8% 0%, rgba(44, 82, 130, 0.08), transparent 28rem),
+    linear-gradient(180deg, #fbfdff 0%, #f2f6fc 52%, #e9f0fa 100%);
 }
 
 [data-theme="dark"] .page-shell::before {
