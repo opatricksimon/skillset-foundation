@@ -609,8 +609,17 @@ function LessonUploadForm({
           type="file"
           accept={courseAssetAcceptTypes[uploadKind]}
           disabled={!isEditable || isUploading}
+          aria-label={courseAssetKindLabels[uploadKind]}
           onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+          className="lesson-modal-upload__input"
         />
+        <span
+          className="lesson-modal-upload__trigger"
+          data-disabled={!isEditable || isUploading ? "true" : undefined}
+        >
+          <UploadCloud size={16} aria-hidden />
+          {selectedFile ? "Choose a different file" : "Choose file"}
+        </span>
       </label>
       <label className="lesson-modal-upload__preview">
         <input
