@@ -1394,6 +1394,15 @@ p {
 }
 
 .platform-topbar {
+  position: relative;
+  /* The topbar already forms a stacking context via `backdrop-filter`. That
+     context defaults to z-index `auto` (≈0), so any card inside the scrolling
+     `.platform-content` that uses `position: relative; z-index: 1` (hero
+     decorations, course-builder tips) would paint OVER the whole topbar —
+     dragging the account dropdown (z-index 50, trapped inside this context)
+     behind dashboard content. Lifting the topbar to 60 keeps the dropdown
+     above all page content while still sitting below the lesson modal (80). */
+  z-index: 60;
   border-bottom: 1px solid var(--color-line);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(18px);

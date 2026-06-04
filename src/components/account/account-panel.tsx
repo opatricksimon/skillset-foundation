@@ -41,7 +41,7 @@ const accountLinkMeta: Record<
     helper: "Name, username, avatar, bio, phone, timezone.",
   },
   Email: {
-    href: "/account?tab=account",
+    href: "/account?tab=security",
     icon: Mail,
     helper: "Login email, email change, and verification.",
   },

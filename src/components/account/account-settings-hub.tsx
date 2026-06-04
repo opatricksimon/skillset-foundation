@@ -4,8 +4,6 @@ import {
   Bell,
   BookOpen,
   Database,
-  LockKeyhole,
-  Mail,
   Shield,
   UserRound,
   type LucideIcon,
@@ -30,7 +28,6 @@ import {
 
 type SettingsTab =
   | "profile"
-  | "account"
   | "notifications"
   | "security"
   | "learning"
@@ -49,12 +46,6 @@ const tabs: Array<{
     icon: UserRound,
   },
   {
-    value: "account",
-    label: "Account",
-    description: "Email verification and login identity.",
-    icon: Mail,
-  },
-  {
     value: "notifications",
     label: "Notifications",
     description: "Course, billing, and support alerts.",
@@ -63,7 +54,7 @@ const tabs: Array<{
   {
     value: "security",
     label: "Security",
-    description: "Password, MFA readiness, and sensitive access.",
+    description: "Login email, password, recovery, and sensitive access.",
     icon: Shield,
   },
   {
@@ -131,10 +122,6 @@ function renderTab(tab: SettingsTab) {
     return <ProfileSettingsPanel />;
   }
 
-  if (tab === "account") {
-    return <AccountIdentityPanel />;
-  }
-
   if (tab === "notifications") {
     return <NotificationPreferencesPanel />;
   }
@@ -180,42 +167,6 @@ function SettingsTabButton({
         </span>
       </span>
     </button>
-  );
-}
-
-function AccountIdentityPanel() {
-  const { user } = useAuth();
-
-  return (
-    <section className="settings-section-card">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-        Account
-      </p>
-      <h2 className="display-title mt-3 text-3xl text-[var(--color-primary)]">
-        Login identity.
-      </h2>
-      <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-        Email is part of Settings because it controls authentication,
-        verification, and account recovery. Use Security for password changes.
-      </p>
-
-      <div className="mt-6 grid gap-3">
-        <SettingsInfoRow
-          icon={Mail}
-          title="Current email"
-          description={user?.email || "No email connected to this session."}
-          value={user?.emailVerified ? "Verified" : "Verification required"}
-          tone={user?.emailVerified ? "success" : "danger"}
-        />
-        <SettingsInfoRow
-          icon={LockKeyhole}
-          title="Where to change it"
-          description="Open the Security tab to resend verification, change email, or update password."
-          value="Security tab"
-          tone="neutral"
-        />
-      </div>
-    </section>
   );
 }
 
@@ -393,37 +344,6 @@ function LearningPreferencesPanel() {
         />
       </div>
     </section>
-  );
-}
-
-function SettingsInfoRow({
-  description,
-  icon: Icon,
-  title,
-  tone,
-  value,
-}: {
-  description: string;
-  icon: LucideIcon;
-  title: string;
-  tone: "danger" | "neutral" | "success";
-  value: string;
-}) {
-  return (
-    <div className="settings-info-row">
-      <span className="settings-info-row__icon">
-        <Icon aria-hidden="true" size={17} strokeWidth={2} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-[var(--color-ink)]">
-          {title}
-        </span>
-        <span className="mt-1 block text-sm leading-6 text-[var(--color-ink-soft)]">
-          {description}
-        </span>
-      </span>
-      <span className={`settings-pill settings-pill--${tone}`}>{value}</span>
-    </div>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   getAuthErrorMessage,
   requestSkillsetEmailChange,
   refreshCurrentUserEmailVerification,
+  resetPassword,
   sendSkillsetEmailVerification,
 } from "@/lib/auth/firebase-auth";
 
@@ -94,6 +95,34 @@ export function SecuritySettingsPanel() {
       setCurrentPassword("");
       setNextPassword("");
       setMessage("Password updated.");
+    } catch (caughtError) {
+      setError(getAuthErrorMessage(caughtError));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  // Recovery path for a signed-in user who forgot their CURRENT password and
+  // therefore can't use the change-password form (which re-authenticates).
+  // Firebase emails a secure reset link — the password is never exposed and
+  // no current password is required.
+  async function handleSendPasswordReset() {
+    if (!user?.email) {
+      setError(
+        "This account signs in with Google and has no password to reset. Add an email password from your provider first.",
+      );
+      return;
+    }
+
+    setIsBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await resetPassword(user.email);
+      setMessage(
+        `Reset link sent to ${user.email}. Open it to set a new password — you won't need your current one.`,
+      );
     } catch (caughtError) {
       setError(getAuthErrorMessage(caughtError));
     } finally {
@@ -223,6 +252,20 @@ export function SecuritySettingsPanel() {
             >
               Update password
             </button>
+            <div className="mt-1 border-t border-[var(--color-line)] pt-3">
+              <p className="text-xs leading-5 text-[var(--color-ink-soft)]">
+                Forgot your current password? We&apos;ll email a secure reset
+                link so you can set a new one without it.
+              </p>
+              <button
+                type="button"
+                onClick={handleSendPasswordReset}
+                disabled={isBusy}
+                className="mt-2 text-xs font-bold text-[var(--color-primary)] underline-offset-2 hover:underline disabled:opacity-60"
+              >
+                Email me a reset link
+              </button>
+            </div>
           </div>
         </div>
 
