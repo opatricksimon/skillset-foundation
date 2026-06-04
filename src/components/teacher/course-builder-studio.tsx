@@ -1435,6 +1435,7 @@ export function CourseBuilderStudio() {
               <button
                 key={stage.id}
                 type="button"
+                aria-current={isActive ? "step" : undefined}
                 onClick={() => {
                   pendingScrollRef.current = stage.anchor;
                   if (activeTab === stage.target) {
@@ -1607,6 +1608,7 @@ export function CourseBuilderStudio() {
                       }
                       disabled={!isEditable}
                       maxLength={120}
+                      aria-label={`Learning outcome ${index + 1}`}
                       placeholder="Example: Launch a paid cohort course end to end"
                       className="min-w-0 flex-1 rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-normal outline-none focus:border-[var(--color-primary-light)] disabled:bg-[var(--color-surface-soft)]"
                     />
