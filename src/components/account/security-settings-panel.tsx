@@ -170,6 +170,8 @@ export function SecuritySettingsPanel() {
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
               placeholder="new-email@example.com"
+              aria-label="New email address"
+              autoComplete="email"
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
             />
             <button
@@ -197,6 +199,8 @@ export function SecuritySettingsPanel() {
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               placeholder="Current password"
+              aria-label="Current password"
+              autoComplete="current-password"
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
             />
             <input
@@ -204,6 +208,8 @@ export function SecuritySettingsPanel() {
               value={nextPassword}
               onChange={(event) => setNextPassword(event.target.value)}
               placeholder="New password"
+              aria-label="New password"
+              autoComplete="new-password"
               className="rounded-[10px] border border-[var(--color-line)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--color-primary-light)]"
             />
             {nextPassword ? (

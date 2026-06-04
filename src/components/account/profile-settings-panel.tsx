@@ -519,6 +519,7 @@ export function ProfileSettingsPanel() {
               <button
                 key={value}
                 type="button"
+                aria-pressed={goals.includes(value)}
                 onClick={() => toggleGoal(value)}
                 className={`rounded-[10px] border px-4 py-3 text-left text-sm font-semibold ${
                   goals.includes(value)

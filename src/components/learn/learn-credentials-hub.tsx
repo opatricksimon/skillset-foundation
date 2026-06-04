@@ -171,7 +171,7 @@ export function LearnCredentialsHub() {
               Earned and in progress.
             </h3>
           </div>
-          <div className="credential-filter-tabs" aria-label="Credential filters">
+          <div className="credential-filter-tabs" role="group" aria-label="Credential filters">
             {[
               ["all", `All ${candidates.length}`],
               ["issued", `Issued ${issuedCount}`],
@@ -181,6 +181,7 @@ export function LearnCredentialsHub() {
               <button
                 key={value}
                 type="button"
+                aria-pressed={activeFilter === value}
                 className={activeFilter === value ? "is-active" : undefined}
                 onClick={() => setActiveFilter(value as typeof activeFilter)}
               >
