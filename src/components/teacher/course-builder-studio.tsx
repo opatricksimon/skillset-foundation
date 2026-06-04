@@ -99,9 +99,7 @@ const builderStages: Array<{
   target: BuilderTab;
   anchor: string;
 }> = [
-  { id: "basics", label: "Course basics", sub: "Title, category", target: "details", anchor: "builder-sec-basics" },
-  { id: "cover", label: "Course cover", sub: "Hero image", target: "details", anchor: "builder-sec-cover" },
-  { id: "about", label: "About", sub: "Promise, outcomes", target: "details", anchor: "builder-sec-about" },
+  { id: "basics", label: "Course basics", sub: "Info, cover, promise", target: "details", anchor: "builder-sec-cover" },
   { id: "modules", label: "Modules", sub: "Structure", target: "content", anchor: "builder-sec-modules" },
   { id: "lessons", label: "Lessons", sub: "Video, text, files", target: "content", anchor: "builder-sec-lessons" },
   { id: "pricing", label: "Pricing", sub: "Access model", target: "pricing", anchor: "builder-sec-pricing" },
@@ -753,9 +751,7 @@ export function CourseBuilderStudio() {
     review: readinessProgress === 100,
   };
   const stageCompletion: Record<string, boolean> = {
-    basics: Boolean(title.trim() && selectedCategories.length > 0),
-    cover: Boolean(course?.coverImageUrl),
-    about: summary.trim().length >= 20,
+    basics: tabCompletion.details,
     modules: modules.length > 0,
     lessons: lessonCount > 0,
     pricing: tabCompletion.pricing,
