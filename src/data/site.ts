@@ -34,6 +34,12 @@ export type PlatformNavItem = {
   /** Section label; an uppercase header is drawn when the section changes. */
   section: string;
   permission?: Permission;
+  /**
+   * Opens in a new browser tab with an external-link affordance. Used for
+   * cross-surface jumps (e.g. a teacher hopping into the student classroom)
+   * so the studio tab is preserved.
+   */
+  newTab?: boolean;
 };
 
 export const featuredTracks: Track[] = getFeaturedCourseCards();
@@ -101,6 +107,7 @@ export const platformNav: PlatformNavItem[] = [
     contexts: ["teacher"],
     section: "My Learning",
     permission: "courses.viewLearning",
+    newTab: true,
   },
   // --- Teacher workspace ---
   {

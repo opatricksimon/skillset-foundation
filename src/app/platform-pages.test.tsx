@@ -130,7 +130,7 @@ describe("platform shells", () => {
     expect(screen.getByText("Learner support")).toBeInTheDocument();
   });
 
-  it("does not expose workspace switching in the account dropdown", () => {
+  it("exposes student-view switching for a teacher in the account dropdown", () => {
     render(
       <AccountMenu
         onSignOut={vi.fn()}
@@ -147,12 +147,17 @@ describe("platform shells", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open account menu" }));
 
-    expect(screen.queryByText("Switch view")).not.toBeInTheDocument();
+    // One account, both roles: a teacher can drop into the student classroom.
+    // The switch opens in a new tab so the studio context is preserved.
+    expect(screen.getByText("Switch view")).toBeInTheDocument();
+    const studentViewLink = screen.getByRole("link", {
+      name: /Student view \(opens in a new tab\)/i,
+    });
+    expect(studentViewLink).toHaveAttribute("href", "/learn");
+    expect(studentViewLink).toHaveAttribute("target", "_blank");
+    // A teacher should not see the learner-to-teacher upgrade prompt.
     expect(
-      screen.queryByRole("link", { name: /Manage teaching/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", { name: /My learning/i }),
+      screen.queryByRole("link", { name: /Become a teacher/i }),
     ).not.toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import {
   BookOpen,
   Calendar,
   CreditCard,
+  ExternalLink,
   GraduationCap,
   Image,
   LayoutDashboard,
@@ -79,6 +80,7 @@ export function PlatformNav({ collapsed = false }: { collapsed?: boolean }) {
               icon={item.icon}
               active={isActivePlatformRoute(pathname, item.href)}
               collapsed={collapsed}
+              newTab={item.newTab}
             />
           ))}
         </div>
@@ -162,12 +164,14 @@ function PlatformNavLink({
   icon,
   active,
   collapsed,
+  newTab = false,
 }: {
   href: string;
   label: string;
   icon: string;
   active: boolean;
   collapsed: boolean;
+  newTab?: boolean;
 }) {
   const Icon = iconMap[icon] ?? LayoutDashboard;
 
@@ -176,6 +180,8 @@ function PlatformNavLink({
       href={href}
       title={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
       className={`platform-nav-link group flex items-center gap-2.5 rounded-[10px] border py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(44,82,130,0.24)] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${collapsed ? "justify-center px-0" : "px-2.5"} ${
         active
           ? "platform-nav-active border-[rgba(24,58,94,0.2)] shadow-[0_10px_22px_rgba(26,54,93,0.16)]"
@@ -190,11 +196,16 @@ function PlatformNavLink({
           className="shrink-0"
         />
       </span>
-      <span
-        className="platform-sidebar-label"
-      >
-        {label}
-      </span>
+      <span className="platform-sidebar-label">{label}</span>
+      {newTab && !collapsed ? (
+        <ExternalLink
+          aria-hidden="true"
+          size={14}
+          strokeWidth={1.8}
+          className="ml-auto shrink-0 text-[var(--color-ink-muted)] transition-colors group-hover:text-[var(--color-ink-soft)]"
+        />
+      ) : null}
+      {newTab ? <span className="sr-only">(opens in a new tab)</span> : null}
     </Link>
   );
 }
