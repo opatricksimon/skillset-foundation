@@ -133,7 +133,7 @@ export function TeacherStudioInsights() {
                 {revenueRangeSubtitle[revenueRange]}
               </p>
             </div>
-            <div className="studio-range-tabs" aria-label="Revenue range">
+            <div className="studio-range-tabs" role="group" aria-label="Revenue range">
               {revenueRanges.map((range) => (
                 <button
                   key={range.value}
