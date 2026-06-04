@@ -205,7 +205,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
             Teacher published
           </p>
-          <h1 className="display-title mt-4 text-6xl leading-none">
+          <h1 className="display-title mt-4 text-6xl leading-tight">
             {course.title}
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-white/78">
@@ -249,7 +249,7 @@ export function CreatorCourseDetail({ courseIdOverride }: CreatorCourseDetailPro
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
                   {previewLesson.moduleTitle}
                 </p>
-                <h2 className="display-title mt-2 text-4xl leading-none text-[var(--color-primary)]">
+                <h2 className="display-title mt-2 text-4xl leading-tight text-[var(--color-primary)]">
                   {previewLesson.title}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">

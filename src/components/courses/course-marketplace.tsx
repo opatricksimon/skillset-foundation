@@ -358,7 +358,7 @@ export function CourseMarketplace({ courses = [] }: CourseMarketplaceProps) {
                   </span>
                   <span className="text-xs text-[var(--color-ink-soft)]">{track.duration}</span>
                 </div>
-                <h2 className="display-title mt-4 text-3xl leading-none text-[var(--color-primary)]">
+                <h2 className="display-title mt-4 text-3xl leading-tight text-[var(--color-primary)]">
                   {track.title}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-[var(--color-ink-soft)]">
