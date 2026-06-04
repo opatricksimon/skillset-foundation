@@ -1,4 +1,5 @@
 import { CapabilitiesGrid } from "@/components/site/capabilities-grid";
+import { FeaturedCourses } from "@/components/site/featured-courses";
 import { ForCreatorsBand } from "@/components/site/for-creators-band";
 import { HowItWorksStrip } from "@/components/site/how-it-works-strip";
 import { MarketingHero } from "@/components/site/marketing-hero";
@@ -31,6 +32,9 @@ export default function Home() {
       <MarketingHero />
       <section id="how-it-works" className="scroll-mt-28">
         <HowItWorksStrip />
+      </section>
+      <section id="courses" className="scroll-mt-28">
+        <FeaturedCourses />
       </section>
       <section id="capabilities" className="scroll-mt-28">
         <CapabilitiesGrid />
