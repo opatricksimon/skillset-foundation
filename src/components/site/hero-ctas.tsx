@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "@/components/auth/auth-provider";
@@ -34,9 +34,15 @@ export function HeroCtas() {
     <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
       <Link
         href="/auth?mode=signup&path=teacher"
-        className="button-solid-light px-5 py-3 text-sm"
+        className="button-solid-light group inline-flex items-center gap-2 px-5 py-3 text-sm"
       >
         Start teaching free
+        <ArrowRight
+          aria-hidden="true"
+          size={16}
+          strokeWidth={2}
+          className="transition-transform duration-200 group-hover:translate-x-0.5"
+        />
       </Link>
       <Link href="/pricing" className="button-outline-light px-5 py-3 text-sm">
         See how you get paid

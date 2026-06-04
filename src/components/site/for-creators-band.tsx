@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
 import { RevealSection } from "@/components/shared/reveal-section";
 import { planById, payoutClearDays } from "@/data/plans";
@@ -28,8 +28,17 @@ export function ForCreatorsBand() {
                 Bring your expertise to a global audience.
               </h2>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/auth?mode=signup&path=teacher" className="button-solid-light px-5 py-3 text-sm">
+                <Link
+                  href="/auth?mode=signup&path=teacher"
+                  className="button-solid-light group inline-flex items-center gap-2 px-5 py-3 text-sm"
+                >
                   Start teaching
+                  <ArrowRight
+                    aria-hidden="true"
+                    size={16}
+                    strokeWidth={2}
+                    className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  />
                 </Link>
                 <Link
                   href="/promise"
