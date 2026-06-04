@@ -55,6 +55,21 @@ export async function createBillingCheckoutClientSecret(
  * EXISTING subscription, not for the upgrade conversion flow — that
  * stays embedded via the function above.
  */
+/**
+ * Whether the Stripe publishable key is present in this build. Embedded
+ * checkout needs it to mount Stripe.js on the client; without it the upgrade
+ * flow can only show a "checkout not configured" notice. Exposed so the plans
+ * UI can present an honest, non-dead-end state (disabled buttons + explainer)
+ * instead of letting a user click into a checkout that can't load — and it
+ * flips on automatically once the key is added and the app is redeployed.
+ *
+ * `NEXT_PUBLIC_*` is inlined by Next at build time, so this resolves to a
+ * static boolean in the client bundle.
+ */
+export function isCheckoutClientConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+}
+
 export async function openBillingPortal() {
   const createBillingPortalSession = httpsCallable<
     Record<string, never>,

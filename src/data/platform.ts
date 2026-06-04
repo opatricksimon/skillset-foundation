@@ -10,6 +10,20 @@ export function formatUsd(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * Whole-dollar USD (no cents) for plan pricing, where every amount is a round
+ * dollar figure. Keeps "$19" / "$190" / "$1,990" visually even instead of the
+ * default "$19.00" the currency formatter produces — the uneven, decimal-heavy
+ * look the pricing cards had before.
+ */
+export function formatUsdWhole(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 import { defaultPlanId, planById } from "@/data/plans";
 
 export { defaultPlanId };

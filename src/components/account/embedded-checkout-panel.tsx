@@ -9,7 +9,7 @@ import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { plans, type PlanBillingCycle, type PlanId } from "@/data/plans";
-import { formatUsd } from "@/data/platform";
+import { formatUsdWhole } from "@/data/platform";
 import { createBillingCheckoutClientSecret } from "@/lib/payments/billing";
 import { track } from "@/lib/posthog/events";
 
@@ -159,8 +159,10 @@ export function EmbeddedCheckoutPanel({
     );
   }
 
-  const periodLabel = cycle === "yearly" ? "/year" : "/month";
-  const price = cycle === "yearly" ? plan.yearlyUsd : plan.monthlyUsd;
+  const isYearly = cycle === "yearly";
+  // Lead with the monthly figure (annualized in yearly mode) to match the
+  // plans grid; the exact billed total sits just below it.
+  const monthlyFigure = isYearly ? plan.yearlyUsd / 12 : plan.monthlyUsd;
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -203,21 +205,21 @@ export function EmbeddedCheckoutPanel({
         </p>
         <div className="mt-4 rounded-[3px] border fine-rule bg-[var(--color-surface-soft)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink-soft)]">
-            {cycle === "yearly" ? "Yearly billing" : "Monthly billing"}
+            {isYearly ? "Yearly billing" : "Monthly billing"}
           </p>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className="display-title text-3xl text-[var(--color-primary)]">
-              {formatUsd(price)}
+            <span className="display-title text-3xl tabular-nums text-[var(--color-primary)]">
+              {formatUsdWhole(Math.round(monthlyFigure))}
             </span>
-            <span className="text-xs text-[var(--color-ink-soft)]">
-              {periodLabel}
+            <span className="text-xs font-semibold text-[var(--color-ink-soft)]">
+              /mo
             </span>
           </div>
-          {cycle === "yearly" ? (
-            <p className="mt-1 text-[11px] text-[var(--color-ink-soft)]">
-              ≈ {formatUsd(plan.yearlyUsd / 12)}/mo equivalent
-            </p>
-          ) : null}
+          <p className="mt-1 text-[11px] tabular-nums text-[var(--color-ink-soft)]">
+            {isYearly
+              ? `Billed ${formatUsdWhole(plan.yearlyUsd)} yearly`
+              : `Billed ${formatUsdWhole(plan.monthlyUsd)} monthly`}
+          </p>
         </div>
         <p className="mt-4 text-[11px] leading-5 text-[var(--color-ink-muted)]">
           Commission per sale on {plan.name}:{" "}

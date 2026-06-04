@@ -14,9 +14,12 @@ import {
   type PlanBillingCycle,
   type PlanId,
 } from "@/data/plans";
-import { formatUsd } from "@/data/platform";
+import { formatUsdWhole } from "@/data/platform";
 import { subscribeToUserProfile } from "@/lib/data/user-profiles";
-import { openBillingPortal } from "@/lib/payments/billing";
+import {
+  isCheckoutClientConfigured,
+  openBillingPortal,
+} from "@/lib/payments/billing";
 
 type UpgradeState = {
   planId: Exclude<PlanId, "free">;
@@ -56,7 +59,14 @@ export function PlansPanel() {
     return () => unsubscribe();
   }, [user]);
 
-  const billingReady = isBillingConfigured();
+  // Two independent gates must both be green for a real upgrade:
+  //   1. Price IDs configured server-side (isBillingConfigured)
+  //   2. Stripe publishable key inlined client-side (isCheckoutClientConfigured)
+  // Splitting them lets the banner explain EXACTLY what's pending, and keeps
+  // the upgrade buttons honest instead of clicking into a dead checkout.
+  const priceIdsReady = isBillingConfigured();
+  const checkoutClientReady = isCheckoutClientConfigured();
+  const checkoutReady = priceIdsReady && checkoutClientReady;
 
   function handleUpgrade(plan: Plan) {
     if (plan.id === "free") return;
@@ -95,15 +105,17 @@ export function PlansPanel() {
 
   return (
     <section className="grid gap-5">
-      {!billingReady ? (
+      {!checkoutReady ? (
         <div className="rounded-[4px] border border-dashed border-[rgba(178,34,52,0.32)] bg-[rgba(178,34,52,0.04)] p-4 text-sm leading-6 text-[var(--color-ink)]">
           <p className="font-semibold text-[var(--color-accent)]">
-            Billing setup pending.
+            {priceIdsReady
+              ? "Card checkout activates soon."
+              : "Billing setup pending."}
           </p>
           <p className="mt-1 text-[var(--color-ink-soft)]">
-            The Stripe Price IDs haven&apos;t been configured yet, so paid
-            plans can&apos;t be purchased. Free still works as the default
-            tier for every account.
+            {priceIdsReady
+              ? "Plans are fully configured. Card checkout switches on the moment the Stripe publishable key is added to this deployment — no other change needed. Free stays the default tier until then."
+              : "The Stripe Price IDs haven't been configured yet, so paid plans can't be purchased. Free still works as the default tier for every account."}
           </p>
         </div>
       ) : null}
@@ -171,13 +183,16 @@ export function PlansPanel() {
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
           const isPaidPlan = plan.id !== "free";
-          const canPurchase = isPaidPlan && hasRealStripePriceIds(plan);
-          const price = cycle === "yearly" ? plan.yearlyUsd : plan.monthlyUsd;
-          const periodLabel = cycle === "yearly" ? "/year" : "/month";
-          const monthlyEquivalent =
-            cycle === "yearly" && plan.yearlyUsd > 0
+          const canPurchase =
+            isPaidPlan && hasRealStripePriceIds(plan) && checkoutClientReady;
+          const isYearly = cycle === "yearly";
+          // Always lead with the monthly figure. In yearly mode that's the
+          // annualized monthly-equivalent; the exact billed total drops to a
+          // smaller line below so the easy-to-scan number stays primary.
+          const monthlyFigure =
+            isYearly && plan.yearlyUsd > 0
               ? plan.yearlyUsd / 12
-              : null;
+              : plan.monthlyUsd;
 
           return (
             <article
@@ -195,18 +210,22 @@ export function PlansPanel() {
                 {isCurrent ? <StatusChip status="active" label="Current" /> : null}
               </div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="display-title text-3xl text-[var(--color-primary)]">
-                  {price === 0 ? "Free" : formatUsd(price)}
+                <span className="display-title text-3xl tabular-nums text-[var(--color-primary)]">
+                  {isPaidPlan
+                    ? formatUsdWhole(Math.round(monthlyFigure))
+                    : "Free"}
                 </span>
-                {price > 0 ? (
-                  <span className="text-xs text-[var(--color-ink-soft)]">
-                    {periodLabel}
+                {isPaidPlan ? (
+                  <span className="text-xs font-semibold text-[var(--color-ink-soft)]">
+                    /mo
                   </span>
                 ) : null}
               </div>
-              {monthlyEquivalent ? (
-                <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                  ≈ {formatUsd(monthlyEquivalent)}/mo
+              {isPaidPlan ? (
+                <p className="mt-1 text-[11px] font-medium tabular-nums text-[var(--color-ink-muted)]">
+                  {isYearly
+                    ? `${formatUsdWhole(plan.yearlyUsd)} billed yearly`
+                    : "billed monthly"}
                 </p>
               ) : null}
               <p className="mt-3 text-xs text-[var(--color-ink-soft)]">
@@ -254,9 +273,13 @@ export function PlansPanel() {
                       ? "button-solid mt-5 w-full justify-center px-3 py-2 text-xs disabled:opacity-60"
                       : "button-outline mt-5 w-full justify-center px-3 py-2 text-xs disabled:opacity-60"
                   }
-                  title={canPurchase ? undefined : "This plan isn't available for purchase yet."}
+                  title={
+                    canPurchase
+                      ? undefined
+                      : "Card checkout activates once the Stripe publishable key is added."
+                  }
                 >
-                  {canPurchase ? `Upgrade to ${plan.name}` : "Unavailable"}
+                  {canPurchase ? `Upgrade to ${plan.name}` : "Activating soon"}
                 </button>
               ) : (
                 <p className="mt-5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-muted)]">
