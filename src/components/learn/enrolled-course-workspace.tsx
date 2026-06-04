@@ -1105,6 +1105,7 @@ function LessonDiscussion({
           onChange={(event) => setBody(event.target.value)}
           disabled={previewMode || isSaving}
           rows={3}
+          aria-label="Write a comment for this lesson"
           placeholder={
             previewMode
               ? "Preview mode does not publish comments."

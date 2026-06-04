@@ -26,7 +26,7 @@ export function AuthShell({
           <p className="mt-10 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
             {eyebrow}
           </p>
-          <h1 className="display-title mt-3 text-5xl leading-none text-[var(--color-primary)] sm:text-6xl">
+          <h1 className="display-title mt-3 text-5xl leading-tight text-[var(--color-primary)] sm:text-6xl">
             {title}
           </h1>
           <p className="mt-5 max-w-xl text-sm leading-7 text-[var(--color-ink-soft)]">

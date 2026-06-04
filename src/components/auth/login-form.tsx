@@ -88,6 +88,7 @@ export function LoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
+          autoComplete="email"
           required
           className="field-input"
         />
@@ -99,6 +100,7 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Your password"
+          autoComplete="current-password"
           required
           className="field-input"
         />
